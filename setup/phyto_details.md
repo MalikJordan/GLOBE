@@ -1,4 +1,4 @@
-Initialization of phytoplankton species present in model. Phytoplankton species are distinguished by their 
+<!-- Initialization of phytoplankton species present in model. Phytoplankton species are distinguished by their 
 equivalent spherical diameter (ESD) into three Phytoplankton Size Classes (PSCs). Example species provided
 for each PSC.
 -----------------------------
@@ -36,4 +36,4 @@ The following rates/reactions are considered for phytoplankton groups.
 |          Predation            |      Sink         |   C, N, P, Chl, Fe, CaCO3, Si     |
 |         Respiration           |      Sink         |   C                               |
 |          Synthesis            |     Source        |            Chl                    |
------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------- -->
