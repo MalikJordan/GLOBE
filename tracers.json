@@ -3,19 +3,19 @@
         "bac1":{
             "long_name": "Aerobic/Anaerobic Bacteria",
             "constituents": ["C", "N", "P"],
-            "units": ["mg C /m^3", "mmol N /m^3", "mmol P /m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
         }
     },
     "dissolved_organic_matter":{
         "dom1":{
             "long_name": "Labile Dissolved Organic Matter",
             "constituents": ["C", "N", "P", "Fe"],
-            "units": ["mg C /m^3", "mmol N /m^3", "mmol P /m^3", "umol Fe /m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "umol Fe / m^3"]
         },
         "dom2":{
             "long_name": "Semi-Labile Dissolved Organic Matter",
             "constituents": ["C"],
-            "units": ["mg C /m^3"]
+            "units": ["mg C / m^3"]
         },
         "dom3":{
             "long_name": "Semi-Refractory Dissolved Organic Matter",
@@ -23,52 +23,56 @@
         }
     },
     "inorganic":{
-        "O2":{
-            "long_name": "Oxygen",
-            "units": "mmol O2 /m^3"
-        },
-        "NO3":{
-            "long_name": "Nitrate",
-            "units": "mmol N /m^3"
-        },
-        "PO4":{
-            "long_name": "Phosphate",
-            "units": "mmol P /m^3"
-        },
-        "NH4":{
-            "long_name": "Ammonium",
-            "units": "mmol N /m^3"
-        },
-        "SiO2":{
-            "long_name": "Silicate",
-            "units": "mmol Si /m^3"
-        },
-        "Fe":{
-            "long_name": "Iron",
-            "units": "umol Fe /m^3"
+        "CaCO3":{
+            "long_name": "Calcium Carbonate",
+            "units": "mg C / m^3"
         },
         "DIC":{
             "long_name": "Dissolved Inorganic Carbon",
-            "units": "mg C /m^3"
+            "units": "mg C / m^3"
+        },
+        "Fe":{
+            "long_name": "Iron",
+            "units": "umol Fe / m^3"
         },
         "N2":{
             "long_name": "Nitrogen Sink",
-            "units": "mmol N /m^3"
+            "units": "mmol N / m^3"
         },
-        "CaCO3":{
-            "long_name": "Calcium Carbonate",
-            "units": "mg C /m^3"
+        "NH4":{
+            "long_name": "Ammonium",
+            "units": "mmol N / m^3"
+        },
+        "NO3":{
+            "long_name": "Nitrate",
+            "units": "mmol N / m^3"
+        },
+        "O2":{
+            "long_name": "Oxygen",
+            "units": "mmol O2 / m^3"
+        },
+        "PO4":{
+            "long_name": "Phosphate",
+            "units": "mmol P / m^3"
         },
         "S":{
             "long_name": "Sulfide",
-            "units": "mmol S /m^3"
+            "units": "mmol S / m^3"
+        },
+        "SiO2":{
+            "long_name": "Silicate",
+            "units": "mmol Si / m^3"
+        },
+        "TALK":{
+            "long_name": "Total Alkalinity",
+            "units": "mmol Eq / m^3"
         }
     },
     "particulate_organic_matter":{
         "pom1":{
             "long_name": "Particulate Organic Detritus",
             "constituents": ["C", "N", "P", "Si", "Fe"],
-            "units": ["mg C /m^3", "mmol N /m^3", "mmol P /m^3", "mmol Si /m^3", "umol Fe /m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mmol Si / m^3", "umol Fe / m^3"]
         }
     },
     "phytoplankton":{
@@ -76,25 +80,25 @@
             "long_name": "Diatoms",
             "size_class": "Microphytoplankton",
             "constituents": ["C", "N", "P", "Chl", "Si", "Fe"],
-            "units": ["mg C /m^3", "mmol N /m^3", "mmol P /m^3", "mg Chl-a / m^3", "mmol Si /m^3", "umol Fe /m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "mmol Si / m^3", "umol Fe / m^3"]
         },
         "phyto2":{
             "long_name": "Phototrophic Nanoflagellates",
             "size_class": "Nanophytoplankton",
             "constituents": ["C", "N", "P", "Chl", "Fe"],
-            "units": ["mg C /m^3", "mmol N /m^3", "mmol P /m^3", "mg Chl-a / m^3", "umol Fe /m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"]
         },
         "phyto3":{
             "long_name": "Cyanobacteria",
             "size_class": "Picophytoplankton",
             "constituents": ["C", "N", "P", "Chl", "Fe"] ,
-            "units": ["mg C /m^3", "mmol N /m^3", "mmol P /m^3", "mg Chl-a / m^3", "umol Fe /m^3"]  
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"]  
         },
         "phyto4":{
             "long_name": "Dinoflagellates",
             "size_class": "Microphytoplankton",
             "constituents": ["C", "N", "P", "Chl", "Fe"],
-            "units": ["mg C /m^3", "mmol N /m^3", "mmol P /m^3", "mg Chl-a / m^3", "umol Fe /m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"]
         }
     },
     "zooplankton":{
@@ -102,25 +106,25 @@
             "long_name": "Carnivorous Mesozooplankton",
             "size_class": "Mesozooplankton",
             "constituents": ["C", "N", "P"],
-            "units": ["mg C /m^3", "mmol N /m^3", "mmol P /m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
         },
         "zoo2":{
             "long_name": "Copepods",
             "size_class": "Mesozooplankton",
             "constituents": ["C", "N", "P"],
-            "units": ["mg C /m^3", "mmol N /m^3", "mmol P /m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
         },
         "zoo3":{
             "long_name": "Cilates",
             "size_class": "Microzooplankton",
             "constituents": ["C", "N", "P"],
-            "units": ["mg C /m^3", "mmol N /m^3", "mmol P /m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
         },
         "zoo4":{
             "long_name": "Heterotrophic Nanoflagellates",
             "size_class": "Nanozooplankton",
             "constituents": ["C", "N", "P"],
-            "units": ["mg C /m^3", "mmol N /m^3", "mmol P /m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
         }
     }
 }
