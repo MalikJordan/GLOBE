@@ -2,7 +2,7 @@ import numpy as np
 
 # ----------------------------------------------------------------------------------------------------
 # Superclass - LivingOrganic
-# Subclasses - Bacterioplankton, Phytoplankton, Zooplankton
+# Subclasses - Bacterioplankton (Non-Phototrophic), Phytoplankton, Zooplankton
 
 class LivingOrganic:
     """
@@ -49,7 +49,7 @@ class Phytoplankton(LivingOrganic):
                  Chlorophyll-a is an added constituent for all phytoplankton groups.
                  Additional constituents can be added for:
                  - Iron (Fe)
-                 - Silicate (Si)
+                 - Silica (Si)
     """
     def __init__(self, name, constituents, num_boxes):
         super().__init__(name, num_boxes)
