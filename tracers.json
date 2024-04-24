@@ -3,7 +3,13 @@
         "bac1":{
             "long_name": "Aerobic/Anaerobic Bacteria",
             "constituents": ["C", "N", "P"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"],
+            "rates": {
+                "lysis": ["dom1","pom1"],
+                "release": ["dom2","dom3","NH4","PO4"],
+                "respiration": ["DIC"],
+                "uptake": ["dom1","dom2","dom3","NH4","pom1","PO4"]
+            }
         }
     },
     "dissolved_organic_matter":{
@@ -66,13 +72,22 @@
         "TALK":{
             "long_name": "Total Alkalinity",
             "units": "mmol Eq / m^3"
+        },
+        "rates": {
+            "air-sea-flux": ["DIC","O2"],
+            "denitrification": ["NO3"],
+            "nitrification": ["NH4"],
+            "reoxidation": ["S"]
         }
     },
     "particulate_organic_matter":{
         "pom1":{
             "long_name": "Particulate Organic Detritus",
             "constituents": ["C", "N", "P", "Si", "Fe"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mmol Si / m^3", "umol Fe / m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mmol Si / m^3", "umol Fe / m^3"],
+            "rates": {
+                "reminarilization": ["SiO2"]
+            }
         }
     },
     "phytoplankton":{
@@ -80,25 +95,57 @@
             "long_name": "Diatoms",
             "size_class": "Microphytoplankton",
             "constituents": ["C", "N", "P", "Chl", "Si", "Fe"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "mmol Si / m^3", "umol Fe / m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "mmol Si / m^3", "umol Fe / m^3"],
+            "rates": {
+                "exudation": ["dom2"],
+                "lysis": ["dom1","pom1"],
+                "primary_production": ["DIC"],
+                "respiration": ["DIC"],
+                "synthesis": ["Chl"],
+                "uptake": ["dom1","Fe","NH4","NO3","PO4","SiO2"]
+            }
         },
         "phyto2":{
             "long_name": "Phototrophic Nanoflagellates",
             "size_class": "Nanophytoplankton",
             "constituents": ["C", "N", "P", "Chl", "Fe"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"],
+            "rates": {
+                "exudation": ["dom2"],
+                "lysis": ["dom1","pom1"],
+                "primary_production": ["DIC"],
+                "respiration": ["DIC"],
+                "synthesis": ["Chl"],
+                "uptake": ["dom1","Fe","NH4","NO3","PO4"]
+            }
         },
         "phyto3":{
             "long_name": "Cyanobacteria",
             "size_class": "Picophytoplankton",
             "constituents": ["C", "N", "P", "Chl", "Fe"] ,
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"]  
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"],
+            "rates": {
+                "exudation": ["dom2"],
+                "lysis": ["dom1","pom1"],
+                "primary_production": ["DIC"],
+                "respiration": ["DIC"],
+                "synthesis": ["Chl"],
+                "uptake": ["dom1","Fe","NH4","NO3","PO4"]
+            } 
         },
         "phyto4":{
             "long_name": "Dinoflagellates",
             "size_class": "Microphytoplankton",
             "constituents": ["C", "N", "P", "Chl", "Fe"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"],
+            "rates": {
+                "exudation": "dom2",
+                "lysis": ["dom1","pom1"],
+                "primary_production": ["DIC"],
+                "respiration": ["DIC"],
+                "synthesis": ["Chl"],
+                "uptake": ["dom1","Fe","NH4","NO3","PO4"]
+            }
         }
     },
     "zooplankton":{
@@ -106,25 +153,45 @@
             "long_name": "Carnivorous Mesozooplankton",
             "size_class": "Mesozooplankton",
             "constituents": ["C", "N", "P"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"],
+            "rates": {
+                "predation": ["phyto1","phyto2","phyto3","phyto4","zoo2","zoo3","zoo4"],
+                "release": ["dom1","pom1"],
+                "respiration": ["DIC"]
+            }
         },
         "zoo2":{
             "long_name": "Copepods",
             "size_class": "Mesozooplankton",
             "constituents": ["C", "N", "P"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"],
+            "rates": {
+                "predation": ["phyto1","phyto2","phyto3","phyto4","zoo1","zoo3","zoo4"],
+                "release": ["dom1","pom1"],
+                "respiration": ["DIC"]
+            }
         },
         "zoo3":{
             "long_name": "Cilates",
             "size_class": "Microzooplankton",
             "constituents": ["C", "N", "P"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"],
+            "rates": {
+                "predation": ["bac1","phyto1","phyto2","phyto3","phyto4","zoo4"],
+                "release": ["dom1","pom1"],
+                "respiration": ["DIC"]
+            }
         },
         "zoo4":{
             "long_name": "Heterotrophic Nanoflagellates",
             "size_class": "Nanozooplankton",
             "constituents": ["C", "N", "P"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
+            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"],
+            "rates": {
+                "predation": ["bac1","phyto1","phyto2","phyto3","phyto4","zoo3"],
+                "release": ["dom1","pom1"],
+                "respiration": ["DIC"]
+            }
         }
     }
 }
