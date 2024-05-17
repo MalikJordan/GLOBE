@@ -1,197 +1,438 @@
 {
-    "bacterioplankton":{
-        "bac1":{
-            "long_name": "Aerobic/Anaerobic Bacteria",
-            "constituents": ["C", "N", "P"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"],
-            "rates": {
-                "lysis": ["dom1","pom1"],
-                "release": ["dom2","dom3","NH4","PO4"],
-                "respiration": ["DIC"],
-                "uptake": ["dom1","dom2","dom3","NH4","pom1","PO4"]
+    "tracers":{
+        "bacterioplankton":{
+            "bac1":{
+                "long_name": "Aerobic/Anaerobic Bacteria",
+                "constituents": ["C", "N", "P"],
+                "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
+            }
+        },
+        "dissolved_organic_matter":{
+            "dom1":{
+                "long_name": "Labile Dissolved Organic Matter",
+                "constituents": ["C", "N", "P", "Fe"],
+                "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "umol Fe / m^3"]
+            },
+            "dom2":{
+                "long_name": "Semi-Labile Dissolved Organic Matter",
+                "constituents": ["C"],
+                "units": ["mg C / m^3"]
+            },
+            "dom3":{
+                "long_name": "Semi-Refractory Dissolved Organic Matter",
+                "constituents": ["C"]
+            }
+        },
+        "inorganic":{
+            "CaCO3":{
+                "long_name": "Calcium Carbonate",
+                "units": "mg C / m^3"
+            },
+            "DIC":{
+                "long_name": "Dissolved Inorganic Carbon",
+                "units": "mg C / m^3"
+            },
+            "Fe":{
+                "long_name": "Iron",
+                "units": "umol Fe / m^3"
+            },
+            "N2":{
+                "long_name": "Nitrogen Sink",
+                "units": "mmol N / m^3"
+            },
+            "NH4":{
+                "long_name": "Ammonium",
+                "units": "mmol N / m^3"
+            },
+            "NO3":{
+                "long_name": "Nitrate",
+                "units": "mmol N / m^3"
+            },
+            "O2":{
+                "long_name": "Oxygen",
+                "units": "mmol O2 / m^3"
+            },
+            "PO4":{
+                "long_name": "Phosphate",
+                "units": "mmol P / m^3"
+            },
+            "S":{
+                "long_name": "Sulfide",
+                "units": "mmol S / m^3"
+            },
+            "SiO2":{
+                "long_name": "Silicate",
+                "units": "mmol Si / m^3"
+            },
+            "TALK":{
+                "long_name": "Total Alkalinity",
+                "units": "mmol Eq / m^3"
+            }
+        },
+        "particulate_organic_matter":{
+            "pom1":{
+                "long_name": "Particulate Organic Detritus",
+                "constituents": ["C", "N", "P", "Si", "Fe"],
+                "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mmol Si / m^3", "umol Fe / m^3"]
+            }
+        },
+        "phytoplankton":{
+            "phyto1":{
+                "long_name": "Diatoms",
+                "size_class": "Microphytoplankton",
+                "constituents": ["C", "N", "P", "Chl", "Si", "Fe"],
+                "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "mmol Si / m^3", "umol Fe / m^3"]
+            },
+            "phyto2":{
+                "long_name": "Phototrophic Nanoflagellates",
+                "size_class": "Nanophytoplankton",
+                "constituents": ["C", "N", "P", "Chl", "Fe"],
+                "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"]
+            },
+            "phyto3":{
+                "long_name": "Cyanobacteria",
+                "size_class": "Picophytoplankton",
+                "constituents": ["C", "N", "P", "Chl", "Fe"] ,
+                "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"]
+            },
+            "phyto4":{
+                "long_name": "Dinoflagellates",
+                "size_class": "Microphytoplankton",
+                "constituents": ["C", "N", "P", "Chl", "Fe"],
+                "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"]
+            }
+        },
+        "zooplankton":{
+            "zoo1":{
+                "long_name": "Carnivorous Mesozooplankton",
+                "size_class": "Mesozooplankton",
+                "constituents": ["C", "N", "P"],
+                "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
+            },
+            "zoo2":{
+                "long_name": "Copepods",
+                "size_class": "Mesozooplankton",
+                "constituents": ["C", "N", "P"],
+                "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
+            },
+            "zoo3":{
+                "long_name": "Ciliates",
+                "size_class": "Microzooplankton",
+                "constituents": ["C", "N", "P"],
+                "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
+            },
+            "zoo4":{
+                "long_name": "Heterotrophic Nanoflagellates",
+                "size_class": "Nanozooplankton",
+                "constituents": ["C", "N", "P"],
+                "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"]
             }
         }
     },
-    "dissolved_organic_matter":{
-        "dom1":{
-            "long_name": "Labile Dissolved Organic Matter",
-            "constituents": ["C", "N", "P", "Fe"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "umol Fe / m^3"]
+    "parameters":{
+        "phyto1":{
+            "chl_light_absorp": 0.03,
+            "chl_relax_rate": 0.25,
+            "chl_switch": 3,
+            "max_chl_quota": 0.035,
+            "max_light_util": 1.1e-05,
+            "max_photo_rate": 2.5,
+
+            "spec_aff_nit": 0.025,
+            "nit_mult_factor": 2.0,
+            "max_nit_quota": 0.0126,
+            "min_nit_quota": 6.87e-03,
+            "opt_nit_quota": 0.0126,
+            "half_sat_amm": 1.0,
+
+            "spec_aff_phos": 2.5e-03,
+            "phos_mult_factor": 2.0,
+            "max_phos_quota": 0.001572,
+            "min_phos_quota": 4.29e-04,
+            "opt_phos_quota": 0.000786,
+
+            "spec_aff_iron": 2.3148148148148148e-09,
+            "iron_mult_factor": 0.0,
+            "min_iron_quota": 0.0,
+            "opt_iron_quota": 0.0,
+            
+            "spec_aff_si": 0.0,
+            "half_sat_si": 1.0,
+            "half_sat_si_contois": 0.0,
+            "si_switch": 1,
+            "min_si_quota": 0.0,
+            "opt_si_quota": 0.01,
+
+            "extra_lysis_rate": 0.0,
+            "half_sat_lysis": 0.1,
+            "half_sat_extra_lysis": 0.0,
+            "max_spec_lysis_rate": 0.01,
+
+            "opt_par_irrad_ratio": 3.0,
+            "spec_resp_rate": 0.05,
+            "excr_prim_prod": 0.01,
+            "activity_resp_frac": 0.1,
+            "cuttof_temp_threshold": 0.0,
+            "nut_stress_threshold": 0.70,
+            "background_sink_rate": 0.0,
+            "bot_burial_vel": 0.0,
+            "max_sedi_rate": 5.0
         },
-        "dom2":{
-            "long_name": "Semi-Labile Dissolved Organic Matter",
-            "constituents": ["C"],
-            "units": ["mg C / m^3"]
+        "phyto2":{
+            "chl_light_absorp": 0.03,
+            "chl_relax_rate": 0.0,
+            "chl_switch": 3,
+            "max_chl_quota": 0.016,
+            "max_photo_rate": 1.6,
+            "max_light_util": 1.52e-05,
+
+            "spec_aff_nit": 0.025,
+            "nit_mult_factor": 1.0,
+            "max_nit_quota": 0.0126,
+            "min_nit_quota": 6.87e-03,
+            "opt_nit_quota": 0.0126,
+            "half_sat_amm": 1.5,
+
+            "spec_aff_phos": 2.5e-03,
+            "phos_mult_factor": 1.0,
+            "max_phos_quota": 7.86e-04,
+            "min_phos_quota": 4.29e-04,
+            "opt_phos_quota": 0.000786,
+
+            "spec_aff_iron": 2.3148148148148148e-09,
+            "iron_mult_factor": 0.0,
+            "min_iron_quota": 0.0,
+            "opt_iron_quota": 0.0,
+
+            "extra_lysis_rate": 0.0,
+            "half_sat_lysis": 0.1,
+            "half_sat_extra_lysis": 0.0,
+            "max_spec_lysis_rate": 0.05,
+
+            "opt_par_irrad_ratio": 0.0,
+            "spec_resp_rate": 0.05,
+            "excr_prim_prod": 0.05,
+            "activity_resp_frac": 0.05,
+            "cuttof_temp_threshold": 0.0,
+            "nut_stress_threshold": 0.75,
+            "background_sink_rate": 0.0,
+            "bot_burial_vel": 0.0,
+            "max_sedi_rate": 0.5
         },
-        "dom3":{
-            "long_name": "Semi-Refractory Dissolved Organic Matter",
-            "constituents": ["C"]
+        "phyto3":{
+            "chl_light_absorp": 0.03,
+            "chl_relax_rate": 0.25,
+            "chl_switch": 3,
+            "max_chl_quota": 0.02,
+            "max_photo_rate": 1.02,
+            "max_light_util": 0.7e-05,
+
+            "spec_aff_nit": 0.025,
+            "nit_mult_factor": 2.0,
+            "max_nit_quota": 0.0126,
+            "min_nit_quota": 6.87e-03,
+            "opt_nit_quota": 0.0126,
+            "half_sat_amm": 0.1,
+
+            "spec_aff_phos": 2.5e-03,
+            "phos_mult_factor": 2.0,
+            "max_phos_quota": 0.001572,
+            "min_phos_quota": 4.29e-04,
+            "opt_phos_quota": 0.000786,
+
+            "spec_aff_iron": 2.3148148148148148e-09,
+            "iron_mult_factor": 0.0,
+            "min_iron_quota": 0.0,
+            "opt_iron_quota": 0.0,
+
+            "extra_lysis_rate": 0.0,
+            "half_sat_lysis": 0.1,
+            "half_sat_extra_lysis": 0.0,
+            "max_spec_lysis_rate": 0.01,
+
+            "opt_par_irrad_ratio": 3.0,
+            "spec_resp_rate": 0.05,
+            "excr_prim_prod": 0.1,
+            "activity_resp_frac": 0.2,
+            "cuttof_temp_threshold": 0.0,
+            "nut_stress_threshold": 0.75,
+            "background_sink_rate": 0.0,
+            "bot_burial_vel": 0,
+            "max_sedi_rate": 0.5
+        },
+        "phyto4":{
+            "chl_light_absorp": 0.03,
+            "chl_relax_rate": 0.25,
+            "chl_switch": 3,
+            "max_chl_quota": 0.035,
+            "max_photo_rate": 0.83,
+            "max_light_util": 6.8e-06,
+
+            "spec_aff_nit": 0.025,
+            "nit_mult_factor": 2.0,
+            "max_nit_quota": 0.0126,
+            "min_nit_quota": 6.87e-03,
+            "opt_nit_quota": 0.0126,
+            "half_sat_amm": 1.0,
+
+            "spec_aff_phos": 2.5e-03,
+            "phos_mult_factor": 2.0,
+            "max_phos_quota": 0.001572,
+            "min_phos_quota": 4.29e-04,
+            "opt_phos_quota": 0.000786,
+
+            "spec_aff_iron": 2.3148148148148148e-09,
+            "iron_mult_factor": 0.0,
+            "min_iron_quota": 0.0,
+            "opt_iron_quota": 0.0,
+
+            "extra_lysis_rate": 0.5,
+            "half_sat_lysis": 0.5,
+            "half_sat_extra_lysis": 100.0,
+            "max_spec_lysis_rate": 0.2,
+
+            "opt_par_irrad_ratio": 3.0,
+            "spec_resp_rate": 0.1,
+            "excr_prim_prod": 0.15,
+            "activity_resp_frac": 0.1,
+            "cuttof_temp_threshold": 0,
+            "nut_stress_threshold": 0.75,
+            "background_sink_rate": 0.0,
+            "bot_burial_vel": 0.0,
+            "max_sedi_rate": 5.0
+        },
+        "zoo1":{
+            "max_nit_quota": 0.01258,
+            "opt_nit_quota": 0.015,
+            "max_phos_quota": 7.862e-04,
+            "opt_phos_quota": 0.00167,
+            "half_sat_oxy": 30.0,
+
+            "assim_eff": 0.6,
+            "excr_uptake": 0.3,
+            "nut_excr_rate": 2.5e-03,
+            "dens_mort_rate": 0.01,
+            "dens_mort_rate_exp": 2.0,
+            "spec_growth_rate": 2.0,
+            "spec_mort_rate": 0.02,
+            "spec_resp_rate": 0.01
+        },
+        "zoo2":{
+            "max_nit_quota": 0.01258,
+            "opt_nit_quota": 0.015,
+            "max_phos_quota": 7.862e-04,
+            "opt_phos_quota": 0.00167,
+            "half_sat_oxy": 30.0,
+
+            "assim_eff": 0.6,
+            "excr_uptake": 0.35,
+            "nut_excr_rate": 0.025,
+            "dens_mort_rate": 0.01,
+            "dens_mort_rate_exp": 2.0,
+            "spec_growth_rate": 2.0,
+            "spec_mort_rate": 0.02,
+            "spec_resp_rate": 0.02
+        },
+        "zoo3":{
+            "max_nit_quota": 1.67e-2,
+            "opt_nit_quota": 0.0128,
+            "max_phos_quota": 1.85e-3,
+            "opt_phos_quota": 0.00185,
+            "half_sat_oxy": 0.5,
+            "mort_rate_oxy": 0.25,
+
+            "assim_eff": 0.5,
+            "feeding_threshold": 50.0,
+            "excr_uptake": 0.25,
+            "michaelis_constant": 200.0,
+            "spec_growth_rate": 2.0,
+            "spec_mort_rate": 1.0e-06,
+            "spec_resp_rate": 0.02
+        },
+        "zoo4":{
+            "max_nit_quota": 1.67e-2,
+            "opt_nit_quota": 0.0128,
+            "max_phos_quota": 1.85e-3,
+            "opt_phos_quota": 0.00185,
+            "half_sat_oxy": 0.5,
+            "mort_rate_oxy": 0.25,
+            
+            "assim_eff": 0.3,
+            "feeding_threshold": 50.0,
+            "excr_uptake": 0.35,
+            "michaelis_constant": 200.0,
+            "spec_growth_rate": 5.0,
+            "spec_mort_rate": 1.0e-06,
+            "spec_resp_rate": 0.02
         }
     },
-    "inorganic":{
-        "CaCO3":{
-            "long_name": "Calcium Carbonate",
-            "units": "mg C / m^3"
+    "rates":{
+        "bac1":{
+            "lysis": ["dom1","pom1"],
+            "release": ["dom2","dom3","NH4","PO4"],
+            "respiration": ["DIC"],
+            "uptake": ["dom1","dom2","dom3","NH4","pom1","PO4"]
         },
-        "DIC":{
-            "long_name": "Dissolved Inorganic Carbon",
-            "units": "mg C / m^3"
-        },
-        "Fe":{
-            "long_name": "Iron",
-            "units": "umol Fe / m^3"
-        },
-        "N2":{
-            "long_name": "Nitrogen Sink",
-            "units": "mmol N / m^3"
-        },
-        "NH4":{
-            "long_name": "Ammonium",
-            "units": "mmol N / m^3"
-        },
-        "NO3":{
-            "long_name": "Nitrate",
-            "units": "mmol N / m^3"
-        },
-        "O2":{
-            "long_name": "Oxygen",
-            "units": "mmol O2 / m^3"
-        },
-        "PO4":{
-            "long_name": "Phosphate",
-            "units": "mmol P / m^3"
-        },
-        "S":{
-            "long_name": "Sulfide",
-            "units": "mmol S / m^3"
-        },
-        "SiO2":{
-            "long_name": "Silicate",
-            "units": "mmol Si / m^3"
-        },
-        "TALK":{
-            "long_name": "Total Alkalinity",
-            "units": "mmol Eq / m^3"
-        },
-        "rates": {
+        "inorganic":{
             "air-sea-flux": ["DIC","O2"],
             "denitrification": ["NO3"],
             "nitrification": ["NH4"],
             "reoxidation": ["S"]
-        }
-    },
-    "particulate_organic_matter":{
+        },
         "pom1":{
-            "long_name": "Particulate Organic Detritus",
-            "constituents": ["C", "N", "P", "Si", "Fe"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mmol Si / m^3", "umol Fe / m^3"],
-            "rates": {
-                "reminarilization": ["SiO2"]
-            }
-        }
-    },
-    "phytoplankton":{
+            "reminarilization": ["SiO2"]
+        },
         "phyto1":{
-            "long_name": "Diatoms",
-            "size_class": "Microphytoplankton",
-            "constituents": ["C", "N", "P", "Chl", "Si", "Fe"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "mmol Si / m^3", "umol Fe / m^3"],
-            "rates": {
-                "exudation": ["dom2"],
-                "lysis": ["dom1","pom1"],
-                "primary_production": ["DIC"],
-                "respiration": ["DIC"],
-                "synthesis": ["Chl"],
-                "uptake": ["dom1","Fe","NH4","NO3","PO4","SiO2"]
-            }
+            "exudation": ["dom2"],
+            "lysis": ["dom1","pom1"],
+            "primary_production": ["DIC"],
+            "respiration": ["DIC"],
+            "synthesis": ["Chl"],
+            "uptake": ["dom1","Fe","NH4","NO3","PO4"]
         },
         "phyto2":{
-            "long_name": "Phototrophic Nanoflagellates",
-            "size_class": "Nanophytoplankton",
-            "constituents": ["C", "N", "P", "Chl", "Fe"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"],
-            "rates": {
-                "exudation": ["dom2"],
-                "lysis": ["dom1","pom1"],
-                "primary_production": ["DIC"],
-                "respiration": ["DIC"],
-                "synthesis": ["Chl"],
-                "uptake": ["dom1","Fe","NH4","NO3","PO4"]
-            }
+            "exudation": ["dom2"],
+            "lysis": ["dom1","pom1"],
+            "primary_production": ["DIC"],
+            "respiration": ["DIC"],
+            "synthesis": ["Chl"],
+            "uptake": ["dom1","Fe","NH4","NO3","PO4"]
         },
         "phyto3":{
-            "long_name": "Cyanobacteria",
-            "size_class": "Picophytoplankton",
-            "constituents": ["C", "N", "P", "Chl", "Fe"] ,
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"],
-            "rates": {
-                "exudation": ["dom2"],
-                "lysis": ["dom1","pom1"],
-                "primary_production": ["DIC"],
-                "respiration": ["DIC"],
-                "synthesis": ["Chl"],
-                "uptake": ["dom1","Fe","NH4","NO3","PO4"]
-            } 
+            "exudation": ["dom2"],
+            "lysis": ["dom1","pom1"],
+            "primary_production": ["DIC"],
+            "respiration": ["DIC"],
+            "synthesis": ["Chl"],
+            "uptake": ["dom1","Fe","NH4","NO3","PO4"]
         },
         "phyto4":{
-            "long_name": "Dinoflagellates",
-            "size_class": "Microphytoplankton",
-            "constituents": ["C", "N", "P", "Chl", "Fe"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3", "mg Chl-a / m^3", "umol Fe / m^3"],
-            "rates": {
-                "exudation": "dom2",
-                "lysis": ["dom1","pom1"],
-                "primary_production": ["DIC"],
-                "respiration": ["DIC"],
-                "synthesis": ["Chl"],
-                "uptake": ["dom1","Fe","NH4","NO3","PO4"]
-            }
-        }
-    },
-    "zooplankton":{
+            "exudation": ["dom2"],
+            "lysis": ["dom1","pom1"],
+            "primary_production": ["DIC"],
+            "respiration": ["DIC"],
+            "synthesis": ["Chl"],
+            "uptake": ["dom1","Fe","NH4","NO3","PO4"]
+        },
         "zoo1":{
-            "long_name": "Carnivorous Mesozooplankton",
-            "size_class": "Mesozooplankton",
-            "constituents": ["C", "N", "P"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"],
-            "rates": {
-                "predation": ["phyto1","phyto2","phyto3","phyto4","zoo2","zoo3","zoo4"],
-                "release": ["dom1","pom1"],
-                "respiration": ["DIC"]
-            }
+            "predation": ["phyto1","phyto2","phyto3","phyto4","zoo2","zoo3","zoo4"],
+            "release": ["dom1","pom1"],
+            "respiration": ["DIC"]
         },
         "zoo2":{
-            "long_name": "Copepods",
-            "size_class": "Mesozooplankton",
-            "constituents": ["C", "N", "P"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"],
-            "rates": {
-                "predation": ["phyto1","phyto2","phyto3","phyto4","zoo1","zoo3","zoo4"],
-                "release": ["dom1","pom1"],
-                "respiration": ["DIC"]
-            }
+            "predation": ["phyto1","phyto2","phyto3","phyto4","zoo1","zoo3","zoo4"],
+            "release": ["dom1","pom1"],
+            "respiration": ["DIC"]
         },
         "zoo3":{
-            "long_name": "Cilates",
-            "size_class": "Microzooplankton",
-            "constituents": ["C", "N", "P"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"],
-            "rates": {
-                "predation": ["bac1","phyto1","phyto2","phyto3","phyto4","zoo4"],
-                "release": ["dom1","pom1"],
-                "respiration": ["DIC"]
-            }
+            "predation": ["bac1","phyto1","phyto2","phyto3","phyto4","zoo4"],
+            "release": ["dom1","pom1"],
+            "respiration": ["DIC"]
         },
         "zoo4":{
-            "long_name": "Heterotrophic Nanoflagellates",
-            "size_class": "Nanozooplankton",
-            "constituents": ["C", "N", "P"],
-            "units": ["mg C / m^3", "mmol N / m^3", "mmol P / m^3"],
-            "rates": {
-                "predation": ["bac1","phyto1","phyto2","phyto3","phyto4","zoo3"],
-                "release": ["dom1","pom1"],
-                "respiration": ["DIC"]
-            }
+            "predation": ["bac1","phyto1","phyto2","phyto3","phyto4","zoo3"],
+            "release": ["dom1","pom1"],
+            "respiration": ["DIC"]
         }
     }
 }

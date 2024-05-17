@@ -2,7 +2,7 @@ import numpy as np
 
 # ----------------------------------------------------------------------------------------------------
 # Superclass - LivingOrganic
-# Subclasses - Bacterioplankton (Non-Phototrophic), Phytoplankton, Zooplankton
+# Subclass   - Phytoplankton (no subclass necessary for Non-Phototrophic Bacterioplankton or Zooplankton, no additional constituents)
 
 class LivingOrganic:
     """
@@ -13,39 +13,33 @@ class LivingOrganic:
                  - Nitrogen (N)
                  - Phosphorus (P)
     """
-    def __init__(self, name, num_boxes):
+    def __init__(self, name, constituents, num_boxes):
         self.name = name
 
         if num_boxes > 1:
-            self.C = np.zeros(num_boxes,dtype=float)
-            self.dC_dt = np.zeros(num_boxes,dtype=float)
-
-            self.N = np.zeros(num_boxes,dtype=float)
-            self.dN_dt = np.zeros(num_boxes,dtype=float)
-
-            self.P = np.zeros(num_boxes,dtype=float)
-            self.dP_dt = np.zeros(num_boxes,dtype=float)
+            if "C" in constituents:
+                self.C = np.zeros(num_boxes,dtype=float)
+                self.dC_dt = np.zeros(num_boxes,dtype=float)
+            if "N" in constituents:
+                self.N = np.zeros(num_boxes,dtype=float)
+                self.dN_dt = np.zeros(num_boxes,dtype=float)
+            if "P" in constituents:
+                self.P = np.zeros(num_boxes,dtype=float)
+                self.dP_dt = np.zeros(num_boxes,dtype=float)
         else:
-            self.C = 0.
-            self.dC_dt = 0.
-
-            self.N = 0.
-            self.dN_dt = 0.
-
-            self.P = 0.
-            self.dP_dt = 0.
-
-class Bacterioplankton(LivingOrganic):
-    """
-    Description: Creates subclass for bacterioplankton groups in the BGC model.
-                 No additional constituents are added to those already included in LivingOrganic Superclass.
-    """
-    def __init__(self, name, num_boxes):
-        super().__init__(name, num_boxes)
+            if "C" in constituents:
+                self.C = 0.
+                self.dC_dt = 0.
+            if "N" in constituents:
+                self.N = 0.
+                self.dN_dt = 0.
+            if "P" in constituents:
+                self.P = 0.
+                self.dP_dt = 0.
 
 class Phytoplankton(LivingOrganic):
     """
-    Description: Creates subclass for phytoplankton groups in the BGC model.
+    Description: Subclass for phytoplankton groups in the BGC model.
                  Chlorophyll-a is an added constituent for all phytoplankton groups.
                  Additional constituents can be added for:
                  - Iron (Fe)
@@ -55,9 +49,9 @@ class Phytoplankton(LivingOrganic):
         super().__init__(name, num_boxes)
 
         if num_boxes > 1:
-            self.Chl = np.zeros(num_boxes,dtype=float)
-            self.dChl_dt = np.zeros(num_boxes,dtype=float)
-
+            if "Chl" in constituents:
+                self.Chl = np.zeros(num_boxes,dtype=float)
+                self.dChl_dt = np.zeros(num_boxes,dtype=float)
             if "Fe" in constituents:
                 self.Fe = np.zeros(num_boxes,dtype=float)
                 self.dFe_dt = np.zeros(num_boxes,dtype=float)
@@ -65,9 +59,9 @@ class Phytoplankton(LivingOrganic):
                 self.Si = np.zeros(num_boxes,dtype=float)
                 self.dSi_dt = np.zeros(num_boxes,dtype=float)
         else:
-            self.Chl = 0.
-            self.dChl_dt = 0.
-
+            if "Chl" in constituents:
+                self.Chl = 0.
+                self.dChl_dt = 0.
             if "Fe" in constituents:
                 self.Fe = 0.
                 self.dFe_dt = 0.
@@ -75,13 +69,21 @@ class Phytoplankton(LivingOrganic):
                 self.Si = 0.
                 self.dSi_dt = 0.
 
-class Zooplankton(LivingOrganic):
-    """
-    Description: Creates subclass for zooplankton groups in the BGC model.
-                 No additional constituents are added to those already included in LivingOrganic Superclass.
-    """
-    def __init__(self, name, num_boxes):
-        super().__init__(name, num_boxes)
+# class Bacterioplankton(LivingOrganic):
+#     """
+#     Description: Subclass for bacterioplankton groups in the BGC model.
+#                  No additional constituents are added to those already included in LivingOrganic Superclass.
+#     """
+#     def __init__(self, name, num_boxes):
+#         super().__init__(name, num_boxes)
+
+# class Zooplankton(LivingOrganic):
+#     """
+#     Description: Subclass for zooplankton groups in the BGC model.
+#                  No additional constituents are added to those already included in LivingOrganic Superclass.
+#     """
+#     def __init__(self, name, num_boxes):
+#         super().__init__(name, num_boxes)
 
 # ----------------------------------------------------------------------------------------------------
 # Superclass - NonLivingOrganic
@@ -97,7 +99,7 @@ class NonLivingOrganic:
 
 class OrganicMatter(NonLivingOrganic):
     """
-    Description: Creates subclasses for dissolved and particulate inorganic matter.
+    Description: Subclass for dissolved and particulate inorganic matter.
                  Constituents which may be included in nutrient and detrital pools include:
                  - Carbon (C)
                  - Iron (Fe)
@@ -145,7 +147,7 @@ class OrganicMatter(NonLivingOrganic):
 # Class - Inorganic
 class Inorganic:
     """
-    Description: Creates a class of inorganic tracers in the BGC model. Supported tracers include:
+    Description: Class for inorganic tracers in the BGC model. Supported tracers include:
                  - Ammonium (NH4)
                  - Calcium Carbonate (CaCO3)
                  - Dissolved Inorganic Carbon (DIC)

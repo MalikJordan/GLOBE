@@ -1,6 +1,7 @@
 import json
 import os
-from setup.functional_groups import Bacterioplankton, Inorganic, OrganicMatter, Phytoplankton, Zooplankton
+from setup.functional_groups import Inorganic, NonLivingOrganic, OrganicMatter, Phytoplankton
+# from setup.functional_groups import Bacterioplankton, Inorganic, OrganicMatter, Phytoplankton, Zooplankton
 
 def initialize_model_tracers():
     """
@@ -79,7 +80,8 @@ def initialize_model_tracers():
         bacterioplankton = tracer_info["bacterioplankton"]
         bac = {}
         for key in bacterioplankton:
-            bac[key] = Bacterioplankton(bacterioplankton[key]["long_name"], num_boxes)
+            bac[key] = NonLivingOrganic(bacterioplankton[key]["long_name"], bacterioplankton[key]["constituents"], num_boxes)
+            # bac[key] = Bacterioplankton(bacterioplankton[key]["long_name"], num_boxes)
             if "constituents" in bacterioplankton[key]:
                 constituents = bacterioplankton[key]["constituents"]
                 for const in constituents:
@@ -113,7 +115,8 @@ def initialize_model_tracers():
         zooplankton = tracer_info["zooplankton"]
         zoo = {}
         for key in zooplankton:
-            zoo[key] = Zooplankton(zooplankton[key]["long_name"], num_boxes)
+            zoo[key] = NonLivingOrganic(zooplankton[key]["long_name"], zooplankton[key]["constituents"], num_boxes)
+            # zoo[key] = Zooplankton(zooplankton[key]["long_name"], num_boxes)
             if "constituents" in zooplankton[key]:
                 constituents = zooplankton[key]["constituents"]
                 for const in constituents:
