@@ -130,6 +130,35 @@
         }
     },
     "parameters":{
+        "bac1":{
+            "bac_version": 3,
+            "spec_growth_rate": 8.38,
+            "spec_mort_rate": 0.1,
+            "dens_mort_rate": 0.0,
+            "spec_resp_rate": 0.01,
+            "anoxic_resp_frac": 0.2,
+            "activity_resp_frac": 0.6,
+            "half_sat_oxy": 30.0,
+            
+            "spec_aff_nit": 0.0,
+            "min_nit_quota": 0.0167,
+            "opt_nit_quota": 0.0167,
+            "half_sat_nit": 5.0,
+            "relax_time_nit": 1.0,
+            
+            "spec_aff_phos": 0.0,
+            "min_phos_quota": 0.00185,
+            "opt_phos_quota": 0.00185,
+            "half_sat_phos": 1.0,
+            "relax_time_phos": 1.0,
+
+            "spec_upt_poor_lab_dom": 0.0,
+            "spec_upt_rich_lab_dom": 0.3,
+            "spec_upt_semilab_dom": 0.0,
+            "spec_upt_semiref_dom": 0.01,
+            "excr_semiref_dom": 0.0,
+            "relax_time_semilab_dom": 1.0  
+        },
         "phyto1":{
             "chl_light_absorp": 0.03,
             "chl_relax_rate": 0.25,
@@ -366,12 +395,151 @@
             "spec_resp_rate": 0.02
         }
     },
+    "reaction":[
+            {
+                "type": "lysis",
+                "consumed": "bac1",
+                "produced": "dom1",
+                "parameters": []
+            },
+            {
+                "type": "uptake",
+                "consumed": "dom1",
+                "produced": "bac1",
+                "parameters": []
+            },
+            {
+                "type": "release",
+                "consumed": "bac1",
+                "produced": "dom2",
+                "parameters": []
+            },
+            {
+                "type": "uptake",
+                "consumed": "dom2",
+                "produced": "bac1",
+                "parameters": []
+            },
+            {
+                "type": "release",
+                "consumed": "bac1",
+                "produced": "dom3",
+                "parameters": []
+            },
+            {
+                "type": "uptake",
+                "consumed": "dom3",
+                "produced": "bac1",
+                "parameters": []
+            },
+            {
+                "type": "respiration",
+                "consumed": "bac1",
+                "produced": "DIC",
+                "parameters": []
+            },
+            {
+                "type": "release",
+                "consumed": "bac1",
+                "produced": "NH4",
+                "parameters": []
+            },
+            {
+                "type": "uptake",
+                "consumed": "NH4",
+                "produced": "bac1",
+                "parameters": []
+            },
+            {
+                "type": "release",
+                "consumed": "bac1",
+                "produced": "PO4",
+                "parameters": []
+            },
+            {
+                "type": "uptake",
+                "consumed": "PO4",
+                "produced": "bac1",
+                "parameters": []
+            },
+            {
+                "type": "predation",
+                "consumed": "bac1",
+                "produced": "zoo3",
+                "parameters": []
+            },
+            {
+                "type": "predation",
+                "consumed": "bac1",
+                "produced": "zoo4",
+                "parameters": []
+            }
+    ],
     "rates":{
         "bac1":{
-            "lysis": ["dom1","pom1"],
-            "release": ["dom2","dom3","NH4","PO4"],
-            "respiration": ["DIC"],
-            "uptake": ["dom1","dom2","dom3","NH4","pom1","PO4"]
+            "dom1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "sink",
+                         "to/from": ["dom1","bac1"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                           "to/from": ["bac1","dom1"]}
+            },
+            "dom2":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from":["dom2","bac1"] },
+                "uptake":{"type": "biological",
+                           "source/sink": "source",
+                           "to/from": ["bac1","dom2"]}
+            },
+            "dom3":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["dom3","bac1"]},
+                "uptake":{"type": "biological",
+                           "source/sink": "source",
+                           "to/from": ["bac1","dom3"]}
+            },
+            "pom1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "sink",
+                         "to/from": ["pom1","bac1"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["bac1","pom1"]}
+            },
+            "DIC":{
+                "respiration":{"type": "biological",
+                               "source/sink": "sink",
+                               "to/from": ["DIC","bac1"]}
+            },
+            "NH4":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["NH4","bac1"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["bac1","NH4"]}
+            },
+            "PO4":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["PO4","bac1"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["bac1","PO4"]}
+            },
+            "zoo3":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo3","bac1"]}
+            },
+            "zoo4":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo4","bac1"]}
+            }
         },
         "inorganic":{
             "air-sea-flux": ["DIC","O2"],
@@ -379,60 +547,692 @@
             "nitrification": ["NH4"],
             "reoxidation": ["S"]
         },
+        "dom1":{
+            "bac1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "source",
+                         "to/from": ["dom1","bac1"]},
+                "uptake":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["bac1","dom1"]}
+            },
+            "phyto1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "source",
+                         "to/from": ["dom1","phyto1"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "sink",
+                          "to/from": ["phyto1","dom1"]}
+            },
+            "phyto2":{
+                "lysis":{"type": "biological",
+                         "source/sink": "source",
+                         "to/from": ["dom1","phyto2"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "sink",
+                          "to/from": ["phyto2","dom1"]}
+            },
+            "phyto3":{
+                "lysis":{"type": "biological",
+                         "source/sink": "source",
+                         "to/from": ["dom1","phyto3"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "sink",
+                          "to/from": ["phyto3","dom1"]}
+            },
+            "phyto4":{
+                "lysis":{"type": "biological",
+                         "source/sink": "source",
+                         "to/from": ["dom1","phyto4"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "sink",
+                          "to/from": ["phyto4","dom1"]}
+            },
+            "zoo1":{
+                "release":{"type": "biological",
+                           "source/sink": "source",
+                           "to/from": ["dom1","zoo1"]}
+            },
+            "zoo2":{
+                "release":{"type": "biological",
+                           "source/sink": "source",
+                           "to/from": ["dom1","zoo2"]}
+            },
+            "zoo3":{
+                "release":{"type": "biological",
+                           "source/sink": "source",
+                           "to/from": ["dom1","zoo3"]}
+            },
+            "zoo4":{
+                "release":{"type": "biological",
+                           "source/sink": "source",
+                           "to/from": ["dom1","zoo4"]}
+            },
+            "DIC":{
+                "remineralization":{"type": "biochemical",
+                                    "source/sink": "sink",
+                                    "to/from": ["DIC","dom1"]}
+            },
+            "NH4":{
+                "remineralization":{"type": "biochemical",
+                                    "source/sink": "sink",
+                                    "to/from": ["NH4","dom1"]}
+            },
+            "O2":{
+                "remineralization":{"type": "biochemical",
+                                    "source/sink": "sink",
+                                    "to/from": ["O2","dom1"]}
+            },
+            "PO4":{
+                "remineralization":{"type": "biochemical",
+                                    "source/sink": "sink",
+                                    "to/from": ["PO4","dom1"]}
+            }
+        },
+        "dom2":{
+            "bac1":{
+                "release":{"type": "biological",
+                           "source/sink": "source",
+                           "to/from": ["dom2","bac1"]},
+                "uptake":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["bac1","dom2"]}
+            },
+            "phyto1":{
+                "exudation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["dom2","phyto1"]}
+            },
+            "phyto2":{
+                "exudation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["dom2","phyto2"]}
+            },
+            "phyto3":{
+                "exudation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["dom2","phyto3"]}
+            },
+            "phyto4":{
+                "exudation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["dom2","phyto4"]}
+            }
+        },
+        "dom3":{
+            "bac1":{
+                "release":{"type": "biological",
+                           "source/sink": "source",
+                           "to/from": ["dom3","bac1"]},
+                "uptake":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["bac1","dom3"]}
+            }
+        },
         "pom1":{
-            "reminarilization": ["SiO2"]
+            "bac1":{
+                "lysis":{}
+            },
+            "phyto1":{
+                "lysis":{}
+            },
+            "phyto2":{
+                "lysis":{}
+            },
+            "phyto3":{
+                "lysis":{}
+            },
+            "phyto4":{
+                "lysis":{}
+            },
+            "zoo1":{
+                "release":{}
+            },
+            "zoo2":{
+                "release":{}
+            },
+            "zoo3":{
+                "release":{}
+            },
+            "zoo4":{
+                "release":{}
+            },
+            "DIC":{
+                "remineralization":{}
+            },
+            "NH4":{
+                "remineralization":{}
+            },
+            "O2":{
+                "remineralization":{}
+            },
+            "PO4":{
+                "remineralization":{}
+            },
+            "SiO2":{
+                "remineralization":{"type": "biochemical",
+                                    "source/sink": "sink",
+                                    "to/from": ["SiO2","pom1"]}
+            }
         },
         "phyto1":{
-            "exudation": ["dom2"],
-            "lysis": ["dom1","pom1"],
-            "primary_production": ["DIC"],
-            "respiration": ["DIC"],
-            "synthesis": ["Chl"],
-            "uptake": ["dom1","Fe","NH4","NO3","PO4"]
+            "dom1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "sink",
+                         "to/from": ["dom1","phyto1"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto1","dom1"]}
+            },
+            "dom2":{
+                "exudation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["dom2","phyto1"]}
+            },
+            "pom1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "sink",
+                         "to/from": ["pom1","phyto1"]}
+            },
+            "Chl":{
+                "synthesis":{"type": "biochemical",
+                             "source/sink": "source",
+                             "to/from": ["phyto1","phyto1"]}
+            },
+            "DIC":{
+                "primary_production":{"type": "biological",
+                                      "source/sink": "source",
+                                      "to/from": ["phyto1","DIC"]},
+                "respiration":{"type": "biological",
+                               "source/sink": "sink",
+                               "to/from": ["DIC","phyto1"]}
+            },
+            "Fe":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto1","Fe"]}
+            },
+            "NH4":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto1","NH4"]}
+            },
+            "NO3":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto1","NO3"]}
+            },
+            "PO4":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto1","PO4"]}
+            },
+            "SiO2":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto1","SiO2"]}
+            },
+            "zoo1":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo1","phyto1"]}
+            },
+            "zoo2":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo2","phyto1"]}
+            },
+            "zoo3":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo3","phyto1"]}
+            },
+            "zoo4":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo4","phyto1"]}
+            }
         },
         "phyto2":{
-            "exudation": ["dom2"],
-            "lysis": ["dom1","pom1"],
-            "primary_production": ["DIC"],
-            "respiration": ["DIC"],
-            "synthesis": ["Chl"],
-            "uptake": ["dom1","Fe","NH4","NO3","PO4"]
+            "dom1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "sink",
+                         "to/from": ["dom1","phyto2"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto2","dom1"]}
+            },
+            "dom2":{
+                "exudation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["dom2","phyto2"]}
+            },
+            "pom1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "sink",
+                         "to/from": ["pom1","phyto2"]}
+            },
+            "Chl":{
+                "synthesis":{"type": "biochemical",
+                             "source/sink": "source",
+                             "to/from": ["phyto2","phyto2"]}
+            },
+            "DIC":{
+                "primary_production":{"type": "biological",
+                                      "source/sink": "source",
+                                      "to/from": ["phyto2","DIC"]},
+                "respiration":{"type": "biological",
+                               "source/sink": "sink",
+                               "to/from": ["DIC","phyto2"]}
+            },
+            "Fe":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto2","Fe"]}
+            },
+            "NH4":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto2","NH4"]}
+            },
+            "NO3":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto2","NO3"]}
+            },
+            "PO4":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto2","PO4"]}
+            },
+            "zoo1":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo1","phyto2"]}
+            },
+            "zoo2":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo2","phyto2"]}
+            },
+            "zoo3":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo3","phyto2"]}
+            },
+            "zoo4":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo4","phyto2"]}
+            }
         },
         "phyto3":{
-            "exudation": ["dom2"],
-            "lysis": ["dom1","pom1"],
-            "primary_production": ["DIC"],
-            "respiration": ["DIC"],
-            "synthesis": ["Chl"],
-            "uptake": ["dom1","Fe","NH4","NO3","PO4"]
+            "dom1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "sink",
+                         "to/from": ["dom1","phyto3"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto3","dom1"]}
+            },
+            "dom2":{
+                "exudation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["dom2","phyto3"]}
+            },
+            "pom1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "sink",
+                         "to/from": ["pom1","phyto3"]}
+            },
+            "Chl":{
+                "synthesis":{"type": "biochemical",
+                             "source/sink": "source",
+                             "to/from": ["phyto3","phyto3"]}
+            },
+            "DIC":{
+                "primary_production":{"type": "biological",
+                                      "source/sink": "source",
+                                      "to/from": ["phyto3","DIC"]},
+                "respiration":{"type": "biological",
+                               "source/sink": "sink",
+                               "to/from": ["DIC","phyto3"]}
+            },
+            "Fe":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto3","Fe"]}
+            },
+            "NH4":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto3","NH4"]}
+            },
+            "NO3":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto3","NO3"]}
+            },
+            "PO4":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto3","PO4"]}
+            },
+            "zoo1":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo1","phyto3"]}
+            },
+            "zoo2":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo2","phyto3"]}
+            },
+            "zoo3":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo3","phyto3"]}
+            },
+            "zoo4":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo4","phyto3"]}
+            }
         },
         "phyto4":{
-            "exudation": ["dom2"],
-            "lysis": ["dom1","pom1"],
-            "primary_production": ["DIC"],
-            "respiration": ["DIC"],
-            "synthesis": ["Chl"],
-            "uptake": ["dom1","Fe","NH4","NO3","PO4"]
+            "dom1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "sink",
+                         "to/from": ["dom1","phyto4"]},
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto4","dom1"]}
+            },
+            "dom2":{
+                "exudation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["dom2","phyto4"]}
+            },
+            "pom1":{
+                "lysis":{"type": "biological",
+                         "source/sink": "sink",
+                         "to/from": ["pom1","phyto4"]}
+            },
+            "Chl":{
+                "synthesis":{"type": "biochemical",
+                             "source/sink": "source",
+                             "to/from": ["phyto4","phyto4"]}
+            },
+            "DIC":{
+                "primary_production":{"type": "biological",
+                                      "source/sink": "source",
+                                      "to/from": ["phyto4","DIC"]},
+                "respiration":{"type": "biological",
+                               "source/sink": "sink",
+                               "to/from": ["DIC","phyto4"]}
+            },
+            "Fe":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto4","Fe"]}
+            },
+            "NH4":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto4","NH4"]}
+            },
+            "NO3":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto4","NO3"]}
+            },
+            "PO4":{
+                "uptake":{"type": "biological",
+                          "source/sink": "source",
+                          "to/from": ["phyto4","PO4"]}
+            },
+            "zoo1":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo1","phyto4"]}
+            },
+            "zoo2":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo2","phyto4"]}
+            },
+            "zoo3":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo3","phyto4"]}
+            },
+            "zoo4":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo4","phyto4"]}
+            }
         },
         "zoo1":{
-            "predation": ["phyto1","phyto2","phyto3","phyto4","zoo2","zoo3","zoo4"],
-            "release": ["dom1","pom1"],
-            "respiration": ["DIC"]
+            "DIC":{
+                "respiration":{"type": "biological",
+                               "source/sink": "sink",
+                               "to/from": ["DIC","zoo1"]}
+            },
+            "dom1":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["dom1","zoo1"]}
+            },
+            "pom1":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["pom1","zoo1"]}
+            },
+            "phyto1":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo1","phyto1"]}
+            },
+            "phyto2":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo1","phyto2"]}
+            },
+            "phyto3":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo1","phyto3"]}
+            },
+            "phyto4":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo1","phyto4"]}
+            },
+            "zoo2":{
+                "predation":{"type": "biological",
+                             "source/sink": "both",
+                             "to/from": {"source": ["zoo1","zoo2"],
+                                         "sink": ["zoo2","zoo1"]}}
+            },
+            "zoo3":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo1","zoo3"]}
+            },
+            "zoo4":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo1","zoo4"]}
+            }
         },
         "zoo2":{
-            "predation": ["phyto1","phyto2","phyto3","phyto4","zoo1","zoo3","zoo4"],
-            "release": ["dom1","pom1"],
-            "respiration": ["DIC"]
+            "DIC":{
+                "respiration":{"type": "biological",
+                               "source/sink": "sink",
+                               "to/from": ["DIC","zoo2"]}
+            },
+            "dom1":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["dom1","zoo2"]}
+            },
+            "pom1":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["pom1","zoo2"]}
+            },
+            "phyto1":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo2","phyto1"]}
+            },
+            "phyto2":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo2","phyto2"]}
+            },
+            "phyto3":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo2","phyto3"]}
+            },
+            "phyto4":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo2","phyto4"]}
+            },
+            "zoo1":{
+                "predation":{"type": "biological",
+                             "source/sink": "both",
+                             "to/from": {"source": ["zoo2","zoo1"],
+                                         "sink": ["zoo1","zoo2"]}}
+            },
+            "zoo3":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo2","zoo3"]}
+            },
+            "zoo4":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo2","zoo4"]}
+            }
         },
         "zoo3":{
-            "predation": ["bac1","phyto1","phyto2","phyto3","phyto4","zoo4"],
-            "release": ["dom1","pom1"],
-            "respiration": ["DIC"]
+            "DIC":{
+                "respiration":{"type": "biological",
+                               "source/sink": "sink",
+                               "to/from": ["DIC","zoo3"]}
+            },
+            "dom1":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["dom1","zoo3"]}
+            },
+            "pom1":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["pom1","zoo3"]}
+            },
+            "bac1":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo3","bac1"]}
+            },
+            "phyto1":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo3","phyto1"]}
+            },
+            "phyto2":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo3","phyto2"]}
+            },
+            "phyto3":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo3","phyto3"]}
+            },
+            "phyto4":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo3","phyto4"]}
+            },
+            "zoo1":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo1","zoo3"]}
+            },
+            "zoo2":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo2","zoo3"]}
+            },
+            "zoo4":{
+                "predation":{"type": "biological",
+                "source/sink": "both",
+                "to/from": {"source": ["zoo3","zoo4"],
+                            "sink": ["zoo4","zoo3"]}}
+            }
         },
         "zoo4":{
-            "predation": ["bac1","phyto1","phyto2","phyto3","phyto4","zoo3"],
-            "release": ["dom1","pom1"],
-            "respiration": ["DIC"]
+            "DIC":{
+                "respiration":{"type": "biological",
+                               "source/sink": "sink",
+                               "to/from": ["DIC","zoo4"]}
+            },
+            "dom1":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["dom1","zoo4"]}
+            },
+            "pom1":{
+                "release":{"type": "biological",
+                           "source/sink": "sink",
+                           "to/from": ["pom1","zoo4"]}
+            },
+            "bac1":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo4","bac1"]}
+            },
+            "phyto1":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo4","phyto1"]}
+            },
+            "phyto2":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo4","phyto2"]}
+            },
+            "phyto3":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo4","phyto3"]}
+            },
+            "phyto4":{
+                "predation":{"type": "biological",
+                             "source/sink": "source",
+                             "to/from": ["zoo4","phyto4"]}
+            },
+            "zoo1":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo1","zoo4"]}
+            },
+            "zoo2":{
+                "predation":{"type": "biological",
+                             "source/sink": "sink",
+                             "to/from": ["zoo2","zoo4"]}
+            },
+            "zoo3":{
+                "predation":{"type": "biological",
+                "source/sink": "both",
+                "to/from": {"source": ["zoo4","zoo3"],
+                            "sink": ["zoo3","zoo4"]}}
+            }
         }
     }
 }
