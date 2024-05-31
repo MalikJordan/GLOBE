@@ -56,8 +56,8 @@
                 "long_name": "Phosphate",
                 "units": "mmol P / m^3"
             },
-            "S":{
-                "long_name": "Sulfide",
+            "HS":{
+                "long_name": "Bisulfide",
                 "units": "mmol S / m^3"
             },
             "SiO2":{
@@ -395,84 +395,627 @@
             "spec_resp_rate": 0.02
         }
     },
-    "reaction":[
+    "reactions":[
             {
                 "type": "lysis",
                 "consumed": "bac1",
                 "produced": "dom1",
-                "parameters": []
+                "parameters": {
+
+                }
             },
             {
                 "type": "uptake",
                 "consumed": "dom1",
                 "produced": "bac1",
-                "parameters": []
+                "parameters": {
+
+                }
             },
             {
                 "type": "release",
                 "consumed": "bac1",
                 "produced": "dom2",
-                "parameters": []
+                "parameters": {
+
+                }
             },
             {
                 "type": "uptake",
                 "consumed": "dom2",
                 "produced": "bac1",
-                "parameters": []
+                "parameters": {
+
+                }
             },
             {
                 "type": "release",
                 "consumed": "bac1",
                 "produced": "dom3",
-                "parameters": []
+                "parameters": {
+
+                }
             },
             {
                 "type": "uptake",
                 "consumed": "dom3",
                 "produced": "bac1",
-                "parameters": []
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "lysis",
+                "consumed": "bac1",
+                "produced": "pom1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "pom1",
+                "produced": "bac1",
+                "parameters": {
+
+                }
             },
             {
                 "type": "respiration",
                 "consumed": "bac1",
                 "produced": "DIC",
-                "parameters": []
+                "parameters": {
+
+                }
             },
             {
                 "type": "release",
                 "consumed": "bac1",
                 "produced": "NH4",
-                "parameters": []
+                "parameters": {
+
+                }
             },
             {
                 "type": "uptake",
                 "consumed": "NH4",
                 "produced": "bac1",
-                "parameters": []
+                "parameters": {
+
+                }
             },
             {
                 "type": "release",
                 "consumed": "bac1",
                 "produced": "PO4",
-                "parameters": []
+                "parameters": {
+
+                }
             },
             {
                 "type": "uptake",
                 "consumed": "PO4",
                 "produced": "bac1",
-                "parameters": []
+                "parameters": {
+
+                }
             },
             {
                 "type": "predation",
                 "consumed": "bac1",
                 "produced": "zoo3",
-                "parameters": []
+                "parameters": {
+
+                }
             },
             {
                 "type": "predation",
                 "consumed": "bac1",
                 "produced": "zoo4",
-                "parameters": []
+                "parameters": {
+
+                }
+            },
+
+            {
+                "type": "lysis",
+                "consumed": "phyto1",
+                "produced": "dom1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "dom1",
+                "produced": "phyto1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "exudation",
+                "consumed": "phyto1",
+                "produced": "dom2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "lysis",
+                "consumed": "phyto1",
+                "produced": "pom1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "synthesis",
+                "consumed": "phyto1",
+                "produced": "phyto1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "primary production",
+                "consumed": "DIC",
+                "produced": "phyto1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "respiration",
+                "consumed": "phyto1",
+                "produced": "DIC",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "Fe",
+                "produced": "phyto1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "NH4",
+                "produced": "phyto1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "NO3",
+                "produced": "phyto1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "PO4",
+                "produced": "phyto1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "SiO2",
+                "produced": "phyto1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto1",
+                "produced": "zoo1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto1",
+                "produced": "zoo2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto1",
+                "produced": "zoo3",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto1",
+                "produced": "zoo4",
+                "parameters": {
+
+                }
+            },
+
+            {
+                "type": "lysis",
+                "consumed": "phyto2",
+                "produced": "dom1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "dom1",
+                "produced": "phyto2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "exudation",
+                "consumed": "phyto2",
+                "produced": "dom2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "lysis",
+                "consumed": "phyto2",
+                "produced": "pom1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "synthesis",
+                "consumed": "phyto2",
+                "produced": "phyto2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "primary production",
+                "consumed": "DIC",
+                "produced": "phyto2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "respiration",
+                "consumed": "phyto2",
+                "produced": "DIC",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "Fe",
+                "produced": "phyto2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "NH4",
+                "produced": "phyto2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "NO3",
+                "produced": "phyto2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "PO4",
+                "produced": "phyto2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto2",
+                "produced": "zoo1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto2",
+                "produced": "zoo2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto2",
+                "produced": "zoo3",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto2",
+                "produced": "zoo4",
+                "parameters": {
+
+                }
+            },
+
+            {
+                "type": "lysis",
+                "consumed": "phyto3",
+                "produced": "dom1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "dom1",
+                "produced": "phyto3",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "exudation",
+                "consumed": "phyto3",
+                "produced": "dom2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "lysis",
+                "consumed": "phyto3",
+                "produced": "pom1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "synthesis",
+                "consumed": "phyto3",
+                "produced": "phyto3",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "primary production",
+                "consumed": "DIC",
+                "produced": "phyto3",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "respiration",
+                "consumed": "phyto3",
+                "produced": "DIC",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "Fe",
+                "produced": "phyto3",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "NH4",
+                "produced": "phyto3",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "NO3",
+                "produced": "phyto3",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "PO4",
+                "produced": "phyto3",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto3",
+                "produced": "zoo1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto3",
+                "produced": "zoo2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto3",
+                "produced": "zoo3",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto3",
+                "produced": "zoo4",
+                "parameters": {
+
+                }
+            },
+
+            {
+                "type": "lysis",
+                "consumed": "phyto4",
+                "produced": "dom1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "dom1",
+                "produced": "phyto4",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "exudation",
+                "consumed": "phyto4",
+                "produced": "dom2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "lysis",
+                "consumed": "phyto4",
+                "produced": "pom1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "synthesis",
+                "consumed": "phyto4",
+                "produced": "phyto4",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "primary production",
+                "consumed": "DIC",
+                "produced": "phyto4",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "respiration",
+                "consumed": "phyto4",
+                "produced": "DIC",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "Fe",
+                "produced": "phyto4",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "NH4",
+                "produced": "phyto4",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "NO3",
+                "produced": "phyto4",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "uptake",
+                "consumed": "PO4",
+                "produced": "phyto4",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto4",
+                "produced": "zoo1",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto4",
+                "produced": "zoo2",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto4",
+                "produced": "zoo3",
+                "parameters": {
+
+                }
+            },
+            {
+                "type": "predation",
+                "consumed": "phyto4",
+                "produced": "zoo4",
+                "parameters": {
+
+                }
+            },
+
+            {
+                "type": "",
+                "consumed": "",
+                "produced": "",
+                "parameters": {
+
+                }
             }
     ],
     "rates":{

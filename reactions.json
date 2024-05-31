@@ -1,11 +1,136 @@
 {
+    "inorganic_reactions":[
+        {
+            "type": "remineralization",
+            "consumed": "dom1",
+            "produced": "DIC",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "remineralization",
+            "consumed": "pom1",
+            "produced": "DIC",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "air-sea flux",
+            "consumed": "DIC",
+            "produced": "DIC",
+            "parameters": {
+
+            }
+        },
+
+        {
+            "type": "denitrtification",
+            "consumed": ["NO3","S"],
+            "produced": "N2",
+            "parameters": {
+
+            }
+        },
+
+        {
+            "type": "remineralization",
+            "consumed": "dom1",
+            "produced": "NH4",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "remineralization",
+            "consumed": "pom1",
+            "produced": "NH4",
+            "parameters": {
+
+            }
+        },
+
+        {
+            "type": "nitrification",
+            "consumed": ["NH4","O2"],
+            "produced": "NO3",
+            "parameters": {
+
+            }
+        },
+
+        {
+            "type": "air-sea flux",
+            "consumed": "O2",
+            "produced": "O2",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "remineralization",
+            "consumed": ["dom1","O2"],
+            "produced": "",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "remineralization",
+            "consumed": ["pom1","O2"],
+            "produced": "",
+            "parameters": {
+
+            }
+        },
+
+        {
+            "type": "remineralization",
+            "consumed": "dom1",
+            "produced": "PO4",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "remineralization",
+            "consumed": "pom1",
+            "produced": "PO4",
+            "parameters": {
+
+            }
+        },
+
+        {
+            "type": "reoxidation",
+            "consumed": ["O2","S"],
+            "produced": "",
+            "parameters": {
+
+            }
+        },
+
+        {
+            "type": "remineralization",
+            "consumed": "pom1",
+            "produced": "SiO2",
+            "parameters": {
+
+            }
+        }
+    ],
     "bac1_reactions":[
         {
             "type": "lysis",
             "consumed": "bac1",
             "produced": "dom1",
             "parameters": {
-
+                "dens_mort_rate": 0.0,
+                "spec_mort_rate": 0.1,
+                "dom_excr_frac_c": 0.6,
+                "dom_excr_frac_n": 0.72,
+                "dom_excr_frac_p": 0.832
             }
         },
         {
@@ -53,7 +178,11 @@
             "consumed": "bac1",
             "produced": "pom1",
             "parameters": {
-
+                "dens_mort_rate": 0.0,
+                "spec_mort_rate": 0.1,
+                "dom_excr_frac_c": 0.6,
+                "dom_excr_frac_n": 0.72,
+                "dom_excr_frac_p": 0.832
             }
         },
         {
@@ -66,10 +195,12 @@
         },
         {
             "type": "respiration",
-            "consumed": "bac1",
-            "produced": "DIC",
+            "consumed": ["bac1","O2"],
+            "produced": ["DIC","HS"],
             "parameters": {
-
+                "spec_resp_rate": 0.01,
+                "anoxic_resp_frac": 0.2,
+                "activity_resp_frac": 0.6
             }
         },
         {
@@ -100,22 +231,6 @@
             "type": "uptake",
             "consumed": "PO4",
             "produced": "bac1",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "bac1",
-            "produced": "zoo3",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "bac1",
-            "produced": "zoo4",
             "parameters": {
 
             }
@@ -155,7 +270,7 @@
             }
         },
         {
-            "type": "synthesis",
+            "type": "chlorophyll synthesis",
             "consumed": "phyto1",
             "produced": "phyto1",
             "parameters": {
@@ -165,14 +280,14 @@
         {
             "type": "primary production",
             "consumed": "DIC",
-            "produced": "phyto1",
+            "produced": ["phyto1","O2"],
             "parameters": {
 
             }
         },
         {
             "type": "respiration",
-            "consumed": "phyto1",
+            "consumed": ["phyto1","O2"],
             "produced": "DIC",
             "parameters": {
 
@@ -217,38 +332,6 @@
             "parameters": {
 
             }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto1",
-            "produced": "zoo1",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto1",
-            "produced": "zoo2",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto1",
-            "produced": "zoo3",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto1",
-            "produced": "zoo4",
-            "parameters": {
-
-            }
         }
     ],
     "phyto2_reactions":[
@@ -285,7 +368,7 @@
             }
         },
         {
-            "type": "synthesis",
+            "type": "chlorophyll synthesis",
             "consumed": "phyto2",
             "produced": "phyto2",
             "parameters": {
@@ -295,14 +378,14 @@
         {
             "type": "primary production",
             "consumed": "DIC",
-            "produced": "phyto2",
+            "produced": ["phyto2","O2"],
             "parameters": {
 
             }
         },
         {
             "type": "respiration",
-            "consumed": "phyto2",
+            "consumed": ["phyto2","O2"],
             "produced": "DIC",
             "parameters": {
 
@@ -336,38 +419,6 @@
             "type": "uptake",
             "consumed": "PO4",
             "produced": "phyto2",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto2",
-            "produced": "zoo1",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto2",
-            "produced": "zoo2",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto2",
-            "produced": "zoo3",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto2",
-            "produced": "zoo4",
             "parameters": {
 
             }
@@ -407,7 +458,7 @@
             }
         },
         {
-            "type": "synthesis",
+            "type": "chlorophyll synthesis",
             "consumed": "phyto3",
             "produced": "phyto3",
             "parameters": {
@@ -417,14 +468,14 @@
         {
             "type": "primary production",
             "consumed": "DIC",
-            "produced": "phyto3",
+            "produced": ["phyto3","O2"],
             "parameters": {
 
             }
         },
         {
             "type": "respiration",
-            "consumed": "phyto3",
+            "consumed": ["phyto3","O2"],
             "produced": "DIC",
             "parameters": {
 
@@ -458,38 +509,6 @@
             "type": "uptake",
             "consumed": "PO4",
             "produced": "phyto3",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto3",
-            "produced": "zoo1",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto3",
-            "produced": "zoo2",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto3",
-            "produced": "zoo3",
-            "parameters": {
-
-            }
-        },
-        {
-            "type": "predation",
-            "consumed": "phyto3",
-            "produced": "zoo4",
             "parameters": {
 
             }
@@ -529,7 +548,7 @@
             }
         },
         {
-            "type": "synthesis",
+            "type": "chlorophyll synthesis",
             "consumed": "phyto4",
             "produced": "phyto4",
             "parameters": {
@@ -539,14 +558,14 @@
         {
             "type": "primary production",
             "consumed": "DIC",
-            "produced": "phyto4",
+            "produced": ["phyto4","O2"],
             "parameters": {
 
             }
         },
         {
             "type": "respiration",
-            "consumed": "phyto4",
+            "consumed": ["phyto4","O2"],
             "produced": "DIC",
             "parameters": {
 
@@ -583,11 +602,135 @@
             "parameters": {
 
             }
+        }
+    ],
+    "zoo1_reactions":[
+        {
+            "type": "respiration",
+            "consumed": ["zoo1","O2"],
+            "produced": "DIC",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "release",
+            "consumed": "zoo1",
+            "produced": "dom1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "release",
+            "consumed": "zoo1",
+            "produced": "pom1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto1",
+            "produced": "zoo1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto2",
+            "produced": "zoo1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto3",
+            "produced": "zoo1",
+            "parameters": {
+
+            }
         },
         {
             "type": "predation",
             "consumed": "phyto4",
             "produced": "zoo1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "zoo2",
+            "produced": "zoo1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "zoo3",
+            "produced": "zoo1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "zoo4",
+            "produced": "zoo1",
+            "parameters": {
+
+            }
+        }
+    ],
+    "zoo2_reactions":[
+        {
+            "type": "respiration",
+            "consumed": ["zoo2","O2"],
+            "produced": "DIC",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "release",
+            "consumed": "zoo2",
+            "produced": "dom1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "release",
+            "consumed": "zoo2",
+            "produced": "pom1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto1",
+            "produced": "zoo2",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto2",
+            "produced": "zoo2",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto3",
+            "produced": "zoo2",
             "parameters": {
 
             }
@@ -602,8 +745,156 @@
         },
         {
             "type": "predation",
+            "consumed": "zoo1",
+            "produced": "zoo2",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "zoo3",
+            "produced": "zoo2",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "zoo4",
+            "produced": "zoo2",
+            "parameters": {
+
+            }
+        }
+    ],
+    "zoo3_reactions":[
+        {
+            "type": "respiration",
+            "consumed": ["zoo3","O2"],
+            "produced": "DIC",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "release",
+            "consumed": "zoo3",
+            "produced": "dom1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "release",
+            "consumed": "zoo3",
+            "produced": "pom1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "bac1",
+            "produced": "zoo3",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto1",
+            "produced": "zoo3",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto2",
+            "produced": "zoo3",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto3",
+            "produced": "zoo3",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
             "consumed": "phyto4",
             "produced": "zoo3",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "zoo4",
+            "produced": "zoo3",
+            "parameters": {
+
+            }
+        }
+    ],
+    "zoo4_reactions":[
+        {
+            "type": "respiration",
+            "consumed": ["zoo4","O2"],
+            "produced": "DIC",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "release",
+            "consumed": "zoo4",
+            "produced": "dom1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "release",
+            "consumed": "zoo4",
+            "produced": "pom1",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "bac1",
+            "produced": "zoo4",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto1",
+            "produced": "zoo4",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto2",
+            "produced": "zoo4",
+            "parameters": {
+
+            }
+        },
+        {
+            "type": "predation",
+            "consumed": "phyto3",
+            "produced": "zoo4",
             "parameters": {
 
             }
@@ -616,7 +907,16 @@
 
             }
         },
+        {
+            "type": "predation",
+            "consumed": "zoo3",
+            "produced": "zoo4",
+            "parameters": {
 
+            }
+        }
+    ],
+    "format":[
         {
             "type": "",
             "consumed": "",
@@ -625,17 +925,5 @@
 
             }
         }
-    ],
-    "zoo1_reactions":[
-
-    ],
-    "zoo2_reactions":[
-
-    ],
-    "zoo3_reactions":[
-
-    ],
-    "zoo4_reactions":[
-        
     ]
 }
