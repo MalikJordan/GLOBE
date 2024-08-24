@@ -1,0 +1,102 @@
+{
+    "tracers":{
+        "inorganic":{
+            "NO3":{
+                "long_name": "Dissolved Inorganic Nitrogen",
+                "units": ["mmol N / m^3"]
+            }
+        },
+        "phytoplankton":{
+            "phyto1":{
+                "long_name": "Phytoplankton",
+                "constituents": ["N"],
+                "units": ["mmol N / m^3"]
+            }
+        },
+        "zooplankton":{
+            "zoo1":{
+                "long_name": "Zooplankton",
+                "constituents": ["N"],
+                "units": ["mmol N / m^3"]
+            }
+        }
+    },
+    "parameters":{
+        "environment":{
+            "base_temp": 20.0,
+            "summer_mld": 10.0,
+            "winter_mld": 40.0,
+            "summer_salt": 34.0,
+            "winter_salt": 37.0,
+            "summer_sun": 300.0,
+            "winter_sun": 20.0,
+            "summer_temp": 28.0,
+            "winter_temp": 8.0
+        },
+        "simulation":{
+            "latitude": 45.0,
+            "num_days": 1080,
+            "timestep": 360.0
+        },
+        "water_column":{
+            "column_depth": 1.0,
+            "mixed_layer_depth": 80,
+            "num_layers": 1,
+            "z": [],
+            "dz": 0.0
+        }
+    },
+    "reactions":[
+        {
+            "type": "grazing",
+            "consumed": "phyto1",
+            "produced": "zoo1",
+            "parameters":{
+                "function": 1,
+                "max_grazing_rate": 0.51,
+                "ivlev": 0.015
+            }
+        },
+        {
+            "type": "uptake",
+            "consumed": "NO3",
+            "produced": "phyto1",
+            "parameters":{
+                "half_saturation_constant_nutrient": 0.85,
+                "initial_PI_slope": 0.15,
+                "light_attenuation_water": 0.04,
+                "light_attenuation_phyto": 0.03,
+                "max_growth_rate": 1.0,
+                "max_photosynthetic_rate": 2.5,
+                "q10_coefficient": 1.85
+            }
+        },
+        {
+            "type": "mortality",
+            "consumed": "phyto1",
+            "produced": "NO3",
+            "parameters":{
+                "linear_mortality_rate": 0.015,
+                "quadratic_mortality_rate": 0.0
+            }
+        },
+        {
+            "type": "mortality",
+            "consumed": "zoo1",
+            "produced": "NO3",
+            "parameters":{
+                "linear_mortality_rate": 0.015,
+                "quadratic_mortality_rate": 0.0
+            }
+        },
+        {
+            "type": "excretion",
+            "consumed": "zoo1",
+            "produced": "NO3",
+            "parameters":{
+                "assimilation_efficiency": 0.69,
+                "ingestion_efficiency": 0.75
+            }
+        }
+    ]
+}

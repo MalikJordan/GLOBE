@@ -1,132 +1,124 @@
 import json
+import numpy as np
 import os
-from setup.functional_groups import Inorganic, NonLivingOrganic, OrganicMatter, Phytoplankton
-# from setup.functional_groups import Bacterioplankton, Inorganic, OrganicMatter, Phytoplankton, Zooplankton
 
-def initialize_model_tracers():
+from setup.functional_groups import Inorganic, LivingOrganic, NonLivingOrganic
+
+class Tracer:
     """
-    Description: Initializes BGC model. Creates a dictionary of all tracers present in model
-                 and classes for each group. 
+    Description: Class for describing tracer properties.
     """
+    def __init__(self, long_name, index):
+        self.name = long_name   # long name
+        self.conc = 0.          # concentration
+        self.d_dt = 0.          # rate of change
+        self.index = index      # index in concentration matrix
 
-    # ----------------------------------------------------------------------------------------------------
-    num_boxes = 1
-    # Initialize dictionary of tracers present in model
-    tracers = {}
-    count_tracers = 0
 
+def coordinate_system(parameters):
+
+    parameters["dz"] = parameters["column_depth"] / parameters["num_layers"]
+    parameters["z"] = np.linspace(parameters["dz"]/2, parameters["column_depth"] - parameters["dz"]/2, parameters["num_layers"])
+
+    return parameters
+
+
+def import_model():
+    
     # Open json file containing tracer information
-    file_path = os.getcwd() + "/tracers.json"
-    with open(file_path) as read_tracers:
-        tracer_info = json.load(read_tracers)
+    file_path = os.getcwd() + "/npzd-kidston.json"
+    # file_path = os.getcwd() + "/model_description.json"
+    with open(file_path) as read_model:
+        model_info = json.load(read_model)
+        model = model_info["tracers"]
+        parameters = model_info["parameters"]
+        reactions = model_info["reactions"]
+
+    # Define coordinate system
+    parameters["water_column"] = coordinate_system(parameters["water_column"])
+
+    # Initialize dictionary of reactions for each tracer
+    tracers = {}
+    index = 0
+
+    # Initialize array of concentrations
+    conc = []
 
     # ----------------------------------------------------------------------------------------------------
-    # Add non-living tracers (inorganic, dissolved organic matter, particulate organic matter)
-
-    if "inorganic" in tracer_info:
-        inorganic = tracer_info["inorganic"]
-        inorg = Inorganic(inorganic, num_boxes)
-        for key in inorganic:
-            if "constituents" in inorganic:
-                constituents = inorganic[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
-            else:
-                tracers[count_tracers] = key
-                count_tracers += 1            
-    else:
-        print("Inrganic tracers not listed in " + file_path)
-        inorg = {}
-
-    if "dissolved_organic_matter" in tracer_info:
-        dissolved_inorganic_matter = tracer_info["dissolved_organic_matter"]
-        dom = {}
-        for key in dissolved_inorganic_matter:
-            dom[key] = OrganicMatter(dissolved_inorganic_matter[key]["long_name"], dissolved_inorganic_matter[key]["constituents"], num_boxes)
-            if "constituents" in dissolved_inorganic_matter[key]:
-                constituents = dissolved_inorganic_matter[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
-            else:
-                tracers[count_tracers] = key
-                count_tracers += 1
-    else:
-        print("Dissolved Organic Matter not listed in " + file_path)
-        dom = {}
-
-    if "particulate_organic_matter" in tracer_info:
-        particulate_organic_matter = tracer_info["particulate_organic_matter"]
-        pom = {}
-        for key in particulate_organic_matter:
-            pom[key] = OrganicMatter(particulate_organic_matter[key]["long_name"], particulate_organic_matter[key]["constituents"], num_boxes)
-            if "constituents" in particulate_organic_matter[key]:
-                constituents = particulate_organic_matter[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
-            else:
-                tracers[count_tracers] = key
-                count_tracers += 1
-    else:
-        print("Particulate Organic Matter not listed in " + file_path)
-        pom = {}
-
+    # Read Model Tracers
     # ----------------------------------------------------------------------------------------------------
-    # Add living tracers (bacterioplankton, phytoplankton, zooplankton)
-
-    if "bacterioplankton" in tracer_info:
-        bacterioplankton = tracer_info["bacterioplankton"]
-        bac = {}
+    # Bacterioplankton
+    if "bacterioplankton" in model:
+        bacterioplankton = model["bacterioplankton"]
+        bac = []
         for key in bacterioplankton:
-            bac[key] = NonLivingOrganic(bacterioplankton[key]["long_name"], bacterioplankton[key]["constituents"], num_boxes)
-            # bac[key] = Bacterioplankton(bacterioplankton[key]["long_name"], num_boxes)
-            if "constituents" in bacterioplankton[key]:
-                constituents = bacterioplankton[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
-            else:
-                tracers[count_tracers] = key
-                count_tracers += 1
-    else:
-        print("Bacterioplankton not listed in " + file_path)
-        bac = {}
+            bac.append(key)
+            tracers[key] = Tracer(bacterioplankton[key]["long_name"], index)
+            conc.append(0.)
+            index += 1
 
-    if "phytoplankton" in tracer_info:
-        phytoplankton = tracer_info["phytoplankton"]
-        phyto = {}
+    else:
+        print("Bacterioplankton not included in model.")
+        bac = None
+
+    # ----------------------------------------------------------------------------------------------------
+    # Detritus
+    if "detritus" in model:
+        detritus = model["detritus"]
+        det = []
+        for key in detritus:
+            det.append(key)
+            tracers[key] = Tracer(detritus[key]["long_name"], index)
+            conc.append(0.)
+            index += 1
+
+    else:
+        print("Detritus not included in model.")
+        det = None
+
+    # ----------------------------------------------------------------------------------------------------
+    # Inorganic Nutients
+    if "inorganic" in model:
+        inorganic = model["inorganic"]
+        inorg = []
+        for key in inorganic:
+            inorg.append(key)
+            tracers[key] = Tracer(inorganic[key]["long_name"], index)
+            conc.append(0.)
+            index += 1
+
+    else:
+        print("Inorganic nutrients not included in model.")
+        inorg = None
+
+    # ----------------------------------------------------------------------------------------------------
+    # Phytoplankton
+    if "phytoplankton" in model:
+        phytoplankton = model["phytoplankton"]
+        phyto = []
         for key in phytoplankton:
-            phyto[key] = Phytoplankton(phytoplankton[key]["long_name"], phytoplankton[key]["constituents"], num_boxes)
-            if "constituents" in phytoplankton[key]:
-                constituents = phytoplankton[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
-            else:
-                tracers[count_tracers] = key
-                count_tracers += 1
-    else:
-        print("Phytoplankton not listed in " + file_path)
-        phyto = {}
+            phyto.append(key)
+            tracers[key] = Tracer(phytoplankton[key]["long_name"], index)
+            conc.append(0.)
+            index += 1
 
-    if "zooplankton" in tracer_info:
-        zooplankton = tracer_info["zooplankton"]
-        zoo = {}
+    else:
+        print("Phytoplankton not included in model.")
+        phyto = None
+
+    # ----------------------------------------------------------------------------------------------------
+    # Zooplankton
+    if "zooplankton" in model:
+        zooplankton = model["zooplankton"]
+        zoo = []
         for key in zooplankton:
-            zoo[key] = NonLivingOrganic(zooplankton[key]["long_name"], zooplankton[key]["constituents"], num_boxes)
-            # zoo[key] = Zooplankton(zooplankton[key]["long_name"], num_boxes)
-            if "constituents" in zooplankton[key]:
-                constituents = zooplankton[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
-            else:
-                tracers[count_tracers] = key
-                count_tracers += 1
-    else:
-        print("Zooplankton not listed in " + file_path)
-        zoo = {}
+            zoo.append(key)
+            tracers[key] = Tracer(zooplankton[key]["long_name"], index)
+            conc.append(0.)
+            index += 1
 
-    return tracers, bac, dom, inorg, phyto, pom, zoo
+    else:
+        print("Zooplankton not included in model.")
+        zoo = None
+
+    return conc, parameters, tracers
