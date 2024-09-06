@@ -31,10 +31,10 @@ t_eval = np.arange(0, end_time, parameters["simulation"]["timestep"])
 # conc[1] = 4.0   # DIN
 # conc[2] = 2.5   # Phyto
 # conc[3] = 1.5   # Zoo
-conc[0] = 0.1   # Detritus
-conc[1] = 10.0   # DIN
-conc[2] = 0.4   # Phyto
-conc[3] = 0.4   # Zoo
+conc[0] = 0.0   # Detritus
+conc[1] = 4.0   # DIN
+conc[2] = 2.5   # Phyto
+conc[3] = 1.5   # Zoo
 
 # model_solution = solve_ivp(bgc_rate_eqns, t_span, conc, args=(tracers,), method='RK23', t_eval=t_eval)
 
@@ -127,26 +127,26 @@ for idx in np.arange(1, NUM_STEPS, 1):
 x = np.arange(1, NUM_STEPS + 1, 1)
 
 end_time = 86400 * parameters["simulation"]["num_days"]
-time = np.arange(0, end_time + parameters["simulation"]["timestep"], parameters["simulation"]["timestep"])
+time = np.arange(0, end_time, parameters["simulation"]["timestep"])
 
 solution = np.zeros((len(conc),len(time)))
 solution[:,0] = conc
-for i in range(0,len(time)):
-    bgc_rates = bgc_rate_eqns(time[i], conc, tracers)
+for i in range(1,len(time)):
+    bgc_rates = bgc_rate_eqns(time[i-1], conc, tracers)
 
     conc += bgc_rates * parameters["simulation"]["timestep"]
     solution[:,i] = conc
 
 plt.subplots()
 # plt.plot(time,solution[0,:])
-plt.plot(time,solution[1,:],'-b')
-plt.plot(x,N,'--b')
-plt.plot(time,solution[2,:],'y')
-plt.plot(x,P,'--y')
-plt.plot(time,solution[3,:],'-g')
-plt.plot(x,Z,'--g')
-plt.plot(time,solution[0,:],'-r')
-plt.plot(x,D,'--r')
+plt.plot(x,solution[1,:],'-b')
+plt.plot(x,N,'--k')
+plt.plot(x,solution[2,:],'-y')
+plt.plot(x,P,'--k')
+plt.plot(x,solution[3,:],'-g')
+plt.plot(x,Z,'--k')
+plt.plot(x,solution[0,:],'-r')
+plt.plot(x,D,'--k')
 
 # plt.legend(['DIN', 'Phytoplankton'], loc='upper left')
 # plt.legend(['DIN', 'Phytoplankton', 'Zooplankton'], loc='upper left')
@@ -156,7 +156,7 @@ plt.plot(x,D,'--r')
 #     ticks[i] = ticks[i] * 86400
 
 # plt.xticks(ticks, ['J','A','J','S','J','A','J','S','J','A','J','S'])
-plt.xlim([0,end_time])
+plt.xlim([0,180])
 # plt.ylim([0,10.5])
 plt.ylabel("mmol N / m^3")
 plt.savefig('npzd-check.jpg')

@@ -1,5 +1,5 @@
 import numpy as np
-from functions.other_functions import light_attenuation, light_limitation, irradiance, nutirent_limitation, temperature_regulation
+from functions.other_functions import light_attenuation, light_limitation, irradiance, max_growth_rate, nutirent_limitation, temperature_regulation
 
 
 def egestion(parameters, grazing_rates):
@@ -25,17 +25,17 @@ def grazing(parameters, consumed, produced):
     Maximum Grazing Rate for a particular zooplankton group is the same for all ingested species (i.e. phytoplankotn and/or detritus) 
     but may be different between zooplankton groups.
     """
-    if parameters["function"] == 1:
+    if parameters["function"] == "ivlev":
         # Ivlev Equation
         grazing = produced * parameters["max_grazing_rate"] * ( 1 - np.exp( -parameters["ivlev"] * consumed))
 
-    elif parameters["function"] == 2:
+    elif parameters["function"] == "holling-2":
         # Holling Type II Response
         # half_sat = parameters["max_grazing_rate"] / parameters["capture_efficiency"]
         # grazing = produced * ( parameters["max_grazing_rate"] * consumed ) / ( half_sat + consumed )
         grazing = produced * ( parameters["max_grazing_rate"] * parameters["capture_efficiency"] * consumed ) / ( parameters["max_grazing_rate"] + ( parameters["capture_efficiency"] * consumed ) )
 
-    elif parameters["function"] == 3:
+    elif parameters["function"] == "holling-3":
         # Holling Type III Response
         # half_sat = np.sqrt( parameters["max_grazing_rate"] / parameters["capture_efficiency"] )
         # grazing = produced * ( parameters["max_grazing_rate"] * (consumed**2) ) / ( (half_sat**2) + (consumed**2) )
@@ -55,12 +55,12 @@ def mortality(parameters, consumed):
     For phytoplankton, both natural and density-dependent losses are allocated to detritus.
     For zooplankton, only natural losses are allocated to detritus. Density dependent losses are considered to be due to predation by carnivores.
     """
+    if parameters["function"] == "linear":
+        mortality = parameters["mortality_rate"] * consumed
+    elif parameters["function"] == "quadratic":
+        mortality = parameters["mortality_rate"] * (consumed**2)
 
-    natural = parameters["linear_mortality_rate"] * consumed
-    quadratic = parameters["quadratic_mortality_rate"] * (consumed**2)
-    mortality = natural + quadratic
-
-    return natural, mortality
+    return mortality
 
 
 def remineralization(parameters, consumed):

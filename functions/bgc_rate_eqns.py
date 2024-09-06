@@ -86,10 +86,10 @@ def bgc_rate_eqns(time, conc, tracers):
             produced = conc[tracers[reac["produced"]].index]
 
             # Calculate egestion rate
-            d_dt_natural, d_dt_total = rates.mortality(reac["parameters"], consumed)
+            d_dt = rates.mortality(reac["parameters"], consumed)
 
-            bgc_rates[tracers[reac["produced"]].index] += d_dt_total
-            bgc_rates[tracers[reac["consumed"]].index] -= d_dt_total
+            bgc_rates[tracers[reac["produced"]].index] += d_dt
+            bgc_rates[tracers[reac["consumed"]].index] -= d_dt
             # Update rates for consumed (-) and produced (+) tracers
             # if "zooplankton" in model and reac["consumed"] in model["zooplankton"]: # Only linear term (natural) for zooplankton is allocated to detrital pool
             #     bgc_rates[tracers[reac["produced"]].index] += d_dt_natural  # Add natural mortality to detrital pool

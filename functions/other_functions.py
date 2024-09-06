@@ -35,6 +35,16 @@ def irradiance(surface_PAR, depth, k_PAR):
     return irradiance
 
 
+def max_growth_rate(parameters, temperature):
+    """
+    Defiition:: Calculates the temperature-dependent maximum phytoplankton grwoth rate, Vm
+    """
+
+    Vm = parameters["a"] * ( parameters["b"] ** ( parameters["c"] * temperature ) )
+
+    return Vm
+
+
 def nutirent_limitation(nutrient, half_saturation_constant):
     """
     Definition:: Calculates the limitation factor a nutrient using the Michaelis-Menten formulation
