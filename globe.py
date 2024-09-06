@@ -18,13 +18,13 @@ t_span = (0,end_time)
 t_eval = np.arange(0, end_time, parameters["simulation"]["timestep"])
 
 # NP
-conc[0] = 0.003   # DIN
-conc[1] = 0.003   # Phyto
+# conc[0] = 0.003   # DIN
+# conc[1] = 0.003   # Phyto
 
 # NPZ
-# conc[0] = 4.0   # DIN
-# conc[1] = 2.5   # Phyto
-# conc[2] = 1.5   # Zoo
+conc[0] = 0.05   # DIN
+conc[1] = 0.5   # Phyto
+conc[2] = 0.5   # Zoo
 
 # NPZD
 # conc[0] = 0.5   # Detritus
