@@ -1,7 +1,5 @@
 import numpy as np
-
-seconds_per_day = 86400
-seconds_per_hour = 3600
+import sys
 
 def light_attenuation(parameters, phyto):
 
@@ -9,15 +7,12 @@ def light_attenuation(parameters, phyto):
 
     return k_PAR
 
+
 def light_limitation(parameters, irrad, k_PAR, mixed_layer_depth, surface_PAR):
     """
     k_PAR = Light Attenuation Coefficient
     surface_PAR = Photosynthetically Active Radiation (PAR) at watetr surface (z = 0)
     """
-    
-    # coeff = (parameters["max_photosynthetic_rate"]/seconds_per_hour) / ( k_PAR * mixed_layer_depth )
-    # numerator = (parameters["initial_PI_slope"]/seconds_per_hour) * surface_PAR + np.sqrt(((parameters["max_photosynthetic_rate"]/seconds_per_hour)**2) + (((parameters["initial_PI_slope"]/seconds_per_hour) * surface_PAR)**2))
-    # denominator = (parameters["initial_PI_slope"]/seconds_per_hour) * irrad + np.sqrt(((parameters["max_photosynthetic_rate"]/seconds_per_hour)**2) + (((parameters["initial_PI_slope"]/seconds_per_hour) * irrad)**2))
     
     coeff = parameters["max_photosynthetic_rate"] / ( k_PAR * mixed_layer_depth )
     numerator = ( parameters["initial_PI_slope"] * surface_PAR ) + np.sqrt( ( parameters["max_photosynthetic_rate"] ** 2 ) + ( ( parameters["initial_PI_slope"] * surface_PAR) ** 2 ) )
@@ -28,6 +23,16 @@ def light_limitation(parameters, irrad, k_PAR, mixed_layer_depth, surface_PAR):
     return light_limitation
 
 
+def max_growth_rate(parameters, temperature):
+    """
+    Defiition:: Calculates the temperature-dependent maximum phytoplankton grwoth rate, Vm
+    """
+
+    Vm = parameters["a"] * ( parameters["b"] ** ( parameters["c"] * temperature ) )
+
+    return Vm
+
+
 def irradiance(surface_PAR, depth, k_PAR):
 
     irradiance = surface_PAR * np.exp( -k_PAR * depth)
@@ -35,12 +40,12 @@ def irradiance(surface_PAR, depth, k_PAR):
     return irradiance
 
 
-def nutirent_limitation(nutrient, half_saturation_constant):
+def nutirent_limitation(nutrient, half_sat):
     """
     Definition:: Calculates the limitation factor a nutrient using the Michaelis-Menten formulation
     """
 
-    nutrient_limitation_factor = nutrient / (half_saturation_constant + nutrient)
+    nutrient_limitation_factor = nutrient / (half_sat + nutrient)
     
     return nutrient_limitation_factor
 
@@ -50,3 +55,44 @@ def temperature_regulation(parameters, base_temp, temperature):
     temp_regulating_factor = np.exp( np.log(parameters["q10_coefficient"]) * (temperature - base_temp) / base_temp )
 
     return temp_regulating_factor
+
+
+# def get_concentration_ratio(numerator, denominator, p_small):
+
+#     if len(numerator) == len(denominator):
+#         concentration_ratio = numerator/(denominator + p_small)
+#     else:
+#         sys.exit("Warning: Array lengths do not match. Cannot determine concentration ratios.")
+    
+#     return concentration_ratio
+
+def concentration_ratio(index, tracer):
+    tracer.conc_ratio = np.array(tracer.conc) / (np.array(tracer.conc[index]) + 1E-20)  # 1E-20 added to denominator to prevent divide by zero
+
+
+def tracer_elements(base_element, reaction, consumed, produced):
+    """
+    ic/ip = index of base element in consumed/produced tracer
+    ec/ep = array of  elements in consumed/produced tracer affected by current reaction
+    """
+
+    if consumed.type == "inorganic":   # inorganic tracers only have one element
+        ic = 0
+        ec = [1.]
+    else:   
+        ic = consumed.composition.index(base_element)
+        ec = np.zeros(len(consumed.composition))
+        for element in consumed.composition:
+            i = consumed.composition.index(element)
+            if element in reaction["consumed_elements"]:   ec[i] = 1.
+    if produced.type == "inorganic":   # inorganic tracers only have one element
+        ip = 0
+        ep = [1.]
+    else:
+        ip = produced.composition.index(base_element)
+        ep = np.zeros(len(produced.composition))
+        for element in produced.composition:
+            i = produced.composition.index(element)
+            if element in reaction["consumed_elements"]:   ep[i] = 1.
+
+    return ec, ep, ic, ip

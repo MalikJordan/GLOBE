@@ -1,11 +1,11 @@
 {
     "tracers":{
         "inorganic":{
-            "NO3":{
+            "no3":{
                 "long_name": "Dissolved Inorganic Nitrogen",
                 "units": ["mmol N / m^3"],
                 "parameters":{
-                    "half_saturation_constant_no3": 0.700
+                    "half_sat_no3": 0.700
                 }
             }
         },
@@ -93,10 +93,10 @@
         },
         {
             "type": "uptake",
-            "consumed": "NO3",
+            "consumed": "no3",
             "produced": "phyto1",
             "parameters":{
-                "half_saturation_constant_nutrient": 0.85,
+                "half_sat_nutrient": 0.85,
                 "initial_PI_slope": 0.15,
                 "light_attenuation_water": 0.04,
                 "light_attenuation_phyto": 0.03,
@@ -134,7 +134,7 @@
         {
             "type": "excretion",
             "consumed": "zoo1",
-            "produced": "NO3",
+            "produced": "no3",
             "parameters":{
                 "zoo_absorption_efficiency": 0.69,
                 "zoo_net_production_efficiency": 0.75
@@ -143,7 +143,7 @@
         {
             "type": "remineralization",
             "consumed": "pom1",
-            "produced": "NO3",
+            "produced": "no3",
             "parameters":{
                 "remineralization_rate": 0.06
             }
