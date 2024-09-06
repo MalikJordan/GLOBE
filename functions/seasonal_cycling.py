@@ -89,6 +89,6 @@ def get_temperature(time,t_win,t_sum):
 
     day_of_year = calc_day_of_year(time)
     fraction_of_day = calc_fraction_of_day(time)
-    temperature = (t_sum + t_win)/2.0 - (t_sum - t_win)/2.0*np.cos((day_of_year+(fraction_of_day - 0.5))*(np.pi/180)) - 0.5*np.cos(2*np.pi*fraction_of_day)
+    temperature = (t_sum + t_win)/2.0 - (t_sum - t_win)/2.0*np.cos((day_of_year+(fraction_of_day - 0.5))*(np.pi/180)) # - 0.5*np.cos(2*np.pi*fraction_of_day)
 
     return temperature
