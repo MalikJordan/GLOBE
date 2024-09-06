@@ -81,12 +81,24 @@ def uptake(parameters, base_temp, coordinates, mixed_layer_depth, nutrient, phyt
     Formulation uses q_10 coefficient in place of maximum photosynthetic rate
     """
     
-    nut_lim = nutirent_limitation(nutrient, parameters["half_saturation_constant_nutrient"])
-    k_PAR = light_attenuation(parameters, phyto)
-    irrad = irradiance(surface_PAR, coordinates, k_PAR)
-    light_lim = light_limitation(parameters, irrad, k_PAR, mixed_layer_depth, surface_PAR)
-    temp_reg = temperature_regulation(parameters, base_temp, temperature)
+    nut_lim = nutirent_limitation(nutrient, parameters["half_sat_nutrient"])
+    
+    if parameters["light_limitation"] == "variable":
+        k_PAR = light_attenuation(parameters, phyto)
+        irrad = irradiance(surface_PAR, coordinates, k_PAR)
+        light_lim = light_limitation(parameters, irrad, k_PAR, mixed_layer_depth, surface_PAR)
+    else:
+        light_lim = parameters["light_limitation"]
 
-    growth = parameters["max_growth_rate"] * temp_reg * nut_lim * light_lim * phyto
+    if parameters["max_growth_rate"] == "variable":
+        Vm = max_growth_rate(parameters, temperature)
+    else:
+        Vm = parameters["max_growth_rate"]
+
+    # temp_reg = temperature_regulation(parameters, base_temp, temperature)
+    # temp_reg = 1
+
+    # growth = Vm * temp_reg * nut_lim * light_lim * phyto
+    growth = Vm * nut_lim * light_lim * phyto
 
     return growth
