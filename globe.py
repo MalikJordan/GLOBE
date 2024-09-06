@@ -18,8 +18,8 @@ t_span = (0,end_time)
 t_eval = np.arange(0, end_time, parameters["simulation"]["timestep"])
 
 # NP
-# conc[0] = 4.0   # DIN
-# conc[1] = 2.5   # Phyto
+conc[0] = 0.003   # DIN
+conc[1] = 0.003   # Phyto
 
 # NPZ
 # conc[0] = 4.0   # DIN
@@ -31,10 +31,10 @@ t_eval = np.arange(0, end_time, parameters["simulation"]["timestep"])
 # conc[1] = 4.0   # DIN
 # conc[2] = 2.5   # Phyto
 # conc[3] = 1.5   # Zoo
-conc[0] = 0.0   # Detritus
-conc[1] = 4.0   # DIN
-conc[2] = 2.5   # Phyto
-conc[3] = 1.5   # Zoo
+# conc[0] = 0.0   # Detritus
+# conc[1] = 4.0   # DIN
+# conc[2] = 2.5   # Phyto
+# conc[3] = 1.5   # Zoo
 
 # model_solution = solve_ivp(bgc_rate_eqns, t_span, conc, args=(tracers,), method='RK23', t_eval=t_eval)
 
@@ -66,65 +66,65 @@ conc[3] = 1.5   # Zoo
 # ax1.legend(['DIN', 'Phytoplankton', 'Zooplankton', 'Detritus'])
 # plt.savefig('npzd.jpg')
 
-# ----------------------------------------------------------------------------------------------------
-# Here we set up the default parameters/coefficients. 
-DT = 1 # Time Step (in days)
-NUM_STEPS = 180 # Number of time steps to be computed and plotted
+# # ----------------------------------------------------------------------------------------------------
+# # Here we set up the default parameters/coefficients. 
+# DT = 1 # Time Step (in days)
+# NUM_STEPS = 180 # Number of time steps to be computed and plotted
 
-# Temperature-Dependent Growth Rate
-a = 0.6
-b = 1.066
-c = 1
-T = 15
-Vm = a * b**(c*T) # Maximum growth rate (per day)
+# # Temperature-Dependent Growth Rate
+# a = 0.6
+# b = 1.066
+# c = 1
+# T = 15
+# Vm = a * b**(c*T) # Maximum growth rate (per day)
 
-# Other parameters
-Kn = 1    # Half-saturation constant for nitrogen uptake (umolN per l)
-Rm = 1    # Maximum grazing rate (per day)
-g = 0.2  # Zooplankton death rate (per day)
-lambda_Z = 0.2  # Grazing constant (umolN per l)
-epsilon = 0.1  # Phyto death rate (per day)
-f = 0.25 # Light intensity (assumed constant)
+# # Other parameters
+# Kn = 1    # Half-saturation constant for nitrogen uptake (umolN per l)
+# Rm = 1    # Maximum grazing rate (per day)
+# g = 0.2  # Zooplankton death rate (per day)
+# lambda_Z = 0.2  # Grazing constant (umolN per l)
+# epsilon = 0.1  # Phyto death rate (per day)
+# f = 0.25 # Light intensity (assumed constant)
 
-# Detritus-related stuff.
-alpha = 0.0 # Fraction of zoo. uptake that goes immediately to dissolved nutrients.
-beta = 1.0  # Assimilation efficiency of zooplankton.
-r = 0.15 # Respiration rate.
-phi = 0.4 # Remineralization rate of detritus.
+# # Detritus-related stuff.
+# alpha = 0.0 # Fraction of zoo. uptake that goes immediately to dissolved nutrients.
+# beta = 1.0  # Assimilation efficiency of zooplankton.
+# r = 0.15 # Respiration rate.
+# phi = 0.4 # Remineralization rate of detritus.
 
-# Set Initial Conditions (umol per L)
-N_0 = 4 
-P_0 = 2.5 
-Z_0 = 1.5
-D_0 = 0
+# # Set Initial Conditions (umol per L)
+# N_0 = 4 
+# P_0 = 2.5 
+# Z_0 = 1.5
+# D_0 = 0
 
-# Initialize Arrays
-N = np.empty(NUM_STEPS, dtype="float")
-P = np.empty(NUM_STEPS, dtype="float")
-Z = np.empty(NUM_STEPS, dtype="float")
-D = np.empty(NUM_STEPS, dtype="float")
+# # Initialize Arrays
+# N = np.empty(NUM_STEPS, dtype="float")
+# P = np.empty(NUM_STEPS, dtype="float")
+# Z = np.empty(NUM_STEPS, dtype="float")
+# D = np.empty(NUM_STEPS, dtype="float")
 
-# Insert Initial Values
-N[0] = N_0
-P[0] = P_0
-Z[0] = Z_0
-D[0] = D_0
+# # Insert Initial Values
+# N[0] = N_0
+# P[0] = P_0
+# Z[0] = Z_0
+# D[0] = D_0
 
-# Here we use the Euler forward method to solve for t+1 and reference t. 
-for idx in np.arange(1, NUM_STEPS, 1):
-    t = idx - 1
+# # Here we use the Euler forward method to solve for t+1 and reference t. 
+# for idx in np.arange(1, NUM_STEPS, 1):
+#     t = idx - 1
     
-    # Common terms for simpler code
-    gamma_N   = N[t] / (Kn + N[t])
-    zoo_graze = Rm * (1 - np.exp(-lambda_Z * P[t])) * Z[t]
+#     # Common terms for simpler code
+#     gamma_N   = N[t] / (Kn + N[t])
+#     zoo_graze = Rm * (1 - np.exp(-lambda_Z * P[t])) * Z[t]
     
-    # Equation calculations
-    N[idx] = DT * (-Vm*gamma_N*f*P[t] + alpha*zoo_graze + epsilon*P[t] + g*Z[t] + phi*D[t]) + N[t] 
-    P[idx] = DT * (Vm*gamma_N*f*P[t] - zoo_graze - epsilon*P[t] - r*P[t]) + P[t]
-    Z[idx] = DT * (beta*zoo_graze - g*Z[t]) + Z[t]  
-    D[idx] = DT * (r*P[t] + (1-alpha-beta)*zoo_graze - phi*D[t]) + D[t]
+#     # Equation calculations
+#     N[idx] = DT * (-Vm*gamma_N*f*P[t] + alpha*zoo_graze + epsilon*P[t] + g*Z[t] + phi*D[t]) + N[t] 
+#     P[idx] = DT * (Vm*gamma_N*f*P[t] - zoo_graze - epsilon*P[t] - r*P[t]) + P[t]
+#     Z[idx] = DT * (beta*zoo_graze - g*Z[t]) + Z[t]  
+#     D[idx] = DT * (r*P[t] + (1-alpha-beta)*zoo_graze - phi*D[t]) + D[t]
 
-x = np.arange(1, NUM_STEPS + 1, 1)
+# x = np.arange(1, NUM_STEPS + 1, 1)
 
 end_time = 86400 * parameters["simulation"]["num_days"]
 time = np.arange(0, end_time, parameters["simulation"]["timestep"])
@@ -138,18 +138,21 @@ for i in range(1,len(time)):
     solution[:,i] = conc
 
 plt.subplots()
-# plt.plot(time,solution[0,:])
-plt.plot(x,solution[1,:])
-plt.plot(x,N,'--k')
-plt.plot(x,solution[2,:])
-plt.plot(x,P,'--k')
-plt.plot(x,solution[3,:])
-plt.plot(x,Z,'--k')
-plt.plot(x,solution[0,:])
-plt.plot(x,D,'--k')
+plt.plot(time,solution[0,:])
+plt.plot(time,solution[1,:])
+plt.plot(time,solution[2,:])
+plt.legend(['N','P','Z'])
+# plt.plot(x,solution[1,:])
+# plt.plot(x,N,'--k')
+# plt.plot(x,solution[2,:])
+# plt.plot(x,P,'--k')
+# plt.plot(x,solution[3,:])
+# plt.plot(x,Z,'--k')
+# plt.plot(x,solution[0,:])
+# plt.plot(x,D,'--k')
 
 # plt.legend(['N','N (check)','P','P (check)','Z','Z (check)','D','D (check)'])
-plt.legend(['N','','P','','Z','','D',''])
+# plt.legend(['N','','P','','Z','','D',''])
 # plt.legend(['DIN', 'Phytoplankton'], loc='upper left')
 # plt.legend(['DIN', 'Phytoplankton', 'Zooplankton'], loc='upper left')
 # plt.legend(['DIN', 'Phytoplankton', 'Zooplankton', 'Detritus'], loc='upper left')
@@ -158,9 +161,10 @@ plt.legend(['N','','P','','Z','','D',''])
 #     ticks[i] = ticks[i] * 86400
 
 # plt.xticks(ticks, ['J','A','J','S','J','A','J','S','J','A','J','S'])
-plt.xlim([0,180])
+# plt.xlim([0,180])
+plt.xlim([0,end_time])
 # plt.ylim([0,10.5])
 plt.ylabel("mmol N / m^3")
-plt.savefig('npzd-check.jpg')
+plt.savefig('npz-check.jpg')
 
 print()
