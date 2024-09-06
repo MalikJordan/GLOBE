@@ -1,13 +1,13 @@
 tracers:
-  NO3:
+  no3:
     long_name: Nitrate
     type: Inorganic
     initial_concentration: 1.0      # mmol N / m^3
-  PO4:
+  po4:
     long_name: Phosphate
     type: Inorganic
     initial_concentration: 0.06     # mmol P / m^3
-  O2:
+  o2:
     long_name: Oxygen
     type: Inorganic
     initial_concentration: 230.0    # mmol O2 / m^3

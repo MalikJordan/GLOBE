@@ -1,7 +1,7 @@
 {
     "tracers":{
         "inorganic":{
-            "NO3":{
+            "no3":{
                 "long_name": "Dissolved Inorganic Nitrogen",
                 "initial_concentration": 4.0,
                 "units": ["mmol N / m^3"]
@@ -41,12 +41,12 @@
             "winter_salt": 37.0,
             "summer_sun": 120.0,
             "winter_sun": 10.0,
-            "summer_temp": 30.0,
-            "winter_temp": 10.0
+            "summer_temp": 15.0,
+            "winter_temp": 15.0
         },
         "simulation":{
             "latitude": 45.0,
-            "num_days": 1080,
+            "num_days": 180,
             "timestep": 360.0
         },
         "water_column":{
@@ -64,30 +64,22 @@
             "produced": "zoo1",
             "parameters":{
                 "function": 1,
-                "max_grazing_rate": 0.97,
+                "max_grazing_rate": 1.0,
                 "ivlev": 0.2
             }
         },
         {
-            "type": "grazing",
-            "consumed": "pom1",
-            "produced": "zoo1",
-            "parameters":{
-                "function": 1,
-                "max_grazing_rate": 0.51,
-                "ivlev": 0.15
-            }
-        },
-        {
             "type": "uptake",
-            "consumed": "NO3",
+            "consumed": "no3",
             "produced": "phyto1",
             "parameters":{
-                "half_saturation_constant_nutrient": 0.85,
+                "a": 0.6,
+                "b": 1.066,
+                "c": 1.0,
+                "half_sat_nutrient": 1.0,
                 "initial_PI_slope": 0.15,
                 "light_attenuation_water": 0.0435,
                 "light_attenuation_phyto": 0.03,
-                "max_growth_rate": 2.0,
                 "max_photosynthetic_rate": 1.6,
                 "q10_coefficient": 2.0
             }
@@ -97,7 +89,7 @@
             "consumed": "phyto1",
             "produced": "pom1",
             "parameters":{
-                "linear_mortality_rate": 0.015,
+                "linear_mortality_rate": 0.15,
                 "quadratic_mortality_rate": 0.025
             }
         },
@@ -106,7 +98,7 @@
             "consumed": "zoo1",
             "produced": "pom1",
             "parameters":{
-                "linear_mortality_rate": 0.01,
+                "linear_mortality_rate": 0.2,
                 "quadratic_mortality_rate": 0.34
             }
         },
@@ -115,24 +107,24 @@
             "consumed": "zoo1",
             "produced": "pom1",
             "parameters":{
-                "assimilation_efficiency": 0.69
+                "assimilation_efficiency": 0.60
             }
         },
         {
             "type": "excretion",
             "consumed": "zoo1",
-            "produced": "NO3",
+            "produced": "no3",
             "parameters":{
-                "assimilation_efficiency": 0.69,
+                "assimilation_efficiency": 0.60,
                 "ingestion_efficiency": 0.75
             }
         },
         {
             "type": "remineralization",
             "consumed": "pom1",
-            "produced": "NO3",
+            "produced": "no3",
             "parameters":{
-                "remineralization_rate": 0.06
+                "remineralization_rate": 0.4
             }
         }
     ]

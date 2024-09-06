@@ -79,7 +79,7 @@ class Inorganic:
                  - Calcium Carbonate (CaCO3)
                  - Dissolved Inorganic Carbon (DIC)
                  - Iron (Fe)
-                 - Nitrate (NO3)
+                 - Nitrate (no3)
                  - Nitrogen Sink (N2)
                  - Oxygen (O2)
                  - Phosphate (PO4)
