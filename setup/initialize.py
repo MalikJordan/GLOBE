@@ -26,7 +26,7 @@ def coordinate_system(parameters):
 def import_model():
     
     # Open json file containing tracer information
-    file_path = os.getcwd() + "/npzd-kidston.json"
+    file_path = os.getcwd() + "/npzd-riley.json"
     # file_path = os.getcwd() + "/model_description.json"
     with open(file_path) as read_model:
         model_info = json.load(read_model)
