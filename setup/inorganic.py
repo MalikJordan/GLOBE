@@ -9,10 +9,10 @@ class Inorganic():
     
     """
 
-    def __init__(self, long_name, composition):
+    def __init__(self, long_name, composition, type):
         self.name = long_name
         self.conc = []
-        self.type = "inorganic"
+        self.type = type
 
         if len(composition) > 1:
             sys.exit("Inorganic: Only one element accepted per inorganic nutrient. Check documentation adn edit input file.")

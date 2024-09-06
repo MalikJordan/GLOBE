@@ -9,7 +9,7 @@ class Phytoplankton():
     
     """
 
-    def __init__(self, long_name, composition, nutrient_limitation):
+    def __init__(self, long_name, composition, type, nutrient_limitation):
         self.name = long_name
         self.nutrients = []
         self.nutrient_half_sat = []
@@ -17,8 +17,7 @@ class Phytoplankton():
         self.nutrient_limitation_factor = 0.
         self.composition = []
         self.conc = []
-        self.cff = "living organic"
-        self.type = "phytoplankton"
+        self.type = type
 
         if len(composition) < 1:
             sys.exit("Phytoplankton: Element required for " + long_name + ". Check documentation adn edit input file.")

@@ -7,12 +7,13 @@ class Zooplankton():
     """
     """
 
-    def __init__(self, long_name, composition):
+    def __init__(self, long_name, composition, type):
         self.name = long_name
         self.prey = []
         self.grazing_rates = []
         self.composition = []
         self.conc = []
+        self.type = type
         
         if len(composition) < 1:
             sys.exit("Zooplankton: Element required for " + long_name + ". Check documentation adn edit input file.")
@@ -126,9 +127,8 @@ class MesoZooplankton(Zooplankton):
     """
     """
 
-    def __init__(self, long_name, composition):
-        super().__init__(long_name, composition)
-        self.type = "mesozooplankton"
+    def __init__(self, long_name, composition, type):
+        super().__init__(long_name, composition, type)
 
     def mesozoo(self, base_element, reactions, tracers):
 
@@ -154,7 +154,7 @@ class MicroZooplankton(Zooplankton):
     """
     """
 
-    def __init__(self, long_name, composition):
-        super().__init__(long_name, composition)
-        self.type = "microzooplankton"
+    def __init__(self, long_name, composition, type):
+        super().__init__(long_name, composition, type)
+
     
