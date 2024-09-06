@@ -19,29 +19,28 @@ def excretion(parameters, grazing_rates):
 def grazing(parameters, consumed, produced):
     """
     Definition:: Calculates the zooplankton grazing rate on a particular species using user choice of the Ivlev Equation (1),
-                 Holling Type II Response (2), or Holling Type III Response (3).
-    Return:: Zooplankton grazing rate on tracer
-
-    Maximum Grazing Rate for a particular zooplankton group is the same for all ingested species (i.e. phytoplankotn and/or detritus) 
-    but may be different between zooplankton groups.
+                 Holling Type II Response (2), Holling Type III Response (3), or Monod Function (4).
+    Return:: grazing_consumed - Grazing rate removed from consumed tracer (full grazing rate)
+             grazing_produced - Porition of grazing rate allocated to zooplaknton (scaled by assimilation and ingestion efficiencies).
     """
+
     if parameters["function"] == "ivlev":
-        # Ivlev Equation
-        grazing = produced * parameters["max_grazing_rate"] * ( 1 - np.exp( -parameters["ivlev"] * consumed))
+        function = parameters["max_grazing_rate"] * ( 1 - np.exp( -parameters["ivlev"] * consumed ) )
 
     elif parameters["function"] == "holling-2":
-        # Holling Type II Response
-        # half_sat = parameters["max_grazing_rate"] / parameters["capture_efficiency"]
-        # grazing = produced * ( parameters["max_grazing_rate"] * consumed ) / ( half_sat + consumed )
-        grazing = produced * ( parameters["max_grazing_rate"] * parameters["capture_efficiency"] * consumed ) / ( parameters["max_grazing_rate"] + ( parameters["capture_efficiency"] * consumed ) )
+        function = ( parameters["max_grazing_rate"] * consumed ) / ( parameters["half_sat_grazing"] + consumed )
 
     elif parameters["function"] == "holling-3":
-        # Holling Type III Response
-        # half_sat = np.sqrt( parameters["max_grazing_rate"] / parameters["capture_efficiency"] )
-        # grazing = produced * ( parameters["max_grazing_rate"] * (consumed**2) ) / ( (half_sat**2) + (consumed**2) )
-        grazing = produced * ( parameters["max_grazing_rate"] * parameters["capture_efficiency"] * (consumed**2) ) / ( parameters["max_grazing_rate"] + ( parameters["capture_efficiency"] * (consumed**2) ) )
+        function = ( parameters["max_grazing_rate"] * (consumed**2) ) / ( (parameters["half_sat_grazing"]**2) + (consumed**2) )
 
-    return grazing
+    elif parameters["function"] == "monod":
+        function = parameters["max_grazing_rate"] * consumed / parameters["half_sat_grazing"]
+
+    grazing_consumed = function * produced
+    grazing_produced = parameters["assimilation_efficiency"] * parameters["ingestion_efficiency"] * function * produced
+    
+    return grazing_consumed, grazing_produced
+
 
 
 def mortality(parameters, consumed):

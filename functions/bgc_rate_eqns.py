@@ -47,14 +47,14 @@ def bgc_rate_eqns(time, conc, tracers):
             produced = conc[tracers[reac["produced"]].index]
 
             # Calculate grazing rate
-            d_dt = rates.grazing(reac["parameters"], consumed, produced)
+            d_dt_consumed, d_dt_produced = rates.grazing(reac["parameters"], consumed, produced)
 
             # Append grazing list
-            grazing_rates[reac["produced"]].append(d_dt)
+            grazing_rates[reac["produced"]].append(d_dt_consumed)
 
             # Update rates for consumed (-) and produced (+) tracers
-            bgc_rates[tracers[reac["produced"]].index] += d_dt
-            bgc_rates[tracers[reac["consumed"]].index] -= d_dt
+            bgc_rates[tracers[reac["produced"]].index] += d_dt_produced
+            bgc_rates[tracers[reac["consumed"]].index] -= d_dt_consumed
 
         if reac["type"] == "egestion":
             # Extract tracer concentrations
