@@ -9,11 +9,11 @@ class Detritus():
     
     """
 
-    def __init__(self, long_name, composition):
+    def __init__(self, long_name, composition, type):
         self.name = long_name
         self.composition = []
         self.conc = []
-        self.type = "detritus"
+        self.type = type
         
         if len(composition) < 1:
             sys.exit("Detritus: Element required for " + long_name + ". Check documentation adn edit input file.")

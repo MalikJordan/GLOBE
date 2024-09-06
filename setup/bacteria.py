@@ -9,13 +9,13 @@ class Bacteria():
     
     """
 
-    def __init__(self, long_name, composition):
+    def __init__(self, long_name, composition, type):
         self.name = long_name
         self.nutrients = []
         self.limiting_nutrient = []
         self.composition = []
         self.conc = []
-        self.type = "bacteria"
+        self.type = type
 
         if len(composition) < 1:
             sys.exit("Bacteria: Element required for " + long_name + ". Check documentation adn edit input file.")

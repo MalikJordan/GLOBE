@@ -42,17 +42,17 @@ def import_model(file_path):
     tracers = {}
     for key in model:
         if model[key]["type"] == "bacteria":
-            tracers[key] = Bacteria(model[key]["long_name"], model[key]["composition"])
+            tracers[key] = Bacteria(model[key]["long_name"], model[key]["composition"], model[key]["type"])
         elif model[key]["type"] == "detritus":
-            tracers[key] = Detritus(model[key]["long_name"], model[key]["composition"])
+            tracers[key] = Detritus(model[key]["long_name"], model[key]["composition"], model[key]["type"])
         elif model[key]["type"] == "inorganic":
-            tracers[key] = Inorganic(model[key]["long_name"], model[key]["composition"])
+            tracers[key] = Inorganic(model[key]["long_name"], model[key]["composition"], model[key]["type"])
         elif model[key]["type"] == "phytoplankton":
-            tracers[key] = Phytoplankton(model[key]["long_name"], model[key]["composition"], model[key]["parameters"]["nutrient_limitation"])
+            tracers[key] = Phytoplankton(model[key]["long_name"], model[key]["composition"], model[key]["type"], model[key]["parameters"]["nutrient_limitation"])
         elif model[key]["type"] == "mesozooplankton":
-            tracers[key] = MesoZooplankton(model[key]["long_name"], model[key]["composition"])
+            tracers[key] = MesoZooplankton(model[key]["long_name"], model[key]["composition"], model[key]["type"])
         elif model[key]["type"] == "microzooplankton":
-            tracers[key] = MicroZooplankton(model[key]["long_name"], model[key]["composition"])
+            tracers[key] = MicroZooplankton(model[key]["long_name"], model[key]["composition"], model[key]["type"])
         else:
             sys.exit("Warning: Functional group '" + model[key]["type"] + "' not accepted. Please review documentation and make necessary changes.")
             
