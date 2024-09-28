@@ -40,7 +40,7 @@ def irradiance(surface_PAR, depth, k_PAR):
     return irradiance
 
 
-def nutirent_limitation(nutrient, half_sat):
+def nutrient_limitation(nutrient, half_sat):
     """
     Definition:: Calculates the limitation factor a nutrient using the Michaelis-Menten formulation
     """
@@ -50,9 +50,9 @@ def nutirent_limitation(nutrient, half_sat):
     return nutrient_limitation_factor
 
 
-def temperature_regulation(parameters, base_temp, temperature):
+def temperature_regulation(base_temp, temperature, q10):
 
-    temp_regulating_factor = np.exp( np.log(parameters["q10_coefficient"]) * (temperature - base_temp) / base_temp )
+    temp_regulating_factor = np.exp( np.log(q10) * (temperature - base_temp) / base_temp )
 
     return temp_regulating_factor
 
@@ -70,29 +70,88 @@ def concentration_ratio(index, tracer):
     tracer.conc_ratio = np.array(tracer.conc) / (np.array(tracer.conc[index]) + 1E-20)  # 1E-20 added to denominator to prevent divide by zero
 
 
-def tracer_elements(base_element, reaction, consumed, produced):
+# def tracer_elements(base_element, reaction, consumed, produced):
+#     """
+#     ic/ip = index of base element in consumed/produced tracer
+#     ec/ep = array of  elements in consumed/produced tracer affected by current reaction
+#     """
+
+#     if consumed.type == "inorganic":   # inorganic tracers only have one element
+#         ic = 0
+#         ec = [1.]
+#     else:   
+#         ic = consumed.composition.index(base_element)
+#         ec = np.zeros(len(consumed.composition))
+#         for element in consumed.composition:
+#             i = consumed.composition.index(element)
+#             if element in reaction["consumed_elements"]:   ec[i] = 1.
+#     if produced.type == "inorganic":   # inorganic tracers only have one element
+#         ip = 0
+#         ep = [1.]
+#     else:
+#         ip = produced.composition.index(base_element)
+#         ep = np.zeros(len(produced.composition))
+#         for element in produced.composition:
+#             i = produced.composition.index(element)
+#             if element in reaction["consumed_elements"]:   ep[i] = 1.
+
+#     return ec, ep, ic, ip
+
+def tracer_elements(base_element, reaction, tracers):
     """
     ic/ip = index of base element in consumed/produced tracer
     ec/ep = array of  elements in consumed/produced tracer affected by current reaction
     """
 
-    if consumed.type == "inorganic":   # inorganic tracers only have one element
-        ic = 0
-        ec = [1.]
-    else:   
-        ic = consumed.composition.index(base_element)
-        ec = np.zeros(len(consumed.composition))
-        for element in consumed.composition:
-            i = consumed.composition.index(element)
-            if element in reaction["consumed_elements"]:   ec[i] = 1.
-    if produced.type == "inorganic":   # inorganic tracers only have one element
-        ip = 0
-        ep = [1.]
-    else:
-        ip = produced.composition.index(base_element)
-        ep = np.zeros(len(produced.composition))
-        for element in produced.composition:
-            i = produced.composition.index(element)
-            if element in reaction["consumed_elements"]:   ep[i] = 1.
+    if "consumed" in reaction and reaction["consumed"] != None:    rc = reaction["consumed"]
+    else:   rc = None
+    if "produced" in reaction and reaction["produced"] != None:    rp = reaction["produced"]
+    else:   rp = None
 
-    return ec, ep, ic, ip
+    
+    consumed = {}
+    ic = {}
+    ec = {}
+
+    if rc != None:
+        consumed_tracers = list(rc.keys())
+        for c in consumed_tracers:
+            consumed[c] = tracers[c]
+        
+        for key in consumed:
+            if consumed[key].type == "inorganic":
+                ic[key] = 0
+                ec[key] = [1.]
+            else:
+                ic[key] = consumed[key].composition.index(base_element)
+                ec[key] = np.zeros(len(consumed[key].composition))
+                for element in consumed[key].composition:
+                    i = consumed[key].composition.index(element)
+                    if element in reaction["consumed"][key]:  ec[key][i] = 1.
+
+
+    
+    produced = {}
+    ip = {}
+    ep = {}
+
+    if rp != None:
+        produced_tracers = list(rp.keys())
+        for p in produced_tracers:
+            produced[p] = tracers[p]
+
+        for key in produced:
+            if produced[key].type == "inorganic":
+                ip[key] = 0
+                ep[key] = [1.]
+            else:
+                ip[key] = produced[key].composition.index(base_element)
+                ep[key] = np.zeros(len(produced[key].composition))
+                for element in produced[key].composition:
+                    i = produced[key].composition.index(element)
+                    if element in reaction["produced"][key]:  ep[key][i] = 1.
+    else:   produced = {None:None}
+
+    c = list(consumed.keys())
+    p = list(produced.keys())
+    return c, p, ec, ep, ic, ip

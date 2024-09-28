@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 #         sys.exit()
 #     check_file = os.path.exists(file)
 #     first_check = False
-file = 'npzd.yaml'
+file = 'bfm17.yaml'
 file_path = os.getcwd() + '/' + file
 base_element, parameters, reactions, tracers = import_model(file_path)
 

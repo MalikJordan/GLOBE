@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 from functions.seasonal_cycling import *
-from functions.other_functions import concentration_ratio, irradiance, light_attenuation, light_limitation, max_growth_rate, nutirent_limitation, temperature_regulation, tracer_elements
+from functions.other_functions import concentration_ratio, irradiance, light_attenuation, light_limitation, max_growth_rate, nutrient_limitation, temperature_regulation, tracer_elements
 
 class Phytoplankton():
     """
@@ -18,6 +18,7 @@ class Phytoplankton():
         self.composition = []
         self.conc = []
         self.type = type
+        self.gross_primary_production = 0.
 
         if len(composition) < 1:
             sys.exit("Phytoplankton: Element required for " + long_name + ". Check documentation adn edit input file.")
@@ -40,14 +41,14 @@ class Phytoplankton():
 
     def calculate_nutrient_limitation(self, tracers):
         """
-        Calculates nutrient limitation factor as either a minimum, product, or sum of all nutrients which limit phytoplankton growth
+        Definition:: Calculates nutrient limitation factor as either a minimum, product, or sum of all nutrients which limit phytoplankton growth
         """
         nutrient_conc = np.zeros(len(self.nutrients))
         for key in tracers:
             if key in self.nutrients:
                 i = self.nutrients.index(key)
                 nutrient_conc[i] = np.array(tracers[key].conc)
-        lim = nutirent_limitation(nutrient_conc, self.nutrient_half_sat)
+        lim = nutrient_limitation(nutrient_conc, self.nutrient_half_sat)
 
         if self.nutrient_limitation == "minimum":
             self.nutrient_limitation_factor = np.min(lim, axis=0)
@@ -55,6 +56,48 @@ class Phytoplankton():
             self.nutrient_limitation_factor = np.prod(lim, axis=0)
         elif self.nutrient_limitation == "sum":
             self.nutrient_limitation_factor == np.sum(lim,  axis=0)
+
+    
+    def exudation(self, parameters):
+        """
+        Definition:: Calculates the amount of unassimilated carbon released by phytoplankton into dissolved carbon pool
+        """
+
+        exudation = ( parameters["excreted_fraction"] + ( 1 - parameters["excreted_fraction"] ) * ( 1 - self.nutrient_limitation_factor ) ) * self.gross_primary_production
+
+        return exudation
+
+
+    def lysis(self, parameters, ec, ep, ic, ip, consumed, produced):
+        
+        # Calculate concentration ratios
+        c = self.composition.index('c')
+        if 'n' in self.composition:
+            n = self.composition.index('n')
+            nc = self.conc[n] / self.conc[c]
+        else:
+            nc = 1.
+        if 'p' in self.composition: 
+            p = self.composition.index('p')
+            pc = self.conc[p] / self.conc[c]
+        else:
+            pc = 1.
+        
+        # Calculate fraction of lysis released to dissolved pool
+        factor = np.min(1, np.min(parameters["min_nitrogen_quota"]/nc,parameters["min_phosphorus_quota"]/pc, axis=0), axis=0)
+
+        # Calculate nutrient stress limitation
+        lim = nutrient_limitation(parameters["nutrient_stress_threshold"], self.nutrient_limitation_factor)
+
+        # Calculate lysis rate
+        if parameters["type"] == "particulate": lysis = ( 1 - factor ) * ( lim * parameters["max_lysis_rate"] )
+        elif parameters["type"] == "dissolved": lysis = factor * ( lim * parameters["max_lysis_rate"] )
+
+        concentration_ratio(ic,consumed)
+        concentration_ratio(ip,produced)
+
+        consumed.d_dt -= ec * consumed.conc_ratio * lysis
+        produced.d_dt += ep * produced.conc_ratio * lysis
 
 
     def mortality(self, parameters, ec, ep, ic, ip, consumed, produced):
