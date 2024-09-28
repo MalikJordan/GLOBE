@@ -31,23 +31,24 @@ def bgc_rate_eqns(time, file_path, tracers):
     for key in tracers:
         tracers[key].d_dt = np.zeros_like(tracers[key].d_dt)
     
-
     # Calculate bgc rates
     for key in tracers:
         if tracers[key].type == "bacteria":
             pass
         elif tracers[key].type == "detritus":
-            tracers[key].detritus(base_element, reactions, tracers)
+            pass
+            # tracers[key].detritus(base_element, reactions, tracers)
         elif tracers[key].type == "inorganic":
             pass
-        elif tracers[key].type == "mesozooplankton":
-            tracers[key].mesozoo(base_element, reactions, tracers)
-        elif tracers[key].type == "microzooplankton":
-            pass
         elif tracers[key].type == "phytoplankton":
-            tracers[key].phyto(base_element, environmental_parameters["base_temp"], water_column_parameters["z"], mixed_layer_depth, reactions, surface_PAR, temperature, tracers)
-    
+            pass
+            # tracers[key].phyto(base_element, environmental_parameters["base_temp"], water_column_parameters["z"], mixed_layer_depth, reactions, surface_PAR, temperature, tracers)
+        elif tracers[key].type == "zooplankton":
+            tracers[key].zoo(base_element, environmental_parameters["base_temp"], temperature, tracers)
+        
     # Apply rates to tracer concentrations
+    for key in tracers:
+        tracers[key].conc += simulation_parameters["timestep"] * tracers[key].d_dt / 86400  # Convert rates from 1/d to 1/s
 
     return 
 

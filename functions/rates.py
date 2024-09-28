@@ -1,5 +1,5 @@
 import numpy as np
-from functions.other_functions import light_attenuation, light_limitation, max_growth_rate, irradiance, nutirent_limitation, temperature_regulation
+from functions.other_functions import light_attenuation, light_limitation, max_growth_rate, irradiance, nutrient_limitation, temperature_regulation
 
 
 def egestion(parameters, grazing_rates):
@@ -86,7 +86,7 @@ def uptake(parameters, base_temp, coordinates, mixed_layer_depth, nutrient, phyt
     Definition:: Calculates the growth rate of a particular phytoplankton species based on  nutrient uptake
     """
     
-    nut_lim = nutirent_limitation(nutrient, parameters["half_sat_nutrient"])
+    nut_lim = nutrient_limitation(nutrient, parameters["half_sat_nutrient"])
     
     if parameters["light_limitation"] == "variable":
         k_PAR = light_attenuation(parameters, phyto)

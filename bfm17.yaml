@@ -1,0 +1,284 @@
+base_element: c                       # mg C / m^3
+
+tracers:
+  co2:
+    long_name: carbon sink
+    type: inorganic
+    composition:
+      c: 0
+  o2:
+    long_name: oxygen
+    type: inorganic
+    composition:
+      o: 230.0                        # mmol O / m^3
+  no3:
+    long_name: nitrate
+    type: inorganic
+    composition:
+      n: 1.0                          # mmol N / m^3
+  nh4:
+    long_name: ammonium
+    type: inorganic
+    composition:
+      n: 0.06                         # mmol N / m^3
+  po4:
+    long_name: phosphate
+    type: inorganic
+    composition:
+      p: 0.06                         # mmol P / m^3
+  phyto1:
+    long_name: diatoms
+    type: phytoplankton
+    composition:                      # element : initial concentration
+      c: 12.0                         # mg C / m^3
+      n: 0.1512                       # mmol N / m^3
+      p: 0.0094344                    # mmol P / m^3
+      chl: 0.192                      # mg Chl / m^3
+    parameters:
+      nutrient_limitation: "product"  # mininimum, product, or sum of all limiting nutrients
+  zoo1:
+    long_name: mesozooplankton
+    type: zooplankton
+    composition:                      # element : initial concentration
+      c: 12.0                         # mg C / m^3
+      n: 0.1512                       # mmol N / m^3
+      p: 0.0094344                    # mmol P / m^3
+    parameters:
+      assimilation_efficiency: 0.5
+      ingestion_efficiency: 0.25
+      grazing_preferences: 
+        phyto1: 1.0
+      temp_limited: True
+      q10: 2.0
+  dom1:
+    long_name: dissolved organic matter
+    type: detritus
+    composition:
+      c: 12.0                         # mg C / m^3
+      n: 0.1512                       # mmol N / m^3
+      p: 0.0094344                    # mmol P / m^3
+  pom1:
+    long_name: particulate organic matter
+    type: detritus
+    composition:                      # element : initial concentration
+      c: 1.0                          # mg C / m^3
+      n: 0.0126                       # mmol N / m^3
+      p: 0.0007862                    # mmol P / m^3
+  
+parameters:
+  environment:
+    base_temp: 20.0
+    summer_mld: 10.0
+    winter_mld: 40.0
+    summer_salt: 36.5
+    winter_salt: 37.0
+    summer_sun: 120.0
+    winter_sun: 10.0
+    summer_temp: 30.0
+    winter_temp: 10.0
+    summer_wind: 2.0
+    winter_wind: 6.0
+  simulation:
+    latitude: 45.0
+    num_days: 180
+    timestep: 360.0
+  water_column:
+    column_depth: 10.0
+    num_layers: 1
+
+reactions:
+  - type: egestion
+    consumed:
+      zoo1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      partition: [0.60,0.72,0.832]    # [c,n,p]
+
+  - type: egestion
+    consumed:
+      zoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      partition: [0.40,0.28,0.168]    # [c,n,p]
+
+  - type: excretion
+    consumed:
+      zoo1: [n]
+    produced:
+      no3: [n]
+    parameters:
+      function: constant
+      excretion_rate: 1.0
+      optimal_nutrient_quota: 0.0126
+
+  - type: excretion
+    consumed:
+      zoo1: [p]
+    produced:
+      po4: [p]
+    parameters:
+      function: constant
+      excretion_rate: 1.0
+      optimal_nutrient_quota: 0.0126
+
+  - type: grazing
+    consumed:
+      phyto1: [c,n,p,chl]
+    produced:
+      zoo1: [c,n,p]
+    parameters:
+      function: holling-2
+      max_grazing_rate: 2.0
+      half_sat_grazing: 200.0
+
+  - type: mortality
+    consumed:
+      phyto1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      oxygen_limited: False
+      mortality_rate: [0.15,0.0]      # [linear, quadratic]
+
+  - type: mortality
+    consumed:
+      zoo1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      oxygen_limited: True
+      half_sat_oxygen: 0.5
+      mortality_rate: [0.2,0.0]       # [linear, quadratic]
+      partition: [0.60,0.72,0.832]    # [c,n,p]
+
+  - type: mortality
+    consumed:
+      zoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      oxygen_limited: True
+      half_sat_oxygen: 0.5
+      mortality_rate: [0.2,0.0]       # [linear, quadratic]
+      partition: [0.40,0.28,0.168]    # [c,n,p]
+
+  - type: nitrification
+    consumed:
+      nh4: [n]
+      o2: [o]
+    produced: 
+      no3: [n]
+    parameters:
+      nitrification_rate: 0.01
+      nitrif_stoic_coeff: 2.0
+
+  - type: remineralization
+    consumed:
+      pom1: [c]
+      o2: [o]
+    produced:
+    parameters:
+      remineralization_rate: 0.05
+      mw_carbon: 12.0
+
+  - type: remineralization
+    consumed:
+      dom1: [n]
+    produced:
+      no3: [n]
+    parameters:
+      remineralization_rate: 0.05
+
+  - type: remineralization
+    consumed:
+      dom1: [p]
+    produced:
+      po4: [p]
+    parameters:
+      remineralization_rate: 0.05
+
+  - type: remineralization
+    consumed:
+      pom1: [c]
+      o2: [o]
+    produced:
+    parameters:
+      remineralization_rate: 0.1
+      mw_carbon: 12.0
+
+  - type: remineralization
+    consumed:
+      pom1: [n]
+    produced:
+      no3: [n]
+    parameters:
+      remineralization_rate: 0.1
+
+  - type: remineralization
+    consumed:
+      pom1: [p]
+    produced:
+      po4: [p]
+    parameters:
+      remineralization_rate: 0.1
+
+  - type: respiration
+    consumed:
+      phyto1: [c]
+      o2: [o]
+    parameters:
+      activity_respiration_frac: 0.05
+      respiration_rate: 0.05
+      mw_carbon: 12.0
+  
+  - type: respiration
+    consumed:
+      zoo1: [c]
+      o2: [o]
+    produced:
+    parameters:
+      respiration_rate: 0.02
+      mw_carbon: 12.0
+
+  - type: uptake
+    consumed:
+      nh4: [n]
+    produced:
+      phyto1: [c,n,p]
+    parameters:
+      half_sat_nutrient: 1
+      light_limitation: 0.25
+      max_growth_rate: variable
+      a: 0.6
+      b: 1.066
+      c: 1.0
+
+  - type: uptake
+    consumed:
+      no3: [n]
+    produced:
+      phyto1: [c,n,p]
+    parameters:
+      half_sat_nutrient: 1
+      light_limitation: 0.25
+      max_growth_rate: variable
+      a: 0.6
+      b: 1.066
+      c: 1.0
+
+  - type: uptake
+    consumed:
+      po4: [n]
+    produced:
+      phyto1: [c,n,p]
+    parameters:
+      half_sat_nutrient: 1
+      light_limitation: 0.25
+      max_growth_rate: variable
+      a: 0.6
+      b: 1.066
+      c: 1.0
+
+  
