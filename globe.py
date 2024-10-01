@@ -29,11 +29,8 @@ base_element, parameters, reactions, tracers = import_model(file_path)
 # ----------------------------------------------------------------------------------------------------
 # Begin simulation
 # ----------------------------------------------------------------------------------------------------
-end_time = 86400 * parameters["simulation"]["num_days"]
-time = np.arange(0, end_time + parameters["simulation"]["timestep"], parameters["simulation"]["timestep"])
-
-for i in range(1,len(time)):
-    bgc_rate_eqns(time[i-1], file_path, tracers)
+for i in range(1,parameters["simulation"]["iters"]):
+    bgc_rate_eqns(parameters["simulation"]["time"][i-1], file_path, tracers)
 
 #     conc += bgc_rates * parameters["simulation"]["timestep"]
 #     solution[:,i] = conc

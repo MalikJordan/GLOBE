@@ -7,39 +7,40 @@ class Zooplankton():
     """
     """
 
-    # def __init__(self, long_name, composition, parameters, type):
-    def __init__(self, abbrev, long_name, composition, parameters, type, reactions):
-        self.name = long_name
-        self.type = type
+    def __init__(self, iters, reactions, **tracer):
+        self.name = tracer["long_name"]
+        self.type = tracer["type"]
         
         # Temperature regulation
-        self.temp_limited = parameters["temp_limited"]
+        self.temp_limited = tracer["parameters"]["temp_limited"]
         if self.temp_limited:
-            self.q10 = parameters["q10"]
+            self.q10 = tracer["parameters"]["q10"]
         self.fT = 0.
 
         # Grazing parameters
-        self.grazing_preferences = parameters["grazing_preferences"]
-        self.assimilation_efficiency = parameters["assimilation_efficiency"]
-        self.ingestion_efficiency = parameters["ingestion_efficiency"]
+        self.grazing_preferences = tracer["parameters"]["grazing_preferences"]
+        self.assimilation_efficiency = tracer["parameters"]["assimilation_efficiency"]
+        self.ingestion_efficiency = tracer["parameters"]["ingestion_efficiency"]
         self.grazing_rates = {}
         
         # Composition and concentration arrays
         self.composition = []
-        self.conc = []
-        if len(composition) < 1:
-            sys.exit("Zooplankton: Element required for " + long_name + ". Check documentation adn edit input file.")
+        conc = []
+        if len(tracer["composition"]) < 1:
+            sys.exit("Zooplankton: Element required for " + self.name + ". Check documentation adn edit input file.")
         else:
-            for key in composition:
+            for key in tracer["composition"]:
                 available_elements = ['c','n','p','fe']
                 if key in available_elements:
                     self.composition.append(key)
-                    self.conc.append(np.array(composition[key]))
+                    conc.append(np.array(tracer["composition"][key]))
                 else:
                     sys.exit("Zooplankton: Element '" + key + "' not recognized. Check documentation and edit input file.")
-        self.conc = np.array(self.conc)
-        self.d_dt = np.zeros_like(self.conc)
-        self.conc_ratio = np.zeros_like(self.conc)
+        hold = np.zeros((len(conc),iters))
+        hold[...,0] = conc
+        self.conc = np.array(hold)
+        self.d_dt = np.zeros_like(conc)
+        self.conc_ratio = np.zeros_like(conc)
 
         # Add relevant reactions
         self.reactions = []
@@ -49,12 +50,63 @@ class Zooplankton():
             else:   consumed = {"empty": "empty"}
             if "produced" in reac and reac["produced"] != None:    produced = reac["produced"]
             else:   produced = {"empty": "empty"}
-            if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
+            if ( list(tracer.keys())[0] in consumed.keys() ) or ( list(tracer.keys())[0] in produced.keys() ):
                 self.reactions.append(reac)
             
         # Reorder reactions (grazing needs to appear first)
-            # if reac["type"] == "grazing":
         self.reactions = [item for item in self.reactions if item["type"] == "grazing"] + [item for item in self.reactions if item["type"] != "grazing"]
+
+
+
+    # def __init__(self, abbrev, composition, iters, long_name, parameters, reactions, type):
+    # # def __init__(self, iters, reactions, **tracer):
+    #     self.name = long_name
+    #     self.type = type
+        
+    #     # Temperature regulation
+    #     self.temp_limited = parameters["temp_limited"]
+    #     if self.temp_limited:
+    #         self.q10 = parameters["q10"]
+    #     self.fT = 0.
+
+    #     # Grazing parameters
+    #     self.grazing_preferences = parameters["grazing_preferences"]
+    #     self.assimilation_efficiency = parameters["assimilation_efficiency"]
+    #     self.ingestion_efficiency = parameters["ingestion_efficiency"]
+    #     self.grazing_rates = {}
+        
+    #     # Composition and concentration arrays
+    #     self.composition = []
+    #     conc = []
+    #     if len(composition) < 1:
+    #         sys.exit("Zooplankton: Element required for " + long_name + ". Check documentation adn edit input file.")
+    #     else:
+    #         for key in composition:
+    #             available_elements = ['c','n','p','fe']
+    #             if key in available_elements:
+    #                 self.composition.append(key)
+    #                 conc.append(np.array(composition[key]))
+    #             else:
+    #                 sys.exit("Zooplankton: Element '" + key + "' not recognized. Check documentation and edit input file.")
+    #     hold = np.zeros((len(conc),iters))
+    #     hold[...,0] = conc
+    #     self.conc = np.array(hold)
+    #     self.d_dt = np.zeros_like(conc)
+    #     self.conc_ratio = np.zeros_like(conc)
+
+    #     # Add relevant reactions
+    #     self.reactions = []
+    #     for reac in reactions:
+    #         # Add reaction to dictionary
+    #         if "consumed" in reac and reac["consumed"] != None:    consumed = reac["consumed"]
+    #         else:   consumed = {"empty": "empty"}
+    #         if "produced" in reac and reac["produced"] != None:    produced = reac["produced"]
+    #         else:   produced = {"empty": "empty"}
+    #         if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
+    #             self.reactions.append(reac)
+            
+    #     # Reorder reactions (grazing needs to appear first)
+    #     self.reactions = [item for item in self.reactions if item["type"] == "grazing"] + [item for item in self.reactions if item["type"] != "grazing"]
 
 
     def zoo(self, base_element, base_temp, temperature, tracers):

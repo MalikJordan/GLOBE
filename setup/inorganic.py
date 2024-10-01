@@ -9,19 +9,63 @@ class Inorganic():
     
     """
 
-    def __init__(self, long_name, composition, type):
-        self.name = long_name
-        self.conc = []
-        self.type = type
+    def __init__(self, iters, reactions, **tracer):
+        self.name = tracer["long_name"]
+        self.type = tracer["type"]
 
-        if len(composition) > 1:
-            sys.exit("Inorganic: Only one element accepted per inorganic nutrient. Check documentation adn edit input file.")
-        elif len(composition) < 1:
-            sys.exit("Inorganic: Element required for " + long_name + ". Check documentation adn edit input file.")
-        else:
-            for key in composition: 
-                self.conc.append(composition[key])
-            self.d_dt = np.zeros_like(self.conc)
+        # Concentration array
+        conc = []
+        if len(tracer["composition"]) > 1:    sys.exit("Inorganic: Only one element accepted per inorganic nutrient. Check documentation adn edit input file.")
+        elif len(tracer["composition"]) < 1:  sys.exit("Inorganic: Element required for " + self.name + ". Check documentation adn edit input file.")
+        else:   pass
+
+        for key in tracer["composition"]: 
+            conc.append(tracer["composition"][key])
+        hold = np.zeros((len(conc),iters))
+        hold[...,0] = conc
+        self.conc = np.array(hold)
+        self.d_dt = np.zeros_like(conc)
+
+        # Add relevant reactions
+        self.reactions = []
+        for reac in reactions:
+            # Add reaction to dictionary
+            if "consumed" in reac and reac["consumed"] != None:    consumed = reac["consumed"]
+            else:   consumed = {"empty": "empty"}
+            if "produced" in reac and reac["produced"] != None:    produced = reac["produced"]
+            else:   produced = {"empty": "empty"}
+            if ( list(tracer.keys())[0] in consumed.keys() ) or ( list(tracer.keys())[0] in produced.keys() ):
+                self.reactions.append(reac)
+        
+
+    # def __init__(self, abbrev, composition, iters, long_name, reactions, type):
+    #     self.name = long_name
+    #     self.type = type
+
+    #     # Concentration array
+    #     conc = []
+    #     if len(composition) > 1:    sys.exit("Inorganic: Only one element accepted per inorganic nutrient. Check documentation adn edit input file.")
+    #     elif len(composition) < 1:  sys.exit("Inorganic: Element required for " + long_name + ". Check documentation adn edit input file.")
+    #     else:   pass
+
+    #     for key in composition: 
+    #         conc.append(composition[key])
+    #     hold = np.zeros((len(conc),iters))
+    #     hold[...,0] = conc
+    #     self.conc = np.array(hold)
+    #     self.d_dt = np.zeros_like(conc)
+
+    #     # Add relevant reactions
+    #     self.reactions = []
+    #     for reac in reactions:
+    #         # Add reaction to dictionary
+    #         if "consumed" in reac and reac["consumed"] != None:    consumed = reac["consumed"]
+    #         else:   consumed = {"empty": "empty"}
+    #         if "produced" in reac and reac["produced"] != None:    produced = reac["produced"]
+    #         else:   produced = {"empty": "empty"}
+    #         if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
+    #             self.reactions.append(reac)
+        
 
     def nitrification(self, parameters, fT, fO, tracers):
         nitrification = fT * fO * parameters["nitrification_rate"] * tracers["nh4"].conc
