@@ -37,22 +37,34 @@ def import_model(file_path):
     parameters["water_column"] = coordinate_system(parameters["water_column"])
 
     # ----------------------------------------------------------------------------------------------------
+    # Setup time array
+    # ----------------------------------------------------------------------------------------------------
+    # Calculate number of iterations needed in simulation
+    parameters["simulation"]["iters"] = parameters["simulation"]["num_days"] * 86400 / parameters["simulation"]["timestep"]     
+    parameters["simulation"]["iters"] = int(np.ceil(parameters["simulation"]["iters"]))
+
+    # Create time array (needed for calculating incident angle for PAR)
+    parameters["simulation"]["time"] = np.linspace(0,parameters["simulation"]["iters"] * parameters["simulation"]["timestep"], parameters["simulation"]["iters"] + 1)   # +1 for zero-indexing
+    # ----------------------------------------------------------------------------------------------------
     # Read model tracers
     # ----------------------------------------------------------------------------------------------------
     tracers = {}
     for key in model:
         if model[key]["type"] == "bacteria":
-            tracers[key] = Bacteria(model[key]["long_name"], model[key]["composition"], model[key]["type"])
+            # tracers[key] = Bacteria(key, model[key]["composition"], parameters["simulation"]["iters"], model[key]["long_name"], model[key]["parameters"], reactions, model[key]["type"])
+            tracers[key] = Bacteria(parameters["simulation"]["iters"], reactions, **model[key])
         elif model[key]["type"] == "detritus":
-            tracers[key] = Detritus(model[key]["long_name"], model[key]["composition"], model[key]["type"])
+            # tracers[key] = Detritus(key, model[key]["composition"], parameters["simulation"]["iters"], model[key]["long_name"], reactions, model[key]["type"])
+            tracers[key] = Detritus(parameters["simulation"]["iters"], reactions, **model[key])
         elif model[key]["type"] == "inorganic":
-            tracers[key] = Inorganic(model[key]["long_name"], model[key]["composition"], model[key]["type"])
+            # tracers[key] = Inorganic(key, model[key]["composition"], parameters["simulation"]["iters"], model[key]["long_name"], reactions, model[key]["type"])
+            tracers[key] = Inorganic(parameters["simulation"]["iters"], reactions, **model[key])
         elif model[key]["type"] == "phytoplankton":
-            tracers[key] = Phytoplankton(model[key]["long_name"], model[key]["composition"], model[key]["type"], model[key]["parameters"]["nutrient_limitation"])
+            # tracers[key] = Phytoplankton(key, model[key]["composition"], parameters["simulation"]["iters"], model[key]["long_name"], model[key]["parameters"], reactions, model[key]["type"])
+            tracers[key] = Phytoplankton(parameters["simulation"]["iters"], reactions, **model[key])
         elif model[key]["type"] == "zooplankton":
-            tracers[key] = Zooplankton(key, model[key]["long_name"], model[key]["composition"], model[key]["parameters"], model[key]["type"], reactions)
-        # elif model[key]["type"] == "microzooplankton":
-        #     tracers[key] = Zooplankton(model[key]["long_name"], model[key]["composition"], model[key]["type"])
+            # tracers[key] = Zooplankton(key, model[key]["composition"], parameters["simulation"]["iters"], model[key]["long_name"], model[key]["parameters"], reactions, model[key]["type"])
+            tracers[key] = Zooplankton(parameters["simulation"]["iters"], reactions, **model[key])
         else:
             sys.exit("Warning: Functional group '" + model[key]["type"] + "' not accepted. Please review documentation and make necessary changes.")
             
@@ -61,14 +73,12 @@ def import_model(file_path):
     # ----------------------------------------------------------------------------------------------------
     for key in reactions:
         if key["type"] == "grazing":    # Add prey to zooplankton (used in rate calculations to determine sum of grazing rates)
-            # tracers[key["produced"]].add_prey(key["consumed"])
-            produced = list(key["produced"].keys())[0]
-            consumed = list(key["consumed"].keys())[0]
-            tracers[produced].add_prey(consumed)
-        if key["type"] == "uptake":     # Add nutrient to phytoplankton (used in rate calculations for nutrient limitation)
-            # tracers[key["produced"]].add_nutrient(key["consumed"],key["parameters"]["half_sat_nutrient"])
-            produced = list(key["produced"].keys())[0]
-            consumed = list(key["consumed"].keys())[0]
-            tracers[produced].add_nutrient(consumed,key["parameters"]["half_sat_nutrient"])
+            # produced = list(key["produced"].keys())[0]
+            # consumed = list(key["consumed"].keys())[0]
+            tracers[list(key["produced"].keys())[0]].add_prey(list(key["consumed"].keys())[0])
+        if key["type"] == "uptake":     # Add nutrient to bacteria and phytoplankton (used in rate calculations for nutrient limitation)
+            # produced = list(key["produced"].keys())[0]
+            # consumed = list(key["consumed"].keys())[0]
+            tracers[list(key["produced"].keys())[0]].add_nutrient(list(key["consumed"].keys())[0],key["parameters"]["half_sat_nutrient"])
 
     return base_element, parameters, reactions, tracers
