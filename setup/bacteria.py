@@ -9,7 +9,8 @@ class Bacteria():
     
     """
 
-    def __init__(self, iters, reactions, **tracer):
+    def __init__(self, abbrev, iters, reactions, **tracer):
+        self.abbrev = abbrev
         self.name = tracer["long_name"]
         self.type = tracer["type"]
 
@@ -46,7 +47,7 @@ class Bacteria():
             else:   consumed = {"empty": "empty"}
             if "produced" in reac and reac["produced"] != None:    produced = reac["produced"]
             else:   produced = {"empty": "empty"}
-            if ( list(tracer.keys())[0] in consumed.keys() ) or ( list(tracer.keys())[0] in produced.keys() ):
+            if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
         
         # Reorder reactions (uptake needs to appear first)

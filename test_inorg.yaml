@@ -1,0 +1,71 @@
+base_element: c                       # mg C / m^3
+
+tracers:
+  o2:
+    long_name: oxygen
+    type: inorganic
+    composition:
+      o: 300.0                        # mmol O / m^3
+    parameters:
+      temp_limited: False
+  no3:
+    long_name: nitrate
+    type: inorganic
+    composition:
+      n: 5.0                          # mmol N / m^3
+    parameters:
+      temp_limited: True
+      q10: 2.0
+  nh4:
+    long_name: ammonium
+    type: inorganic
+    composition:
+      n: 1.0                          # mmol N / m^3
+    parameters:
+      temp_limited: True
+      q10: 2.0
+
+parameters:
+  environment:
+    base_temp: 10.0
+    summer_mld: 10.0
+    winter_mld: 40.0
+    summer_salt: 34.0
+    winter_salt: 37.0
+    summer_sun: 300.0
+    winter_sun: 20.0
+    summer_temp: 28.0
+    winter_temp: 8.0
+    summer_wind: 10.0
+    winter_wind: 20.0
+  simulation:
+    latitude: 45.0
+    num_days: 360
+    timestep: 360.0
+  water_column:
+    column_depth: 5.0
+    num_layers: 1
+
+reactions:
+  - type: reaeration
+    consumed:
+    produced:
+      o2: [o]
+    parameters:
+      d: 0.31
+      k1: 1953.4
+      k2: 128.0
+      k3: 3.9918
+      k4: 0.050091
+      schmidt: 660.0
+
+  - type: nitrification
+    consumed:
+      nh4: [n]
+      o2: [o]
+    produced: 
+      no3: [n]
+    parameters:
+      half_sat_o2: 10.0
+      nitrification_rate: 0.01
+      nitrif_stoic_coeff: 2.0
