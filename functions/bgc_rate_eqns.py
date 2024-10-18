@@ -5,7 +5,7 @@ from functions import rates, seasonal_cycling
 from setup.initialize import coordinate_system
 
 # Open json file containing reactions and model parameters
-file_path = os.getcwd() + "/npz.json"
+file_path = os.getcwd() + "/npzd-riley.json"
 # file_path = os.getcwd() + "/model_description.json"
 with open(file_path) as read_model:
     model_info = json.load(read_model)
