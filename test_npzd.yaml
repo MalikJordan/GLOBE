@@ -1,0 +1,134 @@
+base_element: n                     # mmol N / m^3
+
+tracers:
+  no3:
+    long_name: nitrate
+    type: inorganic
+    composition:
+      n: 4.0                          # mmol N / m^3
+    parameters:
+      temp_limited: False
+      q10: 2.0
+
+  phyto1:
+    long_name: diatoms
+    type: phytoplankton
+    composition:                      # element : initial concentration
+      n: 0.25                          # mmol N / m^3
+    parameters:
+      nutrient_limitation: "product"  # mininimum, product, or sum of all limiting nutrients
+      temp_limited: False
+      q10: 2.0
+
+  zoo1:
+    long_name: mesozooplankton
+    type: zooplankton
+    composition:                      # element : initial concentration
+      n: 0.15                          # mmol N / m^3
+    parameters:
+      assimilation_efficiency: 1.0
+      ingestion_efficiency: 1.0
+      grazing_preferences:
+       phyto1: 1.0
+      temp_limited: False
+      q10: 2.0
+
+  pom1:
+    long_name: particulate organic matter
+    type: detritus
+    composition:                      # element : initial concentration
+      n: 0.0                          # mmol N / m^3
+  
+parameters:
+  environment:
+    base_temp: 20.0
+    summer_mld: 10.0
+    winter_mld: 40.0
+    summer_salt: 36.5
+    winter_salt: 37.0
+    summer_sun: 120.0
+    winter_sun: 10.0
+    summer_temp: 15.0
+    winter_temp: 15.0
+    summer_wind: 10.0
+    winter_wind: 20.0
+  simulation:
+    latitude: 45.0
+    num_days: 180
+    timestep: 86400.0
+  water_column:
+    column_depth: 10.0
+    num_layers: 1
+
+reactions:
+  - type: grazing
+    consumed: 
+      phyto1: [n]
+    produced: 
+      zoo1: [n]
+    parameters:
+      function: ivlev
+      max_grazing_rate: 1.0
+      ivlev: 0.2
+
+  - type: egestion
+    consumed: 
+      zoo1: [n]
+    produced: 
+      pom1: [n]
+    consumed_elements: n
+    produced_elements: n
+    parameters:
+
+  - type: excretion
+    consumed: 
+      zoo1: [n]
+    produced: 
+      no3: [n]
+    parameters:
+      function: grazing
+
+  - type: mortality
+    consumed: 
+      phyto1: [n]
+    produced: 
+      no3: [n]
+    parameters:
+      mortality_rate: [0.1,0.]
+
+  - type: mortality
+    consumed: 
+      phyto1: [n]
+    produced: 
+      pom1: [n]
+    parameters:
+      mortality_rate: [0.15,0.]
+
+  - type: mortality
+    consumed: 
+      zoo1: [n]
+    produced: 
+      no3: [n]
+    parameters:
+      mortality_rate: [0.2,0.]
+
+  - type: uptake
+    consumed: 
+      no3: [n]
+    produced: 
+      phyto1: [n]
+    parameters:
+      half_sat_nutrient: 1
+      light_limitation: 0.25
+      max_photo_rate: variable
+      a: 0.6
+      b: 1.066
+      c: 1.0
+
+  - type: remineralization
+    consumed: 
+      pom1: [n]
+    produced: 
+      no3: [n]
+    parameters:
+      remineralization_rate: 0.4
