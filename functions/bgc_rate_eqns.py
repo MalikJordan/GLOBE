@@ -5,19 +5,9 @@ from functions import rates, seasonal_cycling
 from setup.initialize import coordinate_system
 
 
-# def bgc_rate_eqns(iter, file_path, tracers):
 def bgc_rate_eqns(iter, base_element, parameters, tracers):
     
-    # ----------------------------------------------------------------------------------------------------
     # Extract model paramters
-    # ----------------------------------------------------------------------------------------------------
-    # with open(file_path, 'r') as f:
-    #     model_info = yaml.full_load(f)
-    #     base_element = model_info["base_element"]
-    #     model = model_info["tracers"]
-    #     parameters = model_info["parameters"]
-    #     reactions = model_info["reactions"]
-
     environmental_parameters = parameters["environment"]
     simulation_parameters = parameters["simulation"]
     water_column_parameters = parameters["water_column"]
