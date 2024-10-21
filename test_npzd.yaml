@@ -14,7 +14,7 @@ tracers:
     long_name: diatoms
     type: phytoplankton
     composition:                      # element : initial concentration
-      n: 0.25                          # mmol N / m^3
+      n: 2.5                          # mmol N / m^3
     parameters:
       nutrient_limitation: "product"  # mininimum, product, or sum of all limiting nutrients
       temp_limited: False
@@ -24,7 +24,7 @@ tracers:
     long_name: mesozooplankton
     type: zooplankton
     composition:                      # element : initial concentration
-      n: 0.15                          # mmol N / m^3
+      n: 1.5                          # mmol N / m^3
     parameters:
       assimilation_efficiency: 1.0
       ingestion_efficiency: 1.0
