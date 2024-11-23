@@ -77,8 +77,10 @@ class Zooplankton():
             if reac["type"] == "egestion":      self.egestion(iter, reac["parameters"], c, p, ec, ep, ic, ip, tracers)
             if reac["type"] == "excretion":     self.excretion(iter, reac["parameters"], c, p, ec, ep, ic, ip, tracers)
             if reac["type"] == "mortality":     self.mortality(iter, reac["parameters"], c, p, ec, ep, ic, ip, tracers)
-            if reac["type"] == "respiration":   self.respiration(iter, reac["parameters"], c, p, tracers)
+            if reac["type"] == "respiration":   rsp = self.respiration(iter, reac["parameters"], c, p, tracers)
 
+        return rsp
+    
 
     def add_prey(self, prey):
         self.grazing_rates[prey] = 0.
@@ -99,7 +101,7 @@ class Zooplankton():
         ip = ip[p]
 
         # Sum grazing rates for base element
-        graze_sum = sum([rate[ip] * tracers[prey].conc[ic][iter]
+        graze_sum = sum([rate[ip] #* tracers[prey].conc[ic][iter]
                         for prey, rate in self.grazing_rates.items()])
 
         # Calculate egestion
@@ -108,6 +110,9 @@ class Zooplankton():
         # Calculate concentration ratios
         concentration_ratio(iter, ic, tracers[c])
         concentration_ratio(iter, ip, tracers[p])
+
+        if iter % 10000 == 0:
+            q=1
 
         # Update d_dt
         if parameters != None and "partition" in parameters:   # Egestion can be partitioned between dissolved and particulate detrital pools
@@ -145,11 +150,13 @@ class Zooplankton():
                 carbon_index = self.composition.index("c")
                 carbon_ratio = tc / np.array(tracers[c].conc[carbon_index][iter])
 
+                if tc == 0: 
+                    q=1
                 excretion = excretion * np.maximum(0,carbon_ratio - parameters["optimal_nutrient_quota"])
             
         elif parameters["function"] == "grazing":
             # Sum grazing rates for base element
-            graze_sum = sum([rate[ip] * tracers[prey].conc[ic][iter]
+            graze_sum = sum([rate[ip] # * tracers[prey].conc[ic][iter]
                             for prey, rate in self.grazing_rates.items()])
 
             excretion = self.assimilation_efficiency * ( 1 - self.ingestion_efficiency ) * graze_sum
@@ -161,7 +168,7 @@ class Zooplankton():
         # Update d_dt
         tracers[c].d_dt -= ec * tracers[c].conc_ratio * excretion
         tracers[p].d_dt += ep * tracers[p].conc_ratio * excretion
-
+    
 
     def grazing(self, iter, parameters, c, p, ec, ep, ic, ip, tracers):
         """
@@ -219,7 +226,8 @@ class Zooplankton():
             function = function * self.fT
         
         grazing_prey = function
-        grazing_predator = self.assimilation_efficiency * self.ingestion_efficiency * function
+        # grazing_predator = self.assimilation_efficiency * self.ingestion_efficiency * function
+        grazing_predator = function
 
         # Calculate concentration ratios
         concentration_ratio(iter, ic, tracers[c])
@@ -227,7 +235,9 @@ class Zooplankton():
 
         # Update d_dt
         tracers[c].d_dt -= ec * tracers[c].conc_ratio * grazing_prey
-        tracers[p].d_dt += ep * tracers[p].conc_ratio * grazing_predator
+        # tracers[p].d_dt += ep * tracers[p].conc_ratio * grazing_predator
+        tracers[p].d_dt += ec[:-1] * tracers[p].conc_ratio * grazing_predator   # fix this to be generic if it works
+    
 
         # Update grazing rate dictionary
         tracers[p].grazing_rates[c] = grazing_prey * tracers[p].conc_ratio
@@ -256,8 +266,9 @@ class Zooplankton():
 
         # Oxygen limitation
         if "oxygen_limited" in parameters and parameters["oxygen_limited"]:
-            fO = nutrient_limitation(tc,parameters["half_sat_oxygen"])
-            mortality = mortality * fO
+            # fO = nutrient_limitation(tc,parameters["half_sat_oxygen"])
+            fO = tc / (parameters["half_sat_oxygen"] + tc)
+            mortality = mortality * (1 - fO)
 
         # Calculate concentration ratios
         concentration_ratio(iter, ic, tracers[c])
@@ -296,5 +307,7 @@ class Zooplankton():
 
         # Update d_dt
         self.d_dt[carbon_index] -= respiration
-        if "o2" in c:   tracers["o2"].d_dt -= parameters["mw_carbon"] * respiration
+        if "o2" in c:   tracers["o2"].d_dt -= respiration / parameters["mw_carbon"]
         if "co2" in p:  tracers["co2"].d_dt += respiration
+
+        return respiration

@@ -21,12 +21,14 @@ class Inorganic():
         self.fT = 1.
 
         # Concentration array
+        self.composition = []
         conc = []
         if len(tracer["composition"]) > 1:    sys.exit("Inorganic: Only one element accepted per inorganic nutrient. Check documentation adn edit input file.")
         elif len(tracer["composition"]) < 1:  sys.exit("Inorganic: Element required for " + self.name + ". Check documentation adn edit input file.")
         else:   pass
 
         for key in tracer["composition"]: 
+            self.composition.append(key)
             conc.append(tracer["composition"][key])
         hold = np.zeros((len(conc),iters))
         hold[...,0] = conc
