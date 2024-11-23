@@ -77,9 +77,9 @@ def import_model(file_path):
             # produced = list(key["produced"].keys())[0]
             # consumed = list(key["consumed"].keys())[0]
             tracers[list(key["produced"].keys())[0]].add_prey(list(key["consumed"].keys())[0])
-        # if key["type"] == "uptake":     # Add nutrient to bacteria and phytoplankton (used in rate calculations for nutrient limitation)
-        #     # produced = list(key["produced"].keys())[0]
-        #     # consumed = list(key["consumed"].keys())[0]
-        #     tracers[list(key["produced"].keys())[0]].add_nutrient(list(key["consumed"].keys())[0],key["parameters"]["half_sat_nutrient"])
+        if key["type"] == "uptake":     # Add nutrient to bacteria and phytoplankton (used in rate calculations for nutrient limitation)
+            # produced = list(key["produced"].keys())[0]
+            # consumed = list(key["consumed"].keys())[0]
+            tracers[list(key["produced"].keys())[0]].add_nutrient(list(key["consumed"].keys())[0],key["parameters"]["half_sat_nutrient"])
 
     return base_element, parameters, reactions, tracers

@@ -1,4 +1,4 @@
-base_element: n                     # mmol N / m^3
+base_element: n                       # mmol N / m^3
 
 tracers:
   no3:
@@ -16,7 +16,7 @@ tracers:
     composition:                      # element : initial concentration
       n: 2.5                          # mmol N / m^3
     parameters:
-      nutrient_limitation: "product"  # mininimum, product, or sum of all limiting nutrients
+      nutrient_limitation: "minimum"  # mininimum, product, or sum of all limiting nutrients
       temp_limited: False
       q10: 2.0
 
@@ -41,23 +41,23 @@ tracers:
   
 parameters:
   environment:
-    base_temp: 20.0
-    summer_mld: 10.0
-    winter_mld: 40.0
-    summer_salt: 36.5
-    winter_salt: 37.0
-    summer_sun: 120.0
-    winter_sun: 10.0
-    summer_temp: 15.0
-    winter_temp: 15.0
-    summer_wind: 10.0
-    winter_wind: 20.0
+    base_temp: 20.0                   # degC
+    summer_mld: 10.0                  # m
+    winter_mld: 40.0                  # m
+    summer_salt: 36.5                 # psu
+    winter_salt: 37.0                 # psu
+    summer_sun: 120.0                 # W / m^2
+    winter_sun: 10.0                  # W / m^2
+    summer_temp: 15.0                 # degC
+    winter_temp: 15.0                 # degC
+    summer_wind: 10.0                 # m/s
+    winter_wind: 20.0                 # m/s
   simulation:
-    latitude: 45.0
-    num_days: 180
-    timestep: 86400.0
+    latitude: 45.0                    # deg
+    num_days: 365                     # d
+    timestep: 86400.0                 # s
   water_column:
-    column_depth: 10.0
+    column_depth: 10.0                # m
     num_layers: 1
 
 reactions:
@@ -76,8 +76,6 @@ reactions:
       zoo1: [n]
     produced: 
       pom1: [n]
-    consumed_elements: n
-    produced_elements: n
     parameters:
 
   - type: excretion
@@ -118,6 +116,7 @@ reactions:
     produced: 
       phyto1: [n]
     parameters:
+      nutrient_limitation: variable
       half_sat_nutrient: 1
       light_limitation: 0.25
       max_photo_rate: variable

@@ -68,7 +68,10 @@ class Detritus():
         else:   consumed = c[0]
         ec = ec[consumed]
         ic = ic[consumed]
-        tc = np.array(tracers[consumed].conc[ic][iter])
+
+        # Get concentration of remineralized nutrient in organic matter pool
+        index = list(ec).index(1.)
+        tc = np.array(tracers[consumed].conc[index][iter])
 
         if p[0] == None:    pass
         else:
@@ -79,15 +82,17 @@ class Detritus():
         
         remineralization = (parameters["remineralization_rate"]) * tc
 
-        concentration_ratio(iter, ic, tracers[consumed])
-        tracers[consumed].d_dt -= ec * tracers[consumed].conc_ratio * remineralization
+        # concentration_ratio(iter, ic, tracers[consumed])
+        # tracers[consumed].d_dt -= ec * tracers[consumed].conc_ratio * remineralization
+        tracers[consumed].d_dt -= ec * remineralization
         if "o2" in c:
-            tracers["o2"].d_dt -= parameters["mw_carbon"] * remineralization
+            tracers["o2"].d_dt -=  remineralization / parameters["mw_carbon"]
         
         if p[0] == None:    pass
         else:   
-            concentration_ratio(iter, ip, tracers[p])
-            tracers[p].d_dt += ep * tracers[p].conc_ratio * remineralization
+            # concentration_ratio(iter, ip, tracers[p])
+            # tracers[p].d_dt += ep * tracers[p].conc_ratio * remineralization
+            tracers[p].d_dt += np.array(ep) * remineralization
 
     
     
