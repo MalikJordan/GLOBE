@@ -6,13 +6,18 @@ tracers:
     type: inorganic
     composition:
       n: 0.003                          # mmol N / m^3
+    parameters:
+      temp_limited: False
   phyto1:
     long_name: diatoms
     type: phytoplankton
     composition:                        # element : initial concentration
       n: 0.003                          # mmol N / m^3
     parameters:
-      nutrient_limitation: "product"    # mininimum, product, or sum of all limiting nutrients
+      temp_limited: False
+      nutrient_limitation:
+        type: external
+        nutrients: ["no3"]
   
 parameters:
   environment:
@@ -25,6 +30,9 @@ parameters:
     winter_sun: 10.0
     summer_temp: 15.0
     winter_temp: 15.0
+    summer_wind: 2.0
+    winter_wind: 6.0
+    PAR_frac: 0.4
   simulation:
     latitude: 45.0
     num_days: 180
@@ -35,19 +43,19 @@ parameters:
 
 reactions:
   - type: mortality
-    consumed: phyto1
-    produced: no3
-    consumed_elements: n
-    produced_elements: n
+    consumed: 
+      phyto1: [n]
+    produced: 
+      no3: [n]
     parameters:
-      function: linear
-      mortality_rate: 0.05
+      mortality_rate: [0.05,0.0]
   - type: uptake
-    consumed: no3
-    produced: phyto1
-    consumed_elements: n
-    produced_elements: n
+    consumed: 
+      no3: [n]
+    produced: 
+      phyto1: [n]
     parameters:
+      nutrient_limitation: variable
       half_sat_nutrient: 0.1
       light_limitation: 1.0
-      max_growth_rate: 1.4
+      max_photo_rate: 1.4

@@ -6,18 +6,29 @@ tracers:
     type: inorganic
     composition:
       n: 0.05                         # mmol N / m^3
+    parameters:
+      temp_limited: False
   phyto1:
     long_name: diatoms
     type: phytoplankton
     composition:                      # element : initial concentration
       n: 0.5                          # mmol N / m^3
     parameters:
-      nutrient_limitation: "product"  # mininimum, product, or sum of all limiting nutrients
+      temp_limited: False
+      nutrient_limitation: 
+        type: external
+        nutrients: ["no3"]
   zoo1:
     long_name: mesozooplankton
-    type: mesozooplankton
+    type: zooplankton
     composition:                      # element : initial concentration
       n: 0.5                          # mmol N / m^3
+    parameters:
+      assimilation_efficiency: 0.4
+      ingestion_efficiency: 1.0
+      temp_limited: False
+      grazing_preferences:
+        phyto1: 1.0
   
 parameters:
   environment:
@@ -30,6 +41,9 @@ parameters:
     winter_sun: 10.0
     summer_temp: 15.0
     winter_temp: 15.0
+    summer_wind: 2.0
+    winter_wind: 6.0
+    PAR_frac: 0.4
   simulation:
     latitude: 45.0
     num_days: 180
@@ -40,45 +54,42 @@ parameters:
 
 reactions:
   - type: grazing
-    consumed: phyto1
-    consumed_elements: n
-    produced_elements: n
-    produced: zoo1
+    consumed:
+      phyto1: [n]
+    produced: 
+      zoo1: [n]
     parameters:
-      function: monod
+      function: holling-1
       max_grazing_rate: 1.4
-      half_sat_grazing: 2.8
-      assimilation_efficiency: 1.0
-      ingestion_efficiency: 1.0
+      half_sat_grazing: 1.4
+      # half_sat_grazing: 2.8
   - type: egestion
-    consumed: zoo1
-    produced: pom1
-    consumed_elements: n
-    produced_elements: n
+    consumed: 
+      zoo1: [n]
+    produced: 
+      no3: [n]
     parameters:
-      assimilation_efficiency: 0.4
   - type: mortality
-    consumed: phyto1
-    produced: no3
-    consumed_elements: n
-    produced_elements: n
+    consumed: 
+      phyto1: [n]
+    produced: 
+      no3: [n]
     parameters:
-      function: linear
-      mortality_rate: 0.05
+      mortality_rate: [0.05,0.0]
   - type: mortality
-    consumed: zoo1
-    produced: no3
-    consumed_elements: n
-    produced_elements: n
+    consumed: 
+      zoo1: [n]
+    produced: 
+      no3: [n]
     parameters:
-      function: linear
-      mortality_rate: 0.12
+      mortality_rate: [0.12,0.0]
   - type: uptake
-    consumed: no3
-    produced: phyto1
-    consumed_elements: n
-    produced_elements: n
+    consumed: 
+      no3: [n]
+    produced: 
+      phyto1: [n]
     parameters:
+      nutrient_limitation: variable
       half_sat_nutrient: 0.1
       light_limitation: 1.0
-      max_growth_rate: 1.4
+      max_photo_rate: 1.4
