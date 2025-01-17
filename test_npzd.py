@@ -86,7 +86,8 @@ x = np.arange(1, NUM_STEPS + 1, 1)
 # ----------------------------------------------------------------------------------------------------
 fig, ax = plt.subplots()
 
-
+months = [0,30,60,90,120,150,180]
+marks = ['J','F','M','A','M','J','J']
 ax.plot(x,tracers["no3"].conc[0,:-1])
 ax.plot(x,N,'--k')
 ax.plot(x,tracers["phyto1"].conc[0,:-1])
@@ -98,7 +99,10 @@ ax.plot(x,D,'--k')
 
 plt.ylabel("mmol N / m^3")
 plt.xlabel("Time (days)")
-plt.xlim([0,365])
+plt.xlabel("Time [months]")
+plt.xlim([0,180])
+plt.xticks(months,marks)
+# plt.xlim([0,365])
 
 # Shrink current axis by 10%
 box = ax.get_position()

@@ -16,7 +16,9 @@ tracers:
     composition:                      # element : initial concentration
       n: 2.5                          # mmol N / m^3
     parameters:
-      nutrient_limitation: "minimum"  # mininimum, product, or sum of all limiting nutrients
+      nutrient_limitation: 
+        type: external
+        nutrients: ["no3"]
       temp_limited: False
       q10: 2.0
 

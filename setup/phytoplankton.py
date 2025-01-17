@@ -121,7 +121,7 @@ class Phytoplankton():
             avg_exu = np.average(self.exu[0:iter])
             x=1
 
-        return fI, irrad
+        # return fI, irrad
 
     def add_nutrient(self, nutrient, half_sat):
         "Nitrate-Phosphate (N-P) co-limitation"
@@ -175,7 +175,7 @@ class Phytoplankton():
                 element = tracers[nut].composition[0]
                 element_index = self.composition.index(element)
 
-                func = tracers[nut].conc[...,iter] / ( self.nutrient_limitation["half_sat"][i] + tracers[nut].conc[...,iter] )
+                func = tracers[nut].conc[...,iter] / ( self.nutrient_half_sat[i] + tracers[nut].conc[...,iter] )
                 fN[i] = np.maximum(1.E-20*np.ones_like(func), func)
         else:
             sys.exit("Nutrient limitation type not recognized. Check documentation and edit input file.")
@@ -430,15 +430,19 @@ class Phytoplankton():
         tp = np.array(tracers[p].conc[nutrient_index][iter])
 
         # Get carbon concentration
-        carbon_index = self.composition.index("c")
-        phytoc = self.conc[carbon_index][iter]
+        if "c" in self.composition:
+            carbon_index = self.composition.index("c")
+            phytoc = self.conc[carbon_index][iter]
+        else:
+            phytoc = np.ones_like(tp)
         
         # Locate index of chlorophyll constituent if present
         if "chl" in self.composition:   
             chl_index = self.composition.index("chl")
-            phytol = self.conc[chl_index][iter]
-            pl_pc = phytol / phytoc     # Chl:C ratio (used in light limitation)
+            phyto = self.conc[chl_index][iter]
+            pl_pc = phyto / phytoc     # Chl:C ratio (used in light limitation)
         else:
+            phyto = tp
             pl_pc = 1.
 
         # Calculate growth rate
@@ -451,7 +455,7 @@ class Phytoplankton():
         # if parameters["light_limitation"] == "variable":
         if parameters["light_limitation"] in ["monod", "platt", "smith"]:
             # k_PAR = light_attenuation(parameters, phytoc)
-            k_PAR = light_attenuation(parameters, phytol)
+            k_PAR = light_attenuation(parameters, phyto)
             irrad = irradiance(parameters["eps_PAR"], surface_PAR, coordinates, k_PAR)
             # fI = light_limitation(parameters, dz, irrad, k_PAR, mixed_layer_depth, surface_PAR, Vm)
             fI = light_limitation(parameters, dz, irrad, k_PAR, pl_pc, Vm)

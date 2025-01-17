@@ -79,7 +79,7 @@ class Zooplankton():
             if reac["type"] == "mortality":     self.mortality(iter, reac["parameters"], c, p, ec, ep, ic, ip, tracers)
             if reac["type"] == "respiration":   rsp = self.respiration(iter, reac["parameters"], c, p, tracers)
 
-        return rsp
+        # return rsp
     
 
     def add_prey(self, prey):
@@ -200,7 +200,7 @@ class Zooplankton():
                     if tc[i] < (2 * parameters["half_sat_grazing"]):    slope[i] = parameters["max_grazing_rate"]/(2 * parameters["half_sat_grazing"])
                     else:   slope[i] = parameters["max_grazing_rate"]
             else:
-                if tc[i] < (2 * parameters["half_sat_grazing"]):    slope = parameters["max_grazing_rate"]/(2 * parameters["half_sat_grazing"])
+                if tc < (2 * parameters["half_sat_grazing"]):    slope = parameters["max_grazing_rate"]/(2 * parameters["half_sat_grazing"])
                 else:   slope = parameters["max_grazing_rate"]
             
             function = slope * tc * tp
@@ -236,7 +236,8 @@ class Zooplankton():
         # Update d_dt
         tracers[c].d_dt -= ec * tracers[c].conc_ratio * grazing_prey
         # tracers[p].d_dt += ep * tracers[p].conc_ratio * grazing_predator
-        tracers[p].d_dt += ec[:-1] * tracers[p].conc_ratio * grazing_predator   # fix this to be generic if it works
+        tracers[p].d_dt += ec * tracers[p].conc_ratio * grazing_predator   # fix this to be generic if it works
+        # tracers[p].d_dt += ec[:-1] * tracers[p].conc_ratio * grazing_predator   # fix this to be generic if it works
     
 
         # Update grazing rate dictionary

@@ -5,7 +5,7 @@ from setup.initialize import import_model
 from functions.other_functions import *
 from functions import rates
 from functions.bgc_rate_eqns import bgc_rate_eqns
-from scipy.integrate import odeint, solve_ivp
+# from scipy.integrate import odeint, solve_ivp
 import matplotlib.pyplot as plt
 
 # ----------------------------------------------------------------------------------------------------
