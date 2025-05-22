@@ -62,12 +62,12 @@ def get_mixed_layer_depth(time, mld_win, mld_sum):
     return mld
 
 
-def get_sunlight(time,q_win,q_sum):
+def get_sunlight(time,q_win,q_sum,latitude):
     """ function that calculates the sunlight """
 
     day_of_year = calc_day_of_year(time)
     fraction_of_day = calc_fraction_of_day(time)
-    latitude = 45.0
+    # latitude = 45.0
     light = (q_sum+q_win)/2.0 - (q_sum-q_win)/2.0*np.cos(day_of_year*(np.pi/180))
     cycle = 360
     declination = -0.406*np.cos(2.0*np.pi*int(day_of_year)/cycle)
@@ -87,7 +87,7 @@ def get_irrad(time,q_win,q_sum):
 
     day_of_year = calc_day_of_year(time)
     fraction_of_day = calc_fraction_of_day(time)
-    irrad = (q_sum + q_win)/2.0 - (q_sum - q_win)/2.0*np.cos((day_of_year+(fraction_of_day - 0.5))*(np.pi/180)) # - 0.5*np.cos(2*np.pi*fraction_of_day)
+    irrad = (q_sum + q_win)/2.0 - (q_sum - q_win)/2.0*np.cos((day_of_year+(fraction_of_day - 0.5))*(np.pi/180)) - 0.5*np.cos(2*np.pi*fraction_of_day)
 
     return irrad
 
@@ -96,6 +96,6 @@ def get_temperature(time,t_win,t_sum):
 
     day_of_year = calc_day_of_year(time)
     fraction_of_day = calc_fraction_of_day(time)
-    temperature = (t_sum + t_win)/2.0 - (t_sum - t_win)/2.0*np.cos((day_of_year+(fraction_of_day - 0.5))*(np.pi/180)) # - 0.5*np.cos(2*np.pi*fraction_of_day)
+    temperature = (t_sum + t_win)/2.0 - (t_sum - t_win)/2.0*np.cos((day_of_year+(fraction_of_day - 0.5))*(np.pi/180)) - 0.5*np.cos(2*np.pi*fraction_of_day)
 
     return temperature

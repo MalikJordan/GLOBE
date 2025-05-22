@@ -7,6 +7,8 @@ from setup.inorganic import Inorganic
 from setup.phytoplankton import Phytoplankton
 from setup.zooplankton import Zooplankton
 
+# from setup.setup_solveivp import Bacteria, Detritus, Inorganic, Phytoplankton, Zooplankton
+
 
 def coordinate_system(parameters):
 
@@ -14,7 +16,6 @@ def coordinate_system(parameters):
     parameters["z"] = np.linspace(parameters["dz"]/2, parameters["column_depth"] - parameters["dz"]/2, parameters["num_layers"])
 
     return parameters
-
 
 def import_model(file_path):
 
@@ -80,6 +81,10 @@ def import_model(file_path):
         if key["type"] == "uptake":     # Add nutrient to bacteria and phytoplankton (used in rate calculations for nutrient limitation)
             # produced = list(key["produced"].keys())[0]
             # consumed = list(key["consumed"].keys())[0]
-            tracers[list(key["produced"].keys())[0]].add_nutrient(list(key["consumed"].keys())[0],key["parameters"]["half_sat_nutrient"])
+            # Add half saturation constant if used in calculations
+            if "half_sat_nutrient" in key["parameters"]:
+                tracers[list(key["produced"].keys())[0]].add_nutrient(list(key["consumed"].keys())[0],key["parameters"]["half_sat_nutrient"])
+            else:
+                tracers[list(key["produced"].keys())[0]].add_nutrient(list(key["consumed"].keys())[0],0.)
 
     return base_element, parameters, reactions, tracers
