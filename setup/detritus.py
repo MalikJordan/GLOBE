@@ -13,6 +13,12 @@ class Detritus():
         self.abbrev = abbrev
         self.name = tracer["long_name"]
         self.type = tracer["type"]
+
+        # Light limitation
+        if "light_attenuation" in tracer["parameters"]:
+            self.light_attenuation = tracer["parameters"]["light_attenuation"]
+        else:
+            self.light_attenuation = 0.
         
         # Composition and concentration arrays
         self.composition = []
@@ -47,14 +53,17 @@ class Detritus():
           
 
     def detritus(self, iter, base_element, tracers):
-    
+        check_conc = self.conc[:,iter]
         # Calculate bgc rates
         for reac in self.reactions:
             c, p, ec, ep, ic, ip = tracer_elements(base_element, reac, tracers)
             
             if reac["type"] == "remineralization":  self.remineralization(iter, reac["parameters"], c, p, ec, ep, ic, ip, tracers)
-    
-    
+
+        if iter % 50 == 0:
+            x=1
+        x=1
+        
     def remineralization(self, iter, parameters, c, p, ec, ep, ic, ip, tracers):
         
         # Extract dict
@@ -82,16 +91,12 @@ class Detritus():
         
         remineralization = (parameters["remineralization_rate"]) * tc
 
-        # concentration_ratio(iter, ic, tracers[consumed])
-        # tracers[consumed].d_dt -= ec * tracers[consumed].conc_ratio * remineralization
         tracers[consumed].d_dt -= ec * remineralization
         if "o2" in c:
             tracers["o2"].d_dt -=  remineralization / parameters["mw_carbon"]
         
         if p[0] == None:    pass
-        else:   
-            # concentration_ratio(iter, ip, tracers[p])
-            # tracers[p].d_dt += ep * tracers[p].conc_ratio * remineralization
+        else:
             tracers[p].d_dt += np.array(ep) * remineralization
 
     

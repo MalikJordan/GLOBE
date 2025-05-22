@@ -18,7 +18,10 @@ class Inorganic():
         self.temp_limited = tracer["parameters"]["temp_limited"]
         if self.temp_limited:
             self.q10 = tracer["parameters"]["q10"]
-        self.fT = 1.
+        self.temp_regulation_factor = 1.
+
+        # Oxygen regulation
+        
 
         # Concentration array
         self.composition = []
@@ -49,27 +52,40 @@ class Inorganic():
         
     
     def inorg(self, iter, base_element, base_temp, coordinates, dz, mixed_layer_depth, surface_PAR, temperature, salinity, wind, tracers):
+        check_conc = self.conc[:,iter]
         
         if self.temp_limited:
-            self.fT = temperature_regulation(base_temp, temperature, self.q10)   # calculate temperature regulation factor for nitrification
+            self.temp_regulation_factor = temperature_regulation(base_temp, temperature, self.q10)   # calculate temperature regulation factor for nitrification
         
         for reac in self.reactions:
             c, p, ec, ep, ic, ip = tracer_elements(base_element, reac, tracers)
-            if reac["type"] == "nitrification" and self.abbrev == 'no3':  
-                if "o2" in tracers: fO = nutrient_limitation(tracers["o2"].conc[...,iter],reac["parameters"]["half_sat_o2"])
-                else:   fO = 1.
-                self.nitrification(iter, reac["parameters"], fO, tracers)
+            if reac["type"] == "nitrification" and self.abbrev == "no3":  
+                if "o2" in tracers: oxy_limitation_factor = nutrient_limitation(tracers["o2"].conc[...,iter],reac["parameters"]["half_sat_oxygen"])
+                else:   oxy_limitation_factor = 1.
+                self.nitrification(iter, reac["parameters"], oxy_limitation_factor, tracers)
             if reac["type"] == "reaeration":    self.reaeration(iter, reac["parameters"], dz, temperature, salinity, wind)
+            if reac["type"] == "reoxidation" and self.abbrev == "hs":   
+                if "o2" in tracers: oxy_limitation_factor = nutrient_limitation(tracers["o2"].conc[...,iter],reac["parameters"]["half_sat_oxygen"])
+                else:   oxy_limitation_factor = 1.
+                self.reoxidation(iter, reac["parameters"], oxy_limitation_factor, tracers)
         
+        if iter % 50 == 0:
+            x=1
+        if self.abbrev == 'nh4':
+            x=1
+        if self.abbrev == 'o2':
+            x=1
+        x=1
 
-    def nitrification(self, iter, parameters, fO,  tracers):
+    def nitrification(self, iter, parameters, oxy_limitation_factor,  tracers):
         """
         Definition:: Calculates nitrification rate
         """
-        nitrification = self.fT * fO * parameters["nitrification_rate"] * tracers["nh4"].conc[...,iter]
-
+        nitrification = self.temp_regulation_factor * oxy_limitation_factor * parameters["nitrification_rate"] * tracers["nh4"].conc[...,iter]
+        nitrification = np.maximum(np.zeros_like(nitrification),nitrification)
+        
         tracers["nh4"].d_dt -= nitrification
-        if "o2" in tracers: tracers["o2"].d_dt -= 2. * nitrification    # '2. *' for stoichiometry, NH4(+) + 2O2 --> NO3(-) + H2O + 2H(+)
+        if "o2" in tracers: tracers["o2"].d_dt -= parameters["nitrification_stoic_coeff"] * nitrification    # '2. *' for stoichiometry, NH4(+) + 2O2 --> NO3(-) + H2O + 2H(+)
         tracers["no3"].d_dt += nitrification
 
 
@@ -100,3 +116,14 @@ class Inorganic():
 
         # Update d_dt
         self.d_dt += d_o2
+
+
+    def reoxidation(self, iter, parameters, oxy_limitation_factor, tracers):
+        """
+        Definition:: Calculation reoxidation rate of reduction equivalents
+        """
+        reoxidation = parameters["reoxidation_rate"] * oxy_limitation_factor * tracers["hs"].conc[..., iter]
+
+        # Update d_dt
+        tracers["hs"].d_dt -= reoxidation
+        tracers["o2"].d_dt -= reoxidation / parameters["reoxidation_stoic_coeff"]

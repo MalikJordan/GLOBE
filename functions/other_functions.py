@@ -1,12 +1,35 @@
 import numpy as np
 import sys
 
-def light_attenuation(parameters, phyto):
+# def light_attenuation(parameters, phyto):
+#     """
+#     Definition:: Calculates light attenuation factor for photosynthesis
+#     Beer's Law attenuation coefficient
+#     """
+#     k_PAR = parameters["light_attenuation_water"] + parameters["light_attenuation_phyto"] * phyto
+
+#     return k_PAR
+
+
+def light_attenuation(abbrev, iter, base_element, light_attenuation_water, tracers):
     """
     Definition:: Calculates light attenuation factor for photosynthesis
     Beer's Law attenuation coefficient
     """
-    k_PAR = parameters["light_attenuation_water"] + parameters["light_attenuation_phyto"] * phyto
+    k_PAR = light_attenuation_water * np.ones_like(tracers[abbrev].conc[0][iter])
+
+    for key in tracers:
+        if tracers[key].type == "detritus":
+            base_index = tracers[key].composition.index(base_element)
+            k_PAR += tracers[key].light_attenuation * np.array(tracers[key].conc[base_index][iter])
+        if tracers[key].type == "phytoplankton":
+            # Light attenuation coefficient for phytoplankton is calculated using chl if available
+            if "chl" in tracers[key].composition:
+                chl_index = tracers[key].composition.index("chl")
+                k_PAR += tracers[key].light_attenuation * np.array(tracers[key].conc[chl_index][iter])
+            else:
+                base_index = tracers[key].composition.index(base_element)
+                k_PAR += tracers[key].light_attenuation * np.array(tracers[key].conc[base_index][iter])
 
     return k_PAR
 
@@ -29,8 +52,9 @@ def light_limitation(parameters, dz, irrad, k_PAR, pl_pc, Vm):
             r = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz/2) * 86400
         elif parameters["light_location"] == "integrated":
             r = irrad / (k_PAR * dz) * (1. - np.exp(-k_PAR*dz))
+            
         irr = np.maximum(1E-20*np.ones_like(r), r*86400)    
-        exp = pl_pc * ( parameters["max_light_utilization"] / Vm ) * irr
+        exp = pl_pc * ( parameters["initial_PI_slope"] / Vm ) * irr
 
         light_limitation = 1. - np.exp(-exp)
 
@@ -48,7 +72,7 @@ def light_limitation(parameters, dz, irrad, k_PAR, pl_pc, Vm):
         
         # light_limitation = coeff * np.log(numerator/denominator)
 
-    return light_limitation
+    return exp, irr, light_limitation
 
 
 def max_growth_rate(parameters, temperature):
@@ -76,7 +100,7 @@ def nutrient_limitation(nutrient, half_sat):
     """
     Definition:: Calculates the limitation factor a nutrient using the Michaelis-Menten formulation
     """
-    nutrient_limitation_factor = nutrient / (half_sat + nutrient)
+    nutrient_limitation_factor = nutrient / (half_sat + nutrient + 1.E-20)
     
     return nutrient_limitation_factor
 
@@ -109,6 +133,22 @@ def concentration_ratio(iter, index, tracer):
     """
     for const in range(0,len(tracer.conc[...,iter])):
         tracer.conc_ratio[const] = tracer.conc[const,iter] / (tracer.conc[index,iter] + 1E-20)
+
+        # Detritus may be initialized to zero, fix concentration ratio
+        if iter == 0 and tracer.type == 'detritus':
+            if tracer.conc[const,iter] == 0.:
+                tracer.conc_ratio[const] = 1.   # Initialize first concentration ratio for detritus to 1
+    
+    # Concentration ratio of base element is alway 1
+    tracer.conc_ratio[index] = 1.
+
+
+def concentration_ratio_solveivp(concentration, index, indices, tracer):
+    """
+    Definition:: Calculates concentration ratio of elements in tracer composition to its base element
+    """
+    for const in range(0,len(indices)):
+        tracer.conc_ratio[const] = np.maximum(1E-20, concentration[indices[const]] / (concentration[indices[index]] + 1E-20))
     
     # Concentration ratio of base element is alway 1
     tracer.conc_ratio[index] = 1.
@@ -173,3 +213,18 @@ def tracer_elements(base_element, reaction, tracers):
     p = list(produced.keys())
 
     return c, p, ec, ep, ic, ip
+
+
+
+def switch(parameter):
+    # x = len(parameter)
+    # x = np.shape(parameter)[0]
+    # switch = np.zeros(x)
+    # for i in range(0,x):
+    #     if parameter[i] > 0.0:
+    #         switch[i] = 1.0
+
+    if parameter > 0.:  switch = 1.
+    else:   switch = 0.
+
+    return switch
