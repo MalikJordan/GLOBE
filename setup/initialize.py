@@ -1,132 +1,90 @@
-import json
-import os
-from setup.functional_groups import Inorganic, NonLivingOrganic, OrganicMatter, Phytoplankton
-# from setup.functional_groups import Bacterioplankton, Inorganic, OrganicMatter, Phytoplankton, Zooplankton
+import numpy as np
+import sys
+import yaml
+from setup.bacteria import Bacteria
+from setup.detritus import Detritus
+from setup.inorganic import Inorganic
+from setup.phytoplankton import Phytoplankton
+from setup.zooplankton import Zooplankton
 
-def initialize_model_tracers():
-    """
-    Description: Initializes BGC model. Creates a dictionary of all tracers present in model
-                 and classes for each group. 
-    """
+# from setup.setup_solveivp import Bacteria, Detritus, Inorganic, Phytoplankton, Zooplankton
+
+
+def coordinate_system(parameters):
+
+    parameters["dz"] = parameters["column_depth"] / parameters["num_layers"]
+    parameters["z"] = np.linspace(parameters["dz"]/2, parameters["column_depth"] - parameters["dz"]/2, parameters["num_layers"])
+
+    return parameters
+
+def import_model(file_path):
+
+    with open(file_path, 'r') as f:
+        model_info = yaml.full_load(f)
+        base_element = model_info["base_element"]
+        model = model_info["tracers"]
+        parameters = model_info["parameters"]
+        reactions = model_info["reactions"]
 
     # ----------------------------------------------------------------------------------------------------
-    num_boxes = 1
-    # Initialize dictionary of tracers present in model
+    # Check base element
+    # ----------------------------------------------------------------------------------------------------
+    if base_element not in ['c','n','p']:
+        sys.exit("'" + base_element + "' not accepted as base element. Check documentation and edit input file.")
+
+    # ----------------------------------------------------------------------------------------------------
+    # Update coordinate system
+    # ----------------------------------------------------------------------------------------------------
+    parameters["water_column"] = coordinate_system(parameters["water_column"])
+
+    # ----------------------------------------------------------------------------------------------------
+    # Setup time array
+    # ----------------------------------------------------------------------------------------------------
+    # Calculate number of iterations needed in simulation
+    iters = parameters["simulation"]["num_days"] * 86400 / parameters["simulation"]["timestep"]     
+    iters = int(np.ceil(iters))
+
+    # Create time array (needed for calculating incident angle for PAR)
+    parameters["simulation"]["time"] = np.linspace(0,iters * parameters["simulation"]["timestep"], iters + 1)   # +1 for zero-indexing
+    parameters["simulation"]["iters"] = iters + 1 
+    # ----------------------------------------------------------------------------------------------------
+    # Read model tracers
+    # ----------------------------------------------------------------------------------------------------
     tracers = {}
-    count_tracers = 0
-
-    # Open json file containing tracer information
-    file_path = os.getcwd() + "/tracers.json"
-    with open(file_path) as read_tracers:
-        tracer_info = json.load(read_tracers)
-
+    for key in model:
+        if model[key]["type"] == "bacteria":
+            # tracers[key] = Bacteria(key, model[key]["composition"], parameters["simulation"]["iters"], model[key]["long_name"], model[key]["parameters"], reactions, model[key]["type"])
+            tracers[key] = Bacteria(key, parameters["simulation"]["iters"], reactions, **model[key])
+        elif model[key]["type"] == "detritus":
+            # tracers[key] = Detritus(key, model[key]["composition"], parameters["simulation"]["iters"], model[key]["long_name"], reactions, model[key]["type"])
+            tracers[key] = Detritus(key, parameters["simulation"]["iters"], reactions, **model[key])
+        elif model[key]["type"] == "inorganic":
+            # tracers[key] = Inorganic(key, model[key]["composition"], parameters["simulation"]["iters"], model[key]["long_name"], reactions, model[key]["type"])
+            tracers[key] = Inorganic(key, parameters["simulation"]["iters"], reactions, **model[key])
+        elif model[key]["type"] == "phytoplankton":
+            # tracers[key] = Phytoplankton(key, model[key]["composition"], parameters["simulation"]["iters"], model[key]["long_name"], model[key]["parameters"], reactions, model[key]["type"])
+            tracers[key] = Phytoplankton(key, parameters["simulation"]["iters"], reactions, **model[key])
+        elif model[key]["type"] == "zooplankton":
+            # tracers[key] = Zooplankton(key, model[key]["composition"], parameters["simulation"]["iters"], model[key]["long_name"], model[key]["parameters"], reactions, model[key]["type"])
+            tracers[key] = Zooplankton(key, parameters["simulation"]["iters"], reactions, **model[key])
+        else:
+            sys.exit("Warning: Functional group '" + model[key]["type"] + "' not accepted. Please review documentation and make necessary changes.")
+            
     # ----------------------------------------------------------------------------------------------------
-    # Add non-living tracers (inorganic, dissolved organic matter, particulate organic matter)
-
-    if "inorganic" in tracer_info:
-        inorganic = tracer_info["inorganic"]
-        inorg = Inorganic(inorganic, num_boxes)
-        for key in inorganic:
-            if "constituents" in inorganic:
-                constituents = inorganic[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
-            else:
-                tracers[count_tracers] = key
-                count_tracers += 1            
-    else:
-        print("Inrganic tracers not listed in " + file_path)
-        inorg = {}
-
-    if "dissolved_organic_matter" in tracer_info:
-        dissolved_inorganic_matter = tracer_info["dissolved_organic_matter"]
-        dom = {}
-        for key in dissolved_inorganic_matter:
-            dom[key] = OrganicMatter(dissolved_inorganic_matter[key]["long_name"], dissolved_inorganic_matter[key]["constituents"], num_boxes)
-            if "constituents" in dissolved_inorganic_matter[key]:
-                constituents = dissolved_inorganic_matter[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
-            else:
-                tracers[count_tracers] = key
-                count_tracers += 1
-    else:
-        print("Dissolved Organic Matter not listed in " + file_path)
-        dom = {}
-
-    if "particulate_organic_matter" in tracer_info:
-        particulate_organic_matter = tracer_info["particulate_organic_matter"]
-        pom = {}
-        for key in particulate_organic_matter:
-            pom[key] = OrganicMatter(particulate_organic_matter[key]["long_name"], particulate_organic_matter[key]["constituents"], num_boxes)
-            if "constituents" in particulate_organic_matter[key]:
-                constituents = particulate_organic_matter[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
-            else:
-                tracers[count_tracers] = key
-                count_tracers += 1
-    else:
-        print("Particulate Organic Matter not listed in " + file_path)
-        pom = {}
-
+    # Add necessary components to Phytoplankton and Zooplankton groups
     # ----------------------------------------------------------------------------------------------------
-    # Add living tracers (bacterioplankton, phytoplankton, zooplankton)
-
-    if "bacterioplankton" in tracer_info:
-        bacterioplankton = tracer_info["bacterioplankton"]
-        bac = {}
-        for key in bacterioplankton:
-            bac[key] = NonLivingOrganic(bacterioplankton[key]["long_name"], bacterioplankton[key]["constituents"], num_boxes)
-            # bac[key] = Bacterioplankton(bacterioplankton[key]["long_name"], num_boxes)
-            if "constituents" in bacterioplankton[key]:
-                constituents = bacterioplankton[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
+    for key in reactions:
+        if key["type"] == "grazing":    # Add prey to zooplankton (used in rate calculations to determine sum of grazing rates)
+            # produced = list(key["produced"].keys())[0]
+            # consumed = list(key["consumed"].keys())[0]
+            tracers[list(key["produced"].keys())[0]].add_prey(list(key["consumed"].keys())[0])
+        if key["type"] == "uptake":     # Add nutrient to bacteria and phytoplankton (used in rate calculations for nutrient limitation)
+            # produced = list(key["produced"].keys())[0]
+            # consumed = list(key["consumed"].keys())[0]
+            # Add half saturation constant if used in calculations
+            if "half_sat_nutrient" in key["parameters"]:
+                tracers[list(key["produced"].keys())[0]].add_nutrient(list(key["consumed"].keys())[0],key["parameters"]["half_sat_nutrient"])
             else:
-                tracers[count_tracers] = key
-                count_tracers += 1
-    else:
-        print("Bacterioplankton not listed in " + file_path)
-        bac = {}
+                tracers[list(key["produced"].keys())[0]].add_nutrient(list(key["consumed"].keys())[0],0.)
 
-    if "phytoplankton" in tracer_info:
-        phytoplankton = tracer_info["phytoplankton"]
-        phyto = {}
-        for key in phytoplankton:
-            phyto[key] = Phytoplankton(phytoplankton[key]["long_name"], phytoplankton[key]["constituents"], num_boxes)
-            if "constituents" in phytoplankton[key]:
-                constituents = phytoplankton[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
-            else:
-                tracers[count_tracers] = key
-                count_tracers += 1
-    else:
-        print("Phytoplankton not listed in " + file_path)
-        phyto = {}
-
-    if "zooplankton" in tracer_info:
-        zooplankton = tracer_info["zooplankton"]
-        zoo = {}
-        for key in zooplankton:
-            zoo[key] = NonLivingOrganic(zooplankton[key]["long_name"], zooplankton[key]["constituents"], num_boxes)
-            # zoo[key] = Zooplankton(zooplankton[key]["long_name"], num_boxes)
-            if "constituents" in zooplankton[key]:
-                constituents = zooplankton[key]["constituents"]
-                for const in constituents:
-                    tracers[count_tracers] = key + '_' + const
-                    count_tracers += 1
-            else:
-                tracers[count_tracers] = key
-                count_tracers += 1
-    else:
-        print("Zooplankton not listed in " + file_path)
-        zoo = {}
-
-    return tracers, bac, dom, inorg, phyto, pom, zoo
+    return base_element, parameters, reactions, tracers
