@@ -110,14 +110,6 @@ class Phytoplankton():
 
     def phyto(self, iter, base_element, base_temp, light_attenuation_water, coordinates, dz, mixed_layer_depth, surface_PAR, temperature, tracers):
         
-        # Reset production variables
-        # self.exu = np.zeros_like((self.conc[0,...,0]))   # Exudation (Initialzied to 1 for use in respiration)
-        # self.gpp = np.zeros_like(self.conc[0,...],dtype=float)   # Gross Primary Production
-        # self.lys = np.zeros_like(self.conc[0,...,0])  # Lysis (carbon)
-        # self.npp = np.zeros_like(self.conc[0,...,0])  # Net Primary Production
-        # self.psn = np.zeros_like(self.conc[0,...,0])  # Photosynthesis
-        # self.rsp = np.zeros_like(self.conc[0,...,0])  # Respiration
-
         # Calculate nutrient limitation
         self.calculate_nutrient_limitation(base_element, iter, tracers)
 
@@ -139,7 +131,7 @@ class Phytoplankton():
             if reac["type"] == "exudation":                     self.exudation(iter, reac["parameters"], c, p, tracers)
             if reac["type"] == "gross_primary_production":      self.gross_primary_production(iter, reac["parameters"], c, p, tracers)
             if reac["type"] == "lysis":                         self.lysis(iter, reac["parameters"], c, p, ec, ep, ic, ip, tracers)
-            if reac["type"] == "photosynthesis":                fI, irr = self.photosynthesis(iter, reac["parameters"], base_element, coordinates, dz, k_PAR, temperature, surface_PAR, tracers)
+            if reac["type"] == "photosynthesis":                fI, irr = self.photosynthesis(iter, reac["parameters"], coordinates, dz, k_PAR, temperature, surface_PAR)
             if reac["type"] == "respiration":                   activity_respiration, basal_respiration = self.respiration(iter, reac["parameters"], c, p, tracers)
 
         # Calculate net primary production
@@ -152,25 +144,7 @@ class Phytoplankton():
                 if self.calc_respiration:   self.chlorophyll_synthesis(iter, reac["parameters"], activity_respiration, basal_respiration, coordinates, irr, k_PAR, surface_PAR, tracers)
                 else:                       self.chlorophyll_synthesis(iter, reac["parameters"], 0., 0., coordinates, irr, k_PAR, surface_PAR, tracers)
             if reac["type"] == "uptake":                        self.uptake(iter, reac["parameters"], c, p, ec, ep, ic, tracers)
-            
-        
-        # for reac in self.reactions:
-        #     c, p, ec, ep, ic, ip = tracer_elements(base_element, reac, tracers)
-        #     if reac["type"] == "chlorophyll_synthesis":         self.chlorophyll_synthesis(iter, reac["parameters"], coordinates, surface_PAR)
-        #     if reac["type"] == "exudation":                     self.exudation(iter, reac["parameters"], c, p, tracers)
-        #     if reac["type"] == "gross_primary_production":      irrad = self.gross_primary_production(iter, reac["parameters"], coordinates, dz, mixed_layer_depth, surface_PAR, temperature, c, p, tracers)
-        #     if reac["type"] == "mortality":                     self.mortality(iter, reac["parameters"], c, p, ec, ep, ic, ip, tracers)
-        #     if reac["type"] == "respiration":                   self.respiration(iter, reac["parameters"], c, p, tracers)
-        #     if reac["type"] == "uptake":                        fI = self.uptake(iter, reac["parameters"], coordinates, dz, mixed_layer_depth, surface_PAR, temperature, c, p, ec, ep, ic, ip, tracers)
 
-        # Calculate net primary production
-        # self.npp[iter] = np.maximum(np.zeros_like(self.gpp[iter]), (self.gpp[iter] - self.exu[iter] - self.lys[iter] - self.rsp[iter]))
-        # if iter == 240:
-        #     avg_gpp = np.average(self.gpp[0:iter])
-        #     avg_exu = np.average(self.exu[0:iter])
-        #     x=1
-
-        # return fI, irrad, self.nutrient_limitation_factor
 
     def add_nutrient(self, nutrient, half_sat):
         "Nitrate-Phosphate (N-P) co-limitation"
@@ -183,21 +157,6 @@ class Phytoplankton():
         """
         Definition:: Calculates nutrient limitation factor as either a minimum, product, or sum of all nutrients which limit phytoplankton growth
         """
-        # nutrient_conc = np.zeros(len(self.nutrients),dtype=np.ndarray)
-        # for key in tracers:
-        #     if key in self.nutrients:
-        #         i = self.nutrients.index(key)
-        #         nutrient_conc[i] = np.array(tracers[key].conc[...,iter])
-        # lim = nutrient_limitation(nutrient_conc, self.nutrient_half_sat)
-
-        # if len(lim) > 0:
-        #     if self.nutrient_limitation_type == "minimum":
-        #         self.nutrient_limitation_factor = np.min(lim, axis=0)
-        #     elif self.nutrient_limitation_type == "product":
-        #         self.nutrient_limitation_factor = np.prod(lim, axis=0)
-        #     elif self.nutrient_limitation_type == "sum":
-        #         self.nutrient_limitation_factor == np.sum(lim,  axis=0)
-
 
         fN = np.zeros(len(self.nutrient_limitation["nutrients"]),dtype=np.ndarray)
 
@@ -205,12 +164,8 @@ class Phytoplankton():
             # Get index of base element
             index = self.composition.index(base_element)
 
-            # Calculate concentration ratios
-            # concentration_ratio(iter, index, self)
-
             for nut in self.nutrient_limitation["nutrients"]:
                 i = self.nutrient_limitation["nutrients"].index(nut)
-                # element = str(tracers[nut].composition[0])
                 element = tracers[nut].composition[0]
                 element_index = self.composition.index(element)
 
@@ -221,7 +176,6 @@ class Phytoplankton():
         elif self.nutrient_limitation["type"] == "external":
             for nut in self.nutrient_limitation["nutrients"]:
                 i = self.nutrient_limitation["nutrients"].index(nut)
-                # element = str(tracers[nut].composition[0])
                 element = tracers[nut].composition[0]
                 element_index = self.composition.index(element)
 
@@ -414,44 +368,21 @@ class Phytoplankton():
         self.npp[iter] = np.maximum( np.zeros_like(phyto_carbon), ( self.psn[iter] - specific_losses ) * phyto_carbon )
     
 
-    def photosynthesis(self, iter, parameters, base_element, coordinates, dz, k_PAR, temperature, surface_PAR, tracers):
+    def photosynthesis(self, iter, parameters, coordinates, dz, k_PAR, temperature, surface_PAR):
         
-        # Needs:    Nutrient limitation, Light limitation, Temperature regulation factor, Maximal productivity (Vm) at 10C (rp0 from python bfm, p_sum from fortran bfm)
-
-        # Get concentration of base element in phytoplankton
-        base_index = self.composition.index(base_element)
-        base_conc = np.array(tracers[self.abbrev].conc[base_index][iter])
-
-        # Get carbon concentration
-        if "c" in self.composition:
-            carbon_index = self.composition.index("c")
-            phyto_carbon = self.conc[carbon_index][iter]
-        else:
-            phyto_carbon = np.ones_like(base_conc)
-        
-        # Locate index of chlorophyll constituent if present
-        if "chl" in self.composition:   
-            chl_index = self.composition.index("chl")
-            phyto_chl = self.conc[chl_index][iter]
-            pl_pc = phyto_chl / phyto_carbon     # Chl:C ratio (used in light limitation)
-        else:
-            phyto_chl = base_conc
-            pl_pc = 1.
-
-        # Calculate maximal productivity
-        if parameters["max_photo_rate"] == "variable":
+        # Maximal productivity
+        if parameters["max_photo_rate"] == "eppley":
             Vm = max_growth_rate(parameters, temperature)
         else:
             Vm = parameters["max_photo_rate"]
         
-        if iter == 360:
-            x=1
-
-        # Calculate light limitation
-        if parameters["light_limitation"] in ["monod", "platt", "smith"]:
-            # k_PAR = light_attenuation(parameters, phyto_chl)
+        # Light limitation
+        if parameters["light_limitation"] in ["geider", "monod", "platt", "smith"]:
+            # Calculate irradiance at surface
             irrad = irradiance(parameters["eps_PAR"], surface_PAR, coordinates, k_PAR)
-            exp, irr, fI = light_limitation(parameters, dz, irrad, k_PAR, pl_pc, Vm)
+
+            # Calculate light limitation
+            exp, irr, fI = light_limitation(self, parameters, dz, irrad, k_PAR, Vm)
         else:
             fI = parameters["light_limitation"]
             irr = 1.E-20

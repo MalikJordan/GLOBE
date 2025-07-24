@@ -35,51 +35,74 @@ def light_attenuation(abbrev, iter, base_element, light_attenuation_water, trace
 
 
 # def light_limitation(parameters, dz, irrad, k_PAR, mixed_layer_depth, surface_PAR, Vm, pl_pc):
-def light_limitation(parameters, dz, irrad, k_PAR, pl_pc, Vm):
+def light_limitation(phyto, parameters, dz, irrad, k_PAR, Vm):
     """
     k_PAR = Light Attenuation Coefficient
     surface_PAR = Photosynthetically Active Radiation (PAR) at watetr surface (z = 0)
     """
+    # -------------------------------------------------------------------------------------------------
+    # Monod
+    # -------------------------------------------------------------------------------------------------
     if parameters["light_limitation"] == "monod":
         # Heinle & Slawig (2013)
         light_limitation = irrad / (parameters["half_sat_light"] + irrad + 1E-20)
 
-    elif parameters["light_limitation"] == "platt":  # Jassby and Platt (1976)
-        # *86400 to convert from [1/s] to [1/d]
+    # -------------------------------------------------------------------------------------------------
+    # Geider et al. (1997) / Jassby and Platt (1976)
+    # -------------------------------------------------------------------------------------------------
+    elif parameters["light_limitation"] in ["geider","platt"]:
+        
+        # Calculate irradiance at depth
         if parameters["light_location"] == "top":
-            r = np.maximum(1E-20*np.ones_like(irrad), irrad) * 86400
-        elif parameters["light_location"] == "middle":
-            r = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz/2) * 86400
-        elif parameters["light_location"] == "integrated":
-            r = irrad / (k_PAR * dz) * (1. - np.exp(-k_PAR*dz))
-            
-        irr = np.maximum(1E-20*np.ones_like(r), r*86400)    
-        exp = pl_pc * ( parameters["initial_PI_slope"] / Vm ) * irr
+            irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * 86400                              # *86400 to convert from [1/s] to [1/d]
+        elif parameters["light_location"] == "middle":  # Lazzari et al. (2012)
+            irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz/2) * 86400     # *86400 to convert from [1/s] to [1/d]
+        elif parameters["light_location"] == "integrated":  # Vichi et al. (2007)
+            r = irrad / (k_PAR * dz) * (1. - np.exp(-k_PAR*dz))            
+            irrad_at_depth = np.maximum(1E-20*np.ones_like(r), r*86400)                                        # *86400 to convert from [1/s] to [1/d]
+
+        # Calculate Chl:C ratio using either ...   
+        if {"c","chl"}.issubset(phyto.composition): # Carbon and Chlorophyll concentrations (if preselt)
+        # if "c" in self.composition and "chl"  in self.composition:
+            carbon_index = phyto.composition.index("c")
+            pc = phyto.conc[carbon_index][iter]
+            chl_index = phyto.composition.index("chl")
+            pl = phyto.conc[chl_index][iter]
+            pl_pc = pl / pc     # Chl:C ratio (used in light limitation)
+        else: # Geider et al. (1997) Dynamic Model
+            if "theta_min" not in parameters: parameters["theta_min"] = 0.
+            pl_pc = (parameters["theta_max"] - parameters["theta_min"]) / ( 1. + ( ( parameters["theta_max"] * parameters["initial_PI_slope"] * irrad_at_depth ) / 
+                                                                                ( 2 * Vm * phyto.temp_regulation_factor * phyto.nutrient_limitation_factor + 1.E-20 ) ) ) \
+                        + parameters["theta_min"]
+
+        # Calculate exponent for light limitation
+        exp = pl_pc * ( parameters["initial_PI_slope"] / Vm ) * irrad_at_depth     # Stays like this for Platt
+        if parameters["light_limitation"] == "geider":  # scale by temperature and nutrient limitation factors for Geider
+            exp = exp / ( phyto.temp_regulation_factor * phyto.nutrient_limitation_factor )
 
         light_limitation = 1. - np.exp(-exp)
 
-    elif parameters["light_limitation"] == "smith": # Smith (1936)
+    # -------------------------------------------------------------------------------------------------
+    # Smith (1936)
+    # -------------------------------------------------------------------------------------------------
+    elif parameters["light_limitation"] == "smith":
         # Evans & Parslow (1985) formulation
         num = Vm * parameters["initial_PI_slope"] * irrad
         den = np.sqrt((Vm**2) + ((parameters["initial_PI_slope"]*irrad)**2))
         
         light_limitation = num/(den + 1E-20)
 
-        # Anderson et al. (2015) formulation
-        # coeff = Vm / ( k_PAR * mixed_layer_depth )
-        # numerator = ( parameters["initial_PI_slope"] * surface_PAR ) + np.sqrt( ( Vm ** 2 ) + ( ( parameters["initial_PI_slope"] * surface_PAR) ** 2 ) )
-        # denominator = ( parameters["initial_PI_slope"] * irrad ) + np.sqrt( ( Vm ** 2 ) + ( ( parameters["initial_PI_slope"] * irrad ) ** 2 ) )
-        
-        # light_limitation = coeff * np.log(numerator/denominator)
-
-    return exp, irr, light_limitation
+    return exp, irrad_at_depth, light_limitation
 
 
 def max_growth_rate(parameters, temperature):
     """
     Defiition:: Calculates the temperature-dependent maximum phytoplankton grwoth rate, Vm
     """
-    Vm = parameters["a"] * ( parameters["b"] ** ( parameters["c"] * temperature ) )
+    if parameters["type"] == "base_b":
+        Vm = parameters["a"] * ( parameters["b"] ** ( parameters["c"] * temperature ) )
+    elif parameters["type"] == "standard":
+        Vm = parameters["base_growth_rate"] * np.exp(parameters["eppley_coeff"] * temperature)
 
     return Vm
 
@@ -90,7 +113,7 @@ def irradiance(eps_PAR, surface_PAR, depth, k_PAR):
     eps_PAR = fraction of photosynthetically available radiation
     0.217 = conversion from Einstein to Watts
     """
-    # irradiance = ( surface_PAR * eps_PAR / 0.217) * np.exp( -k_PAR * depth)
+
     irradiance = surface_PAR * eps_PAR / 0.217
 
     return irradiance
@@ -103,6 +126,13 @@ def nutrient_limitation(nutrient, half_sat):
     nutrient_limitation_factor = nutrient / (half_sat + nutrient + 1.E-20)
     
     return nutrient_limitation_factor
+
+
+def monod(nutrient, half_sat, exponent):
+
+    limitation_factor = np.power(nutrient, exponent) / ( np.power(nutrient, exponent) + np.power(half_sat, exponent) + 1.E-20)
+
+    return limitation_factor
 
 # def nutrient_limitation(self, tracers):
 #     """

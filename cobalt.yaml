@@ -1,0 +1,498 @@
+base_element: n
+
+tracers:
+  o2:
+    long_name: oxygen
+    composition:
+      o:
+    parameters:
+
+  no3:
+    long_name: nitrate
+    type: inorganic
+    composition:
+      n:                                  # [mmol N / m^3]
+    parameters:
+      temp_limited: True
+
+  nh4:
+    long_name: ammonium
+    type: inorganic
+    composition:
+      n:                                # [mmol N / m^3]
+    parameters:
+      temp_limited: True
+
+  po4:
+    long_name: phosphate
+    type: inorganic
+    composition:
+      p:                                # [mmol P / m^3]
+    parameters:
+      temp_limited: False
+
+  sio4:
+    long_name: silicate
+    type: inorganic
+    composition:
+      si: 
+    parameters:
+      temp_limited: False
+  
+  fe:
+    long_name: dissolved iron
+    type: inorganic
+    composition:
+      fe:                                # [nmol Fe / m^3]
+    parameters:
+      temp_limited: False
+
+  bac1:
+    long_name: bacteria
+    type: bacteria
+    composition:
+      c: 
+      n: 
+      p: 
+    parameters:
+      nutrient_limitation:
+        colimitation: minimum           # mininimum, product, or sum of all limiting nutrients
+        
+      oxygen_inhibition:
+        function: monod
+        half_sat: 8.0E-06               # [mol O2 / kg]
+        exponent: 4.                    # optional: Hill exponent for Monod function (default to 1. if not included)
+        min_o2: 0.8E-06                 # optional: minimum oxygen concentration for determining aerobic/anerobic respiration [mol O2 / kg]
+      temperature_regulation:
+        function: eppley                # arrhenius, eppley, or q10
+        coefficient: 0.063
+        base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
+
+  phyto1:
+    long_name: small phytoplankton
+    type: phytoplankton
+    composition:
+      c:
+      n:                                # [mmol N / m^3]
+      p:
+      chl:
+      fe:                             # [nmol Fe / m^3]
+    parameters:
+      light_attenuation: 0.03
+      stoichometry:
+        constituents: ["c","n","p","chl","fe"]
+        redfield: 
+      nutrient_limitation:
+        colimitation: minimum           # mininimum, product, or sum of all limiting nutrients
+        no3:
+          type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod               # monod or droop nutrient limitation types
+          nh4_inihibited: True          # flag to include additional scaling for no3 limitation
+          half_sat: 0.5 # μmol / kg
+          exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+        nh4:
+          type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod
+          half_sat: 0.01 # μmol / kg
+          exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+        po4:
+          type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod
+          half_sat: 0.05 # μmol / kg
+          exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+        fe:
+          type: internal                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod
+          half_sat: 0.1 # nmol / kg
+          exponent: 2.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+      temperature_regulation:
+        function: eppley                # arrhenius, eppley, or q10
+        coefficient: 0.063
+        base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
+
+  phyto2:
+    long_name: large phytoplankton
+    type: phytoplankton
+    composition:
+      c:
+      n:                                # [mmol N / m^3]
+      p:
+      chl:
+      fe:                             # [nmol Fe / m^3]
+      si:                               # [mmol Si / m^3]
+      parameters:
+        light_attenuation: 0.03
+        stoichometry:
+          constituents: ["c","n","p","chl","fe","si"]
+          redfield: 
+        nutrient_limitation:
+          colimitation: minimum           # mininimum, product, or sum of all limiting nutrients
+          no3:
+            type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+            function: monod               # monod or droop nutrient limitation types
+            nh4_inihibited: True          # flag to include additional scaling for no3 limitation
+            half_sat: 2.5 # μmol / kg
+            exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+          nh4:
+            type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+            function: monod
+            half_sat: 0.05 # μmol / kg
+            exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+          po4:
+            type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+            function: monod
+            half_sat: 0.05 # μmol / kg
+            exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+          fe:
+            type: internal                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+            function: monod
+            half_sat: 0.5 # nmol / kg
+            exponent: 2.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+          si:
+            type: external
+            function: monod
+            half_sat: 2. # μmol / kg
+            exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+        temperature_regulation:
+          function: eppley                # arrhenius, eppley, or q10
+          coefficient: 0.063
+          base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
+  
+  phyto3:
+    long_name: diazotrophs
+    type: phytoplankton
+    composition:
+      c:
+      n:                                # [mmol N / m^3]
+      p:
+      chl:
+      fe:                              # [nmol Fe / m^3]
+    parameters:
+      light_attenuation: 0.03
+      stoichometry:
+          constituents: ["c","n","p","chl","fe"]
+          redfield: 
+      nutrient_limitation:
+        colimitation: minimum           # mininimum, product, or sum of all limiting nutrients
+        no3:
+          type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod               # monod or droop nutrient limitation types
+          nh4_inihibited: True          # flag to include additional scaling for no3 limitation
+          half_sat: 5 # μmol / kg
+          exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+        nh4:
+          type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod
+          half_sat: 0.1 # μmol / kg
+          exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+        po4:
+          type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod
+          half_sat: 0.05 # μmol / kg
+          exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+        fe:
+          type: internal                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod
+          half_sat: 0.5 # nmol / kg
+          exponent: 2.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+      oxygen_inhibition:
+        half_sat: 30 # μmol / kg
+        exponent: 4.                    # optional: Hill exponent for Monod function (default to 1. if not included)
+      temperature_regulation:
+        function: eppley                # arrhenius, eppley, or q10
+        coefficient: 0.063
+        base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
+
+  zoo1:
+    long_name: small zooplankton
+    type: zooplankton
+    composition:
+      c: 
+      n:                                # [mmol N / m^3]
+      p: 
+      fe: 
+      si: 
+    parameters:
+      temperature_regulation:
+        function: eppley                # arrhenius, eppley, or q10
+        coefficient: 0.063
+        base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
+
+  zoo2:
+    long_name: medium zooplankton
+    type: zooplankton
+    composition:
+      c: 
+      n:                                # [mmol N / m^3]
+      p: 
+      fe: 
+      si: 
+    parameters:
+      temperature_regulation:
+        function: eppley                # arrhenius, eppley, or q10
+        coefficient: 0.063
+        base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
+
+  zoo3:
+    long_name: large zooplankton
+    type: zooplankton
+    composition:
+      c: 
+      n:                                # [mmol N / m^3]
+      p: 
+      fe: 
+      si: 
+    parameters:
+      temperature_regulation:
+        function: eppley                # arrhenius, eppley, or q10
+        coefficient: 0.063
+        base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
+
+  dom1:
+    long_name: dissolved organic matter
+    type: detritus
+    composition:
+      c:                             # [mmol C / m^3]
+      n:                               # [mmol N / m^3]
+      p:                             # [mmol P / m^3]
+      fe:                             # [nmol Fe / m^3]
+    parameters:
+      light_attenuation: 0.
+
+  pom1:
+    long_name: particulate organic matter
+    type: detritus
+    composition:
+      c:                              # [mmol C / m^3]
+      n:                                # [mmol N / m^3]
+      p:                             # [mmol P / m^3]
+      fe:                             # [nmol Fe / m^3]
+      caco3:                          # [mmol C / m^3]
+      si:                               # [mmol Si / m^3]
+    parameters:
+      light_attenuation: 0.
+
+# -------------------------------------------------------------------------------------------------
+parameters:
+  constants:
+    einstein_to_watts: 0.217
+
+  environment:
+    PAR_frac: 0.45
+    light_attenuation_water: 0.04       # [1/m]
+    latitude: 0.0
+    forcing: seasonal_cycling
+    seasonal:
+      summer_mld: 10.                   # [m]
+      winter_mld: 40.                   # [m]
+      summer_salt: 36.5                 # [psu]
+      winter_salt: 37.                  # [psu]
+      summer_sun: 300.0                 # [W / m^2]
+      winter_sun: 20.0                  # [W / m^2]
+      summer_temp: 30.                  # [°C]
+      winter_temp: 10.                  # [°C]
+      summer_wind: 2.                   # [m/s]
+      winter_wind: 6.                   # [m/s]
+    temp_dependence:
+      type: arrhenius
+      ref_temp: 303.15                  # [K]
+      coeff: -4000.
+    light_dependence:
+      PAR_frac: 0.45                    # [-]
+      light_attenuation_water: 0.04     # [1/m]
+
+    # temp_dependence:
+    #   type: q10
+    #   base_temp: 10.
+
+  simulation:
+    latitude: 0.0
+    num_days: 730
+    timestep: 360.0
+
+  water_column:
+    column_depth: 5.0
+    num_layers: 1
+
+# -------------------------------------------------------------------------------------------------
+reactions:
+
+  # Nutrient Uptake/Release - Bacteria
+  - type: uptake_release
+    consumed:
+      nh4: [n]
+    produced:
+      bac1: [n]
+    parameters:
+
+  - type: uptake_release
+    consumed:
+      po4: [p]
+    produced:
+      bac1: [p]
+    parameters:
+
+  # Nutrient Uptake - Small Phytoplankton (phyto1)
+  - type: uptake
+    consumed:
+      no3: [n]
+      nh4: [n]
+    produced:
+      phyto1: [n]
+    parameters:
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto1: [p]
+    parameters:
+
+  - type: uptake
+    consumed:
+      fe: [fe]
+    produced:
+      phyto1: [fe]
+    parameters:
+
+  # Nutrient Uptake - Large Phytoplankton (phyto2)
+  - type: uptake
+    consumed:
+      no3: [n]
+      nh4: [n]
+    produced:
+      phyto2: [n]
+    parameters:
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto2: [p]
+    parameters:
+
+  - type: uptake
+    consumed:
+      fe: [fe]
+    produced:
+      phyto2: [fe]
+    parameters:
+
+  - type: uptake
+    consumed:
+      sio4: [si]
+    produced:
+      phyto2: [si]
+    parameters:
+
+  # Nutrient Uptake - Diazotrophs (phyto3)
+  - type: uptake
+    consumed:
+      no3: [n]
+      nh4: [n]
+    produced:
+      phyto3: [n]
+    parameters:
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto3: [p]
+    parameters:
+
+  - type: uptake
+    consumed:
+      fe: [fe]
+    produced:
+      phyto3: [fe]
+    parameters:
+
+  # Photosynthesis
+  - type: photosynthesis
+    consumed:
+      phyto1: [n]
+    produced:
+    parameters:
+      eps_PAR: 0.4
+      light_limitation: geider
+      light_location: integrated
+      initial_PI_slope: 2.4E-05     # [(mg C . m^2) / (mg Chl μE)]
+      max_photo_rate: 1.25          # [1/d]
+      theta_max: 0.03               # [g Chl / g C]
+      theta_min: 0.002              # [g Chl / g C]
+
+  - type: photosynthesis
+    consumed:
+      phyto2: [n]
+    produced:
+    parameters:
+      eps_PAR: 0.4
+      light_limitation: geider
+      light_location: integrated
+      initial_PI_slope: 0.8E-05     # [(mg C . m^2) / (mg Chl μE)]
+      max_photo_rate: 1.25          # [1/d]
+      theta_max: 0.05               # [g Chl / g C]
+      theta_min: 0.002              # [g Chl / g C]
+
+  - type: photosynthesis
+    consumed:
+      phyto3: [n]
+    produced:
+    parameters:
+      eps_PAR: 0.4
+      light_limitation: geider
+      light_location: integrated
+      initial_PI_slope: 0.8E-05     # [(mg C . m^2) / (mg Chl μE)]
+      max_photo_rate: 0.5           # [1/d]
+      theta_max: 0.03               # [g Chl / g C]
+      theta_min: 0.002              # [g Chl / g C]
+
+  # Phytoplankton Respiration
+  - type: respiration
+    consumed:
+      phyto1: [n]
+      o2: [o]
+    produced:
+      nh4: [n]
+    parameters:
+      activity_respiration_frac: 0.05   # [-]
+      basal_respiration_rate: 0.03      # [1/d]
+      convert_o2: 7.375                 # [mol O2 / mol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
+
+  - type: respiration
+    consumed:
+      phyto2: [n]
+      o2: [o]
+    produced:
+      nh4: [n]
+    parameters:
+      activity_respiration_frac: 0.05   # [-]
+      basal_respiration_rate: 0.05      # [1/d]
+      convert_o2: 7.375                 # [mol O2 / mol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
+
+  - type: respiration
+    consumed:
+      phyto3: [n]
+      o2: [o]
+    produced:
+      nh4: [n]
+    parameters:
+      activity_respiration_frac: 0.05   # [-]
+      basal_respiration_rate: 0.05      # [1/d]
+      convert_o2: 7.375                 # [mol O2 / mol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
+
+  # Bacteria Respiration
+  - type: respiration
+    consumed:
+      bac1: [n]
+      o2: [o]
+    produced:
+      nh4: [n]
+    parameters:
+      respiration_rate: 0.0075          # [1/d]
+      convert_o2: 7.375                 # [mol O2 / mol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
+      min_o2: 0.8E-06                   # [mol O2 / kg] -- minimum oxygen concentration for determining aerobic/anerobic respiration
+
+
+  # Bacteria Growth
