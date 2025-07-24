@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 from functions.seasonal_cycling import *
-from functions.other_functions import concentration_ratio, tracer_elements
+from functions.other_functions import concentration_ratio, monod, tracer_elements
 
 class Bacteria():
     """
@@ -108,5 +108,27 @@ class Bacteria():
     def uptake():
         pass
 
-    def bac():
+    def bac(self, iter, tracers):
+        
+        # Calculate oxygen limitation factor (if necessary)
+        if "oxygen_inhibition" in self.__dict__:
+            if "min_o2" in self.oxygen_inhibition:
+                o2 = np.maximum(tracers["o2"].conc[...,iter] , self.oxygen_inhibition["min_o2"] * np.ones_like(tracers["o2"].conc[...,iter]))
+            self.oxy_limitation_factor = monod(o2, self.oxygen_inhibition["half_sat"], self.oxygen_inhibition["exponent"])
+
         pass
+
+    def respiration(self, iter, base_element, parameters, c, p, tracers):
+
+        # Locate index of base element
+        index = self.composition.index(base_element)
+
+        # Get concentration of base element
+        bac = tracers[self.abbrev].conc[index[iter]]
+
+        # Calculate respiration rate
+        respiration = self.temp_regulation_rator * parameters["respiration_rate"] * bac
+        
+        # Update d_dt
+        self.d_dt[index] -= respiration
+        tracers[p].d_dt += respiration
