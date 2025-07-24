@@ -3,16 +3,16 @@ from matplotlib import pyplot as plt
 import os
 
 # Folder path
-folder = os.getcwd() + '/tests/bfm17/0522'
+folder = os.getcwd() + '/tests/bfm17/ooi'
 
 # Load solution
-solution = np.load("bfm17-0522-fdm.npz", allow_pickle=True)
+solution = np.load("bfm17-OOI.npz", allow_pickle=True)
 # conc = solution["conc"]     # concentratrion matrix
 conc = solution["concentration"]     # concentratrion matrix
 time = solution["time"]     # time array
 
 # Load tracer indices
-indices = np.load("tracer_indices_bfm17-0522.npz")
+indices = np.load("tracer_indices_bfm17-OOI.npz")
 tracer_indices = {}
 for file in indices.files:
     tracer_indices[file] = list(indices[file])

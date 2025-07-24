@@ -1,0 +1,445 @@
+# Inital concentrations and climatological data (max/min values for seasonal cycling) obtained from 
+# https://dataexplorer.oceanobservatories.org/#ooi/array/CE/subsite/CE04OSSM/node/CE04OSSM-SB} between Jan 2020 and Jan 2025.
+
+# Initial Conditions:
+#   Provided for Dissolved Oxygen (O2), Nitrate (NO3), and Chloprophyll-a (Phytoplankton consitutent).
+#   Phytoplankton, Zooplankton, and Detrital pools extrapolated from chlorophyll-a (provided) using BFM17 initial concentration ratios.
+#   Ammonium (NH4) and Phosphate (PO4) extrapolated from Nitrate (provided) using BFM17 initial concentration ratios.
+#   Reduction equivalents (HS-) set to 1.0 [mmol S / m^3] which was used in BFM17
+
+#
+
+base_element: c                             # [mg C / m^3]
+
+tracers:
+  o2:
+    long_name: oxygen
+    type: inorganic
+    composition:
+      o: 280.                               # [mmol O / m^3]
+    parameters:
+      temp_limited: False
+
+  no3:
+    long_name: nitrate
+    type: inorganic
+    composition:
+      n: 7.                                 # [mmol N / m^3]
+    parameters:
+      temp_limited: True
+      q10: 2.367
+
+  nh4:
+    long_name: ammonium
+    type: inorganic
+    composition:
+      n: 0.42                               # [mmol N / m^3]
+    parameters:
+      temp_limited: True
+      q10: 2.367
+
+  po4:
+    long_name: phosphate
+    type: inorganic
+    composition:
+      p: 0.42                               # [mmol P / m^3]
+    parameters:
+      temp_limited: False
+
+  hs:
+    long_name: reduction equivalents
+    type: inorganic
+    composition:
+      s: 1.                                 # [mmol S / m^3]
+    parameters:
+      temp_limited: False
+
+  phyto1:
+    long_name: diatoms
+    type: phytoplankton
+    composition:                            # element : initial concentration
+      c: 56.25                              # [mg C / m^3]
+      n: 0.70875                            # [mmol N / m^3]
+      p: 0.0442125                          # [mmol P / m^3]
+      chl: 0.9                              # [mg Chl / m^3]
+    parameters:
+      # nutrient_limitation: minimum    # mininimum, product, or sum of all limiting nutrients
+      # nutrient_limitation_type: internal  # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+      temp_limited: True
+      q10: 2.0
+      nutrient_limitation:  
+        type: internal                      # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+        colimitation: minimum               # mininimum, product, or sum of all limiting nutrients
+        nutrients: ["no3", "po4"]
+        max_quota: [0.025, 2.5E-03]
+        min_quota: [6.873E-03, 4.29E-04]
+        opt_quota: [1.26E-02, 7.86E-04]
+      cell_quota:
+        constituents: ["c","n","p","chl"]
+        max: [1., 0.025, 2.5E-03, 0.016]
+        min: [1., 6.873E-03, 4.29E-04, 0.016]
+        opt: [1., 1.26E-02, 7.86E-04, 0.016]
+      light_attenuation: 0.03               # [m^2 / mg Chl]
+
+  zoo1:
+    long_name: mesozooplankton
+    type: zooplankton
+    composition:                            # element : initial concentration
+      c: 56.25                              # [mg C / m^3]
+      n: 0.939375                           # [mmol N / m^3]
+      p: 0.1040625                          # [mmol P / m^3]
+    parameters:
+      assimilation_efficiency: 0.5
+      ingestion_efficiency: 0.25
+      cell_quota:
+        constituents: ["c","n","p"]
+        opt: [1., 1.67E-02, 1.85E-03]
+      grazing_preferences: 
+        phyto1: 1.0
+      temp_limited: True
+      q10: 2.0
+      oxygen_limited: True
+
+  dom1:
+    long_name: dissolved organic matter
+    type: detritus
+    composition:
+      c: 56.25                              # [mg C / m^3]
+      n: 0.70875                            # [mmol N / m^3]
+      p: 0.04422375                         # [mmol P / m^3]
+    parameters:
+      light_attenuation: 0.0                # [m^2 / mg C]
+
+  pom1:
+    long_name: particulate organic matter
+    type: detritus
+    composition:                            # element : initial concentration
+      c: 56.25                              # [mg C / m^3]
+      n: 0.70875                            # [mmol N / m^3]
+      p: 0.04422375                         # [mmol P / m^3]
+    parameters:
+      light_attenuation: 1.0E-04            # [m^2 / mg C]
+
+# -------------------------------------------------------------------------------------------------
+parameters:
+  constants:
+    einstein_to_watts: 0.217
+
+  environment:
+    base_temp: 10.0
+    summer_mld: 10.0
+    winter_mld: 40.0
+    summer_salt: 30.7
+    winter_salt: 32.5
+    summer_sun: 300.0
+    winter_sun: 40.0
+    summer_temp: 16.
+    winter_temp: 10.
+    summer_wind: 4.5
+    winter_wind: 8.75
+    PAR_frac: 0.4
+    light_attenuation_water: 0.0435        # [1/m]
+    latitude: 0.0
+
+  simulation:
+    latitude: 0.0
+    num_days: 730
+    timestep: 360.0
+
+  water_column:
+    column_depth: 5.0
+    num_layers: 1
+
+# -------------------------------------------------------------------------------------------------
+reactions:
+  - type: chlorophyll_synthesis
+    consumed:
+    produced:
+      phyto1: [chl]
+    parameters:
+      eps_PAR: 0.4                        # [-]
+      initial_PI_slope: 1.52E-05
+      chl_quota: 0.016                    # [mg Chl / mg C]
+      chl_relax_rate: 0.            # [(mg C . m^2) / (mg Chl μE)]
+      optimal_Epar_Ek: 0.0
+      max_photo_rate: 1.6                 # [1/d]
+      light_attenuation_water: 0.0435     # [1/m]
+      light_attenuation_phyto: 0.03       # [m^2 / mg Chl]
+
+  # - type: egestion
+  #   consumed:
+  #     zoo1: [c,n,p]
+  #   produced:
+  #     dom1: [c,n,p]
+  #   parameters:
+  #     partition: [0.60,0.72,0.832]        # c,n,p [-]
+
+  # - type: egestion
+  #   consumed:
+  #     zoo1: [c,n,p]
+  #   produced:
+  #     pom1: [c,n,p]
+  #   parameters:
+  #     half_sat_oxygen: 0.5                # [mmol O2 / m^3]
+  #     partition: [0.40,0.28,0.168]        # c,n,p [-]
+
+  - type: excretion
+    consumed:
+      zoo1: [n]
+    produced:
+      nh4: [n]
+    parameters:
+      function: grazing
+      optimal_nutrient_quota: 0.0167      # [mmol N / mg C]
+
+  - type: excretion
+    consumed:
+      zoo1: [p]
+    produced:
+      po4: [p]
+    parameters:
+      function: grazing
+      optimal_nutrient_quota: 1.85E-03    # [mmol P / mg C]
+      # optimal_nutrient_quota: 0.000786
+
+  - type: excretion
+    consumed: 
+      zoo1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      function: grazing
+      assimilation_efficiency: 0.25
+      ingestion_efficiency: 0.5
+      partition: [0.60,0.72,0.832]        # c,n,p [-]
+
+  - type: excretion
+    consumed: 
+      zoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      function: grazing
+      assimilation_efficiency: 0.25
+      ingestion_efficiency: 0.5
+      partition: [0.40,0.28,0.168]        # c,n,p [-]
+
+  - type: exudation
+    consumed:
+      phyto1: [c]
+    produced:
+      dom1: [c]
+    parameters:
+      excreted_fraction: 0.05             # [-]
+
+  - type: grazing
+    consumed:
+      phyto1: [c,n,p,chl]
+    produced:
+      zoo1: [c,n,p]
+    parameters:
+      function: holling-2
+      ingestion_type: feeding_threshold
+      feeding_threshold: 50.0
+      max_grazing_rate: 2.0               # [1/d]
+      half_sat_grazing: 200.0             # [mg C / m^3]
+
+  - type: gross_primary_production
+    consumed:
+    produced:
+      phyto1: [c]
+      o2: [o]
+    parameters:
+      mw_carbon: 12.0
+
+  - type: lysis
+    consumed:
+      phyto1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      extra_lysis_rate: 0.0               # [1/d]
+      half_sat_stress_lysis: 0.1
+      half_sat_extra_lysis: 0.0
+      max_stress_lysis_rate: 0.05         # [1/d]
+      om_type: dissolved
+
+  - type: lysis
+    consumed:
+      phyto1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      extra_lysis_rate: 0.0               # [1/d]
+      half_sat_stress_lysis: 0.1
+      half_sat_extra_lysis: 0.0
+      max_stress_lysis_rate: 0.05         # [1/d]
+      om_type: particulate
+
+  - type: mortality
+    consumed:
+      zoo1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      oxygen_limited: True
+      half_sat_oxygen: 0.5                # [mmol O2 / m^3]
+      mortality_rate: [0.0,0.0]          # linear [1/d], quadratic [1/d^2]
+      mortality_rate_oxy: 0.25            # [1/d]
+      partition: [0.60,0.72,0.832]        # c,n,p   [-]
+
+  - type: mortality
+    consumed:
+      zoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      oxygen_limited: True
+      half_sat_oxygen: 0.5                # [mmol O2 / m^3]
+      mortality_rate: [0.0,0.0]          # linear [1/d], quadratic [1/d^2]
+      mortality_rate_oxy: 0.25            # [1/d]
+      partition: [0.40,0.28,0.168]        # c,n,p   [-]
+
+  - type: nitrification
+    consumed:
+      nh4: [n]
+      o2: [o]
+    produced: 
+      no3: [n]
+    parameters:
+      half_sat_oxygen: 10.0               # [mmol O2 / m^3]
+      nitrification_rate: 0.01            # [1/d]
+      nitrification_stoic_coeff: 2.0
+
+  - type: photosynthesis
+    consumed:
+      phyto1: [c]
+    produced:
+    parameters:
+      eps_PAR: 0.4
+      light_limitation: platt
+      light_location: integrated
+      light_attenuation_water: 0.0435
+      light_attenuation_phyto: 0.03
+      initial_PI_slope: 1.52E-05     # [(mg C . m^2) / (mg Chl μE)]
+      max_photo_rate: 1.6                 # [1/d]
+
+  - type: reaeration
+    consumed:
+    produced:
+      o2: [o]
+    parameters:
+      d: 0.31
+      k1: 1953.4
+      k2: 128.0
+      k3: 3.9918
+      k4: 0.050091
+      schmidt: 660.0
+
+  - type: remineralization
+    consumed:
+      dom1: [c]
+      o2: [o]
+    produced:
+    parameters:
+      remineralization_rate: 0.3          # [1/d]
+      mw_carbon: 12.0
+
+  - type: remineralization
+    consumed:
+      dom1: [n]
+    produced:
+      nh4: [n]
+    parameters:
+      remineralization_rate: 0.3          # [1/d]
+
+  - type: remineralization
+    consumed:
+      dom1: [p]
+    produced:
+      po4: [p]
+    parameters:
+      remineralization_rate: 0.25         # [1/d]
+
+  - type: remineralization
+    consumed:
+      pom1: [c]
+      o2: [o]
+    produced:
+    parameters:
+      remineralization_rate: 0.3          # [1/d]
+      mw_carbon: 12.0
+
+  - type: remineralization
+    consumed:
+      pom1: [n]
+    produced:
+      nh4: [n]
+    parameters:
+      remineralization_rate: 0.3          # [1/d]
+
+  - type: remineralization
+    consumed:
+      pom1: [p]
+    produced:
+      po4: [p]
+    parameters:
+      remineralization_rate: 0.3          # [1/d]
+
+  - type: reoxidation
+    consumed:
+      hs: [s]
+      o2: [o]
+    produced:
+    parameters:
+      half_sat_oxygen: 10.0               # [mmol O2 / m^3]
+      reoxidation_rate: 0.05              # [1/d]
+      reoxidation_stoic_coeff: 0.5        # [mmol HS- / mmol O2]
+
+  - type: respiration
+    consumed:
+      phyto1: [c]
+      o2: [o]
+    produced:
+    parameters:
+      activity_respiration_frac: 0.05     # [-]
+      basal_respiration_rate: 0.05        # [1/d]
+      mw_carbon: 12.0
+  
+  - type: respiration
+    consumed:
+      zoo1: [c]
+      o2: [o]
+    produced:
+    parameters:
+      respiration_rate: 0.02              # [1/d]
+      mw_carbon: 12.0
+
+  - type: uptake
+    consumed:
+      no3: [n]
+      nh4: [n]
+    produced:
+      phyto1: [n]
+      dom1: [n]
+    parameters:
+      half_sat_nh4_preference: 1.0
+      half_sat_nh4_uptake: 1.5            # [mmol N-NH4 / m^3]
+      luxury_storage: 1.5
+      max_photo_rate: 1.6                 # [1/d]
+      specific_affinity: 0.025            # [m^3 / (mg C . d)]
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto1: [p]
+      dom1: [p]
+    parameters:
+      luxury_storage: 1.0
+      max_photo_rate: 1.6                 # [1/d]
+      specific_affinity: 0.0025           # [m^3 / (mg C . d)]
+            
+
+  
+  

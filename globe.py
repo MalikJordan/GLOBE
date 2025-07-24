@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 #     check_file = os.path.exists(file)
 #     first_check = False
 # file = 'bfm17.yaml'
-file = 'bfm17-matlab.yaml'
+file = 'bfm17-OOI.yaml'
 file_path = os.getcwd() + '/' + file
 base_element, parameters, reactions, tracers = import_model(file_path)
 
@@ -49,8 +49,8 @@ for t in tracers:
 
 concentration = np.array(concentration,dtype=float)
 
-np.savez('bfm17-0522-fdm.npz',concentration=concentration,time=parameters["simulation"]["time"])
-np.savez('tracer_indices_bfm17-0522.npz',**tracer_indices)
+np.savez('bfm17-OOI.npz',concentration=concentration,time=parameters["simulation"]["time"])
+np.savez('tracer_indices_bfm17-OOI.npz',**tracer_indices)
 
 print('Simulation complete.')
 
