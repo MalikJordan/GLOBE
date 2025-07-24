@@ -112,8 +112,9 @@ class Bacteria():
         
         # Calculate oxygen limitation factor (if necessary)
         if "oxygen_inhibition" in self.__dict__:
-            if "min_o2" in self.oxygen_inhibition:
-                o2 = np.maximum(tracers["o2"].conc[...,iter] , self.oxygen_inhibition["min_o2"] * np.ones_like(tracers["o2"].conc[...,iter]))
+            # Optional minimum concentration for aerobic/anerobic operations
+            if "min_o2" in self.oxygen_inhibition:  o2 = np.maximum(tracers["o2"].conc[...,iter] , self.oxygen_inhibition["min_o2"] * np.ones_like(tracers["o2"].conc[...,iter]))
+            else:   o2 = tracers["o2"].conc[...,iter]
             self.oxy_limitation_factor = monod(o2, self.oxygen_inhibition["half_sat"], self.oxygen_inhibition["exponent"])
 
         pass
@@ -129,6 +130,10 @@ class Bacteria():
         # Calculate respiration rate
         respiration = self.temp_regulation_rator * parameters["respiration_rate"] * bac
         
+        # Aeorbic --> O2 repired
+        if tracers["o2"].conc[...,iter] > self.oxygen_inhibition["min_o2"]:
+            tracers["o2"].d_dt -= respiration * parameters["convert_o2"]
+
         # Update d_dt
         self.d_dt[index] -= respiration
         tracers[p].d_dt += respiration
