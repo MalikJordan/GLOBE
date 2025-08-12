@@ -556,333 +556,42 @@ class Phytoplankton():
             if c == 'po4':  self.uptp[iter] = uptake_to_phyto
 
 
-    # def uptake(self, iter, parameters, c, p, ec, ep, ic, tracers, surface_PAR):
+    def uptake(self, iter, parameters, c, p, ec, ep, ic, tracers):
 
-    #     # light limitation (platt)
-    #     fI = parameters["Vm"] * ( 1. - np.exp(-parameters["alpha"] * surface_PAR / ( parameters["Vm"] + 1.E-20 )) )
+        # Extract dict
+        c = c[0]
+        p = p[0]
+        ec = ec[c]
+        ep = ep[p]
+        ic = ic[c]
+        ip = ip[p]
+
+        # Identify the chemical constituent of the nutrient(s)
+        element = ec[c[0]]
+
+        # Get concentration of constituent in phytoplankton if present
+        index = self.composition.index(element)
+
+        if parameters["strategy"] == "coupled":
+            coupled_uptake = parameters["coupled_uptake"]
+            linked_nutrients = coupled_uptake["link"]
+
+            # Extract uptake rates of linked nutrients
+            uptake_rates = []
+            for nut in linked_nutrients:
+                uptake_rates.append(self.uptake_rates[nut])
+
+            # Calculate total linked uptake rate if multiple linked nutrients are used
+            if len(linked_nutrients) > 1:
+                if coupled_uptake["method"] == "max":       linked_uptake = np.maximum(uptake_rates)
+                elif coupled_uptake["method"] == "min":     linked_uptake = np.minimum(uptake_rates)
+                elif coupled_uptake["method"] == "product": linked_uptake = np.prod(uptake_rates)
+                elif coupled_uptake["method"] == "sum":     linked_uptake = np.sum(uptake_rates)
+
+            uptake = self.nutrient_limitation[c] * linked_uptake * coupled_uptake["conversion"]
+
+        elif parameters["strategy"] == "independent":
+            
+            pass
+        # Get concentration of element being consumed
         
-    #     if len(c) > 1:
-    #         no3 = np.array(tracers["no3"].conc[0][iter])
-    #         nh4 = np.array(tracers["nh4"].conc[0][iter])
-
-    #         f_nh4 = nutrient_limitation(nh4, parameters["kNH4"])
-    #         f_no3 = nutrient_limitation(no3, parameters["kNO3"])
-
-    #         uptake_nh4 = parameters["Vm"] * fI * self.temp_regulation_factor * f_nh4
-    #         uptake_no3 = parameters["Vm"] * fI * self.temp_regulation_factor * (1. - f_nh4) * f_no3
-
-    #         tracers["no3"].d_dt -= uptake_no3
-    #         tracers["nh4"].d_dt -= uptake_nh4
-    #         tracers[p].d_dt += uptake_no3 + uptake_nh4
-
-    #     else:
-    #         nut = np.array(tracers[c[0]]).conc[0][iter]
-
-    #         f_nut = nutrient_limitation(nut, parameters["kN"])
-
-    #         uptake = parameters["Vm"] * fI * self.temp_regulation_factor * f_nut
-
-    #         tracers[c[0]].d_dt -= uptake
-    #         tracers[p[0]].d_dt += ep[p[0]] * uptake
-
-    
-    # def photosynthesis(self)
-
-
-
-
-
-    # def chlorophyll_synthesis(self, iter, parameters, coordinates, surface_PAR):
-    #     """
-    #     Definition:: Calculates chlorophyll synthesis based on gains and losses of phytoplankton carbon
-    #     """
-    #     # Locate indexes of carbon and chlorophyll constituents
-    #     carbon_index = self.composition.index("c")
-    #     chl_index = self.composition.index("chl")
-
-    #     # Get carbon and chlorophyll concentrations
-    #     phyto_c = self.conc[carbon_index][iter]
-    #     phyto_chl = self.conc[chl_index][iter]
-
-    #     # Calculate chlorophyll-carbon ratio
-    #     pl_pc = phyto_chl / phyto_c
-
-    #     # Calculate irradiance
-    #     k_PAR = light_attenuation(parameters, phyto_c)
-    #     irrad = irradiance(parameters["eps_PAR"], surface_PAR, coordinates, k_PAR)
-
-    #     # Calculate chlorophyll regulation (rho_chl)
-    #     factor = ( 1 - parameters["activity_respiration_frac"] ) / ( parameters["initial_PI_slope"] * irrad * phyto_chl + 1E-20 )    # 1E-20 to prevent divide by zero error
-    #     rho_chl = parameters["max_chl_c"] * np.minimum(np.ones_like(phyto_chl), np.maximum(np.zeros_like(phyto_chl),factor * (self.gpp[iter] - self.exu[iter])))
-    #     # rho_chl = parameters["max_chl_c"] * np.minimum(np.ones_like(phyto_chl), factor * (self.gpp[iter] - self.exu[iter]))
-
-    #     # Calculate chlorophyll synthesis
-    #     synthesis = rho_chl * ( 1 - parameters["activity_respiration_frac"] ) * ( self.gpp[iter] - self.exu[iter] ) - pl_pc * ( self.lys[iter] + self.rsp[iter] )
-    #     # synthesis = np.maximum(np.zeros_like(phyto_chl),synthesis)  # synthesis >= 0
-
-    #     # Update d_dt
-    #     self.d_dt[chl_index] += synthesis
-
-
-    
-    # def exudation(self, iter, parameters, c, p, tracers):
-    #     """
-    #     Definition:: Calculates the amount of unassimilated carbon released by phytoplankton into dissolved carbon pool
-    #     """
-    #     # Locate index of carbon constituent 
-    #     carbon_index_phyto = self.composition.index("c")
-    #     carbon_index_om = tracers[p[0]].composition.index("c")
-
-    #     # Exudation
-    #     # exudation = ( parameters["excreted_fraction"] + ( 1 - parameters["excreted_fraction"] ) * ( 1 - self.nutrient_limitation_factor ) ) * self.gpp[iter]
-    #     exudation = ( 1 - parameters["excreted_fraction"] ) * ( 1 - self.nutrient_limitation_factor ) * self.gpp[iter]
-
-    #     # Update d_dt
-    #     tracers[c[0]].d_dt[carbon_index_phyto] -= exudation
-    #     tracers[p[0]].d_dt[carbon_index_om] += exudation
-
-    #     # Update exu variable 
-    #     self.exu[iter] = exudation
-    
-
-    # def gross_primary_production(self, iter, parameters, coordinates, dz, mixed_layer_depth, surface_PAR, temperature, c, p, tracers):
-    #     """
-    #     Definition:: Calculate gross primary production
-    #     """
-        
-    #     # Get carbon concentration
-    #     carbon_index = self.composition.index("c")
-    #     phytoc = self.conc[carbon_index][iter]
-        
-    #     # Locate index of chlorophyll constituent if present
-    #     if "chl" in self.composition:   
-    #         chl_index = self.composition.index("chl")
-    #         phytol = self.conc[chl_index][iter]
-    #         pl_pc = phytol / phytoc     # Chl:C ratio (used in light limitation)
-    #     else:
-    #         pl_pc = 1.
-
-    #     # Calculate growth rate
-    #     if parameters["max_photo_rate"] == "variable":
-    #         Vm = max_growth_rate(parameters, temperature)
-    #     else:
-    #         Vm = parameters["max_photo_rate"]
-
-    #     # Calculate light limitation
-    #     # if parameters["light_limitation"] == "variable":
-    #     if parameters["light_limitation"] in ["monod", "platt", "smith"]:
-    #         # k_PAR = light_attenuation(parameters, phytoc)
-    #         k_PAR = light_attenuation(parameters, phytol)
-    #         irrad = irradiance(parameters["eps_PAR"], surface_PAR, coordinates, k_PAR)
-    #         # fI = light_limitation(parameters, dz, irrad, k_PAR, mixed_layer_depth, surface_PAR, Vm)
-    #         fI = light_limitation(parameters, dz, irrad, k_PAR, pl_pc, Vm)
-    #         # fI = light_limitation(parameters, coordinates, irrad, k_PAR, pl_pc, Vm)
-    #     else:
-    #         fI = parameters["light_limitation"]
-
-    #     if fI == 1:
-    #         x=1
-    #     # Calculate gross primary production
-    #     gpp = Vm * self.temp_regulation_factor * fI * phytoc
-
-    #     # Update d_dt
-    #     self.d_dt[carbon_index] += gpp
-    #     if "o2" in p:   tracers["o2"].d_dt += gpp / parameters["mw_carbon"]
-    #     if "co2"in c:   tracers["co2"].d_dt -= gpp
-
-    #     # Update gpp variable
-    #     self.gpp[iter] = gpp
-
-    #     return irrad
-
-
-    # def lysis(self, iter, parameters, c, p, ec, ep, ic, ip, tracers):
-    #     """
-    #     Definition:: Calculate lysis rate of phytoplankton to organic matter pools
-    #     """
-    #     # Extract dict
-    #     c = c[0]
-    #     p = p[0]
-    #     ec = ec[c]
-    #     ep = ep[p]
-    #     ic = ic[c]
-    #     ip = ip[p]
-    #     tc = np.array(tracers[c].conc[ic][iter])
-    #     tp = np.array(tracers[p].conc[ip][iter])
-        
-    #     # Calculate carbon ratios
-    #     carbon_index = self.composition.index('c')
-    #     if 'n' in self.composition:
-    #         nitrogen_index = self.composition.index('n')
-    #         # nit_carb = self.conc[nitrogen_index] / self.conc[carbon_index]
-    #         nit_carb = np.array(tracers[self.abbrev].conc[nitrogen_index][iter] / tracers[self.abbrev].conc[carbon_index][iter])
-    #     else:
-    #         nit_carb = np.ones_like(tp)
-
-    #     if 'p' in self.composition: 
-    #         phosphorus_index = self.composition.index('p')
-    #         # phos_carb = self.conc[phosphorus_index] / self.conc[carbon_index]
-    #         phos_carb = np.array(tracers[self.abbrev].conc[phosphorus_index][iter] / tracers[self.abbrev].conc[carbon_index][iter])
-    #     else:
-    #         phos_carb = np.ones_like(tp)
-        
-    #     # Calculate fraction of lysis released to dissolved pool
-    #     min_quota = np.minimum(parameters["min_nitrogen_quota"]/(nit_carb + 1.E-20), parameters["min_phosphorus_quota"]/(phos_carb + 1.E-20))
-    #     apportioning_factor = np.minimum(np.ones_like(min_quota), min_quota)
-
-    #     # Calculate nutrient stress limitation
-    #     lim = nutrient_limitation(parameters["nutrient_stress_threshold"], self.nutrient_limitation_factor)
-
-    #     # Calculate lysis rate
-    #     if parameters["type"] == "dissolved": lysis = ( 1 - apportioning_factor ) * ( lim * parameters["max_lysis_rate"] )
-    #     elif parameters["type"] == "particulate": lysis = apportioning_factor * ( lim * parameters["max_lysis_rate"] )
-
-    #     # Calculate concentration ratios
-    #     concentration_ratio(iter, ic, tracers[c])
-    #     concentration_ratio(iter, ip, tracers[p])
-
-    #     # Update d_dt
-    #     tracers[c].d_dt -= ec * tracers[c].conc_ratio * lysis
-    #     tracers[p].d_dt += ep * tracers[p].conc_ratio * lysis
-
-    #     # Update lys variable
-    #     self.lys += tracers[c].conc_ratio[carbon_index] * lysis
-
-
-    # def mortality(self, iter, parameters, c, p, ec, ep, ic, ip, tracers):
-    #     """
-    #     Definition:: Calculates the non-grazing mortality of planktoninc species
-    #                  Lysis is parameterized as a quadratic mortality rate (the carbon constituent of lysis is added to the 'lys' variable for the calculation of net primary production)
-    #     """
-    #     # Extract dict
-    #     c = c[0]
-    #     p = p[0]
-    #     ec = ec[c]
-    #     ep = ep[p]
-    #     ic = ic[c]
-    #     ip = ip[p]
-    #     tc = np.array(tracers[c].conc[ic][iter])
-
-    #     # Calculate mortality rate
-    #     mortality = ( parameters["mortality_rate"][0] * tc ) + ( parameters["mortality_rate"][1] * (tc**2) )
-
-    #     # Temperature regulation
-    #     if self.temp_limited:
-    #         mortality = mortality * self.temp_regulation_factor
-
-    #     # Oxygen limitation
-    #     if "oxygen_limited" in parameters and parameters["oxygen_limited"]:
-    #         fO = nutrient_limitation(tc,parameters["half_sat_oxygen"])
-    #         mortality = mortality * (1 - fO)
-
-    #     # Calculate concentration ratios
-    #     concentration_ratio(iter, ic, tracers[c])
-    #     concentration_ratio(iter, ip, tracers[p])
-
-    #     # Update d_dt
-    #     if "partition" in parameters:   # Mortality can be partitioned between dissolved and particulate detrital pools
-    #         tracers[c].d_dt -= ec * tracers[c].conc_ratio * mortality * parameters["partition"]
-    #         tracers[p].d_dt += ep * tracers[p].conc_ratio * mortality * parameters["partition"]
-
-    #     else:
-    #         tracers[c].d_dt -= ec * tracers[c].conc_ratio * mortality
-    #         tracers[p].d_dt += ep * tracers[p].conc_ratio * mortality
-
-    #     # Update 'lys' variable if phytoplankton contains a carbon constituent
-    #     if "c" in self.composition:
-    #         carbon_index = self.composition.index("c")
-    #         self.lys[iter] += parameters["mortality_rate"][1] * (self.conc[carbon_index][iter]**2)
-        
-
-    # def respiration(self, iter, parameters, c, p, tracers):
-    #     """
-    #     Definition:: Calculates phytoplankton respiration
-    #     """
-    #     # Locate index of carbon constituent
-    #     carbon_index = self.composition.index("c")
-
-    #     # Get carbon concentration
-    #     phyto = self.conc[carbon_index][iter]
-
-    #     # Respiration
-    #     respiration = parameters["respiration_rate"] * self.temp_regulation_factor * phyto + parameters["activity_respiration_frac"] * (self.gpp[iter] - self.exu[iter])
-
-    #     # Update d_dt
-    #     self.d_dt[carbon_index] -= respiration
-    #     if "o2" in c:   tracers["o2"].d_dt -= respiration / parameters["mw_carbon"]
-    #     if "co2" in p:  tracers["co2"].d_dt += respiration
-
-    #     # Update rsp variable
-    #     self.rsp[iter] = respiration
-
-
-    # def uptake(self, iter, parameters, coordinates, dz, mixed_layer_depth, surface_PAR, temperature, c, p, ec, ep, ic, ip, tracers):
-        
-    #     # Extract dict
-    #     c = c[0]
-    #     p = p[0]
-    #     ec = ec[c]
-    #     ep = ep[p]
-    #     ic = ic[c]
-    #     ip = ip[p]
-    #     tc = np.array(tracers[c].conc[ic][iter])
-
-    #     # Get concentration of nutrient in phytoplankton
-    #     nutrient_index = list(ep).index(1.)
-    #     tp = np.array(tracers[p].conc[nutrient_index][iter])
-
-    #     # Get carbon concentration
-    #     if "c" in self.composition:
-    #         carbon_index = self.composition.index("c")
-    #         phytoc = self.conc[carbon_index][iter]
-    #     else:
-    #         phytoc = np.ones_like(tp)
-        
-    #     # Locate index of chlorophyll constituent if present
-    #     if "chl" in self.composition:   
-    #         chl_index = self.composition.index("chl")
-    #         phyto = self.conc[chl_index][iter]
-    #         pl_pc = phyto / phytoc     # Chl:C ratio (used in light limitation)
-    #     else:
-    #         phyto = tp
-    #         pl_pc = 1.
-
-    #     # Calculate growth rate
-    #     if parameters["max_photo_rate"] == "variable":
-    #         Vm = max_growth_rate(parameters, temperature)
-    #     else:
-    #         Vm = parameters["max_photo_rate"]
-        
-    #     # Calculate light limitation
-    #     # if parameters["light_limitation"] == "variable":
-    #     if parameters["light_limitation"] in ["monod", "platt", "smith"]:
-    #         # k_PAR = light_attenuation(parameters, phytoc)
-    #         k_PAR = light_attenuation(parameters, phyto)
-    #         irrad = irradiance(parameters["eps_PAR"], surface_PAR, coordinates, k_PAR)
-    #         # fI = light_limitation(parameters, dz, irrad, k_PAR, mixed_layer_depth, surface_PAR, Vm)
-    #         fI = light_limitation(parameters, dz, irrad, k_PAR, pl_pc, Vm)
-    #     else:
-    #         fI = parameters["light_limitation"]
-
-    #     # Calculate nutrient limitation
-    #     if parameters["nutrient_limitation"] == "variable":
-    #         fN = nutrient_limitation(tc, parameters["half_sat_nutrient"])
-    #     else:
-    #         fN = parameters["nutrient_limitation"]
-        
-    #     # Calculate nutrient uptake
-    #     uptake = Vm * self.temp_regulation_factor * fN * fI * tp
-
-    #     # Calculate concentration ratio
-    #     # concentration_ratio(iter, ic, tracers[c])
-    #     # concentration_ratio(iter, ip, tracers[p])
-        
-    #     # Update d_dt
-    #     tracers[c].d_dt -= np.array(ec) * uptake
-    #     tracers[p].d_dt += ep * uptake
-    #     # tracers[c].d_dt -= ec * tracers[c].conc_ratio * uptake
-    #     # tracers[p].d_dt += ep * tracers[p].conc_ratio * uptake
-        
-    #     return fI
-    
-
