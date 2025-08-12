@@ -384,6 +384,17 @@ reactions:
     produced:
       phyto2: [si]
     parameters:
+      strategy: coupled
+      # "coupled": uptake based on that of different nutrients
+      # "independent": uptake calculated independent of other nutrients
+      coupled_uptake:
+        link: ["no3","nh4"]   # nutrients who's uptake is dependent of
+        method: sum           # Only include if multiple nutrients are linked the total uptake calculated by
+        # "sum": sum of upake rates of linked nutrients
+        # "minimum": minimum uptake rate
+        # "maximum": maximum uptake rate
+        # "product": product of uptake rates of linked nutrients 
+        conversion: 5.        # conversion factor between nutrient being consumed and the linked nutrient [mmol consumed / mmol linked]
 
   # Nutrient Uptake - Diazotrophs (phyto3)
   - type: uptake
@@ -490,6 +501,9 @@ reactions:
     produced:
       nh4: [n]
     parameters:
+      activity_respiration_frac:        # [-]
+      anoxic_respiration_frac:          # [-]
+
       respiration_rate: 0.0075          # [1/d]
       convert_o2: 7.375                 # [mol O2 / mol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
       min_o2: 0.8E-06                   # [mol O2 / kg] -- minimum oxygen concentration for determining aerobic/anerobic respiration
