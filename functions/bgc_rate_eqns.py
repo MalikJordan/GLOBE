@@ -66,57 +66,57 @@ def bgc_rate_eqns(iter, base_element, parameters, tracers):
     # return fI, irrad, nut_lim
 
 
-def bgc_rate_eqns_solveivp(time, concentration):
-    from test_globe import base_element, parameters, tracers, tracer_indices
-    # Extract model paramters
-    environmental_parameters = parameters["environment"]
-    simulation_parameters = parameters["simulation"]
-    water_column_parameters = parameters["water_column"]
-    water_column_parameters = coordinate_system(parameters["water_column"])
+# def bgc_rate_eqns_solveivp(time, concentration):
+#     from test_globe import base_element, parameters, tracers, tracer_indices
+#     # Extract model paramters
+#     environmental_parameters = parameters["environment"]
+#     simulation_parameters = parameters["simulation"]
+#     water_column_parameters = parameters["water_column"]
+#     water_column_parameters = coordinate_system(parameters["water_column"])
 
-    # Seasonal cycling for temperature, salinity, radiation, and mixed layer depth
-    temperature = seasonal_cycling.get_temperature(time, environmental_parameters["winter_temp"], environmental_parameters["summer_temp"])
-    # surface_PAR = seasonal_cycling.get_sunlight(simulation_parameters["time"][iter], environmental_parameters["winter_sun"], environmental_parameters["summer_sun"])
-    surface_PAR = seasonal_cycling.get_irrad(time, environmental_parameters["winter_sun"], environmental_parameters["summer_sun"])
-    mixed_layer_depth = seasonal_cycling.get_mixed_layer_depth(time, environmental_parameters["winter_mld"], environmental_parameters["summer_mld"])
-    salinity = seasonal_cycling.get_salinity(time, environmental_parameters["winter_salt"], environmental_parameters["summer_salt"])
-    wind = seasonal_cycling.get_wind(time, environmental_parameters["winter_wind"], environmental_parameters["summer_wind"])
+#     # Seasonal cycling for temperature, salinity, radiation, and mixed layer depth
+#     temperature = seasonal_cycling.get_temperature(time, environmental_parameters["winter_temp"], environmental_parameters["summer_temp"])
+#     # surface_PAR = seasonal_cycling.get_sunlight(simulation_parameters["time"][iter], environmental_parameters["winter_sun"], environmental_parameters["summer_sun"])
+#     surface_PAR = seasonal_cycling.get_irrad(time, environmental_parameters["winter_sun"], environmental_parameters["summer_sun"])
+#     mixed_layer_depth = seasonal_cycling.get_mixed_layer_depth(time, environmental_parameters["winter_mld"], environmental_parameters["summer_mld"])
+#     salinity = seasonal_cycling.get_salinity(time, environmental_parameters["winter_salt"], environmental_parameters["summer_salt"])
+#     wind = seasonal_cycling.get_wind(time, environmental_parameters["winter_wind"], environmental_parameters["summer_wind"])
 
-    # temperature = seasonal_cycling.get_temperature(simulation_parameters["time"][iter], environmental_parameters["winter_temp"], environmental_parameters["summer_temp"])
-    # # surface_PAR = seasonal_cycling.get_sunlight(simulation_parameters["time"][iter], environmental_parameters["winter_sun"], environmental_parameters["summer_sun"])
-    # surface_PAR = seasonal_cycling.get_irrad(simulation_parameters["time"][iter], environmental_parameters["winter_sun"], environmental_parameters["summer_sun"])
-    # mixed_layer_depth = seasonal_cycling.get_mixed_layer_depth(simulation_parameters["time"][iter], environmental_parameters["winter_mld"], environmental_parameters["summer_mld"])
-    # salinity = seasonal_cycling.get_salinity(simulation_parameters["time"][iter], environmental_parameters["winter_salt"], environmental_parameters["summer_salt"])
-    # wind = seasonal_cycling.get_wind(simulation_parameters["time"][iter], environmental_parameters["winter_wind"], environmental_parameters["summer_wind"])
+#     # temperature = seasonal_cycling.get_temperature(simulation_parameters["time"][iter], environmental_parameters["winter_temp"], environmental_parameters["summer_temp"])
+#     # # surface_PAR = seasonal_cycling.get_sunlight(simulation_parameters["time"][iter], environmental_parameters["winter_sun"], environmental_parameters["summer_sun"])
+#     # surface_PAR = seasonal_cycling.get_irrad(simulation_parameters["time"][iter], environmental_parameters["winter_sun"], environmental_parameters["summer_sun"])
+#     # mixed_layer_depth = seasonal_cycling.get_mixed_layer_depth(simulation_parameters["time"][iter], environmental_parameters["winter_mld"], environmental_parameters["summer_mld"])
+#     # salinity = seasonal_cycling.get_salinity(simulation_parameters["time"][iter], environmental_parameters["winter_salt"], environmental_parameters["summer_salt"])
+#     # wind = seasonal_cycling.get_wind(simulation_parameters["time"][iter], environmental_parameters["winter_wind"], environmental_parameters["summer_wind"])
     
-    # Clip concentration matrix
-    for i in range(0,len(concentration)):
-        concentration[i] = np.maximum(1E-20,concentration[i])
+#     # Clip concentration matrix
+#     for i in range(0,len(concentration)):
+#         concentration[i] = np.maximum(1E-20,concentration[i])
 
-    # Clear previous rates
-    for key in tracers:
-        tracers[key].d_dt = np.zeros_like(tracers[key].d_dt)
+#     # Clear previous rates
+#     for key in tracers:
+#         tracers[key].d_dt = np.zeros_like(tracers[key].d_dt)
     
-    # Calculate bgc rates
-    for key in tracers:
-        if tracers[key].type == "bacteria":
-            pass
-        elif tracers[key].type == "detritus":
-            tracers[key].detritus(concentration, tracer_indices, base_element, tracers)
-        elif tracers[key].type == "inorganic":
-            tracers[key].inorg(concentration, tracer_indices, base_element, environmental_parameters["base_temp"], water_column_parameters["z"], water_column_parameters["dz"], mixed_layer_depth, surface_PAR, temperature, salinity, wind, tracers)
-        elif tracers[key].type == "phytoplankton":
-            tracers[key].phyto(concentration, tracer_indices, base_element, environmental_parameters["base_temp"], water_column_parameters["z"], water_column_parameters["dz"], mixed_layer_depth, surface_PAR, temperature, tracers)
-            # fI, irrad = tracers[key].phyto(iter, base_element, environmental_parameters["base_temp"], water_column_parameters["z"], water_column_parameters["dz"], mixed_layer_depth, surface_PAR, temperature, tracers)
-        elif tracers[key].type == "zooplankton":
-            tracers[key].zoo(concentration, tracer_indices, base_element, environmental_parameters["base_temp"], temperature, tracers)
-            # rsp = tracers[key].zoo(iter, base_element, environmental_parameters["base_temp"], temperature, tracers)
+#     # Calculate bgc rates
+#     for key in tracers:
+#         if tracers[key].type == "bacteria":
+#             pass
+#         elif tracers[key].type == "detritus":
+#             tracers[key].detritus(concentration, tracer_indices, base_element, tracers)
+#         elif tracers[key].type == "inorganic":
+#             tracers[key].inorg(concentration, tracer_indices, base_element, environmental_parameters["base_temp"], water_column_parameters["z"], water_column_parameters["dz"], mixed_layer_depth, surface_PAR, temperature, salinity, wind, tracers)
+#         elif tracers[key].type == "phytoplankton":
+#             tracers[key].phyto(concentration, tracer_indices, base_element, environmental_parameters["base_temp"], water_column_parameters["z"], water_column_parameters["dz"], mixed_layer_depth, surface_PAR, temperature, tracers)
+#             # fI, irrad = tracers[key].phyto(iter, base_element, environmental_parameters["base_temp"], water_column_parameters["z"], water_column_parameters["dz"], mixed_layer_depth, surface_PAR, temperature, tracers)
+#         elif tracers[key].type == "zooplankton":
+#             tracers[key].zoo(concentration, tracer_indices, base_element, environmental_parameters["base_temp"], temperature, tracers)
+#             # rsp = tracers[key].zoo(iter, base_element, environmental_parameters["base_temp"], temperature, tracers)
 
-    # Update rate of change matrix
-    dt = np.zeros_like(concentration)
-    for t in tracers:
-        indices = tracer_indices[t]
-        for i in range(len(indices)):
-            dt[indices[i]] = tracers[t].d_dt[i,...]
+#     # Update rate of change matrix
+#     dt = np.zeros_like(concentration)
+#     for t in tracers:
+#         indices = tracer_indices[t]
+#         for i in range(len(indices)):
+#             dt[indices[i]] = tracers[t].d_dt[i,...]
 
-    return dt
+#     return dt

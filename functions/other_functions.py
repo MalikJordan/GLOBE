@@ -35,7 +35,7 @@ def light_attenuation(abbrev, iter, base_element, light_attenuation_water, trace
 
 
 # def light_limitation(parameters, dz, irrad, k_PAR, mixed_layer_depth, surface_PAR, Vm, pl_pc):
-def light_limitation(phyto, parameters, dz, irrad, k_PAR, Vm):
+def light_limitation(phyto, iter, parameters, dz, irrad, k_PAR, Vm):
     """
     k_PAR = Light Attenuation Coefficient
     surface_PAR = Photosynthetically Active Radiation (PAR) at watetr surface (z = 0)
@@ -147,12 +147,23 @@ def monod(nutrient, half_sat, exponent):
 #     return fN
 
 
-def temperature_regulation(base_temp, temperature, q10):
+# def temperature_dependence(base_temp, temperature, q10, tracer):
+def temperature_dependence(temperature, tracer):
+    
     """
     Definition:: Calculates temperature regulating factor
     """
-    # temp_regulating_factor = np.exp( np.log(q10) * (temperature - base_temp) / base_temp )
-    temp_regulating_factor = q10**((temperature-base_temp)/base_temp)
+    if tracer.temperature_regulation["function"] == "arrhenius":
+        # Convert temperature from Celsius to Kelvin (+273.15)
+        # Universal gas constant (R = 8.314 J mol-1 K-1)
+        temp_regulating_factor = tracer.temperature_regulation["coefficient"] * np.exp(-tracer.temperature_regulation["activation_energy"] / (8.314 * (temperature+273.15)) )
+    
+    elif tracer.temperature_regulation["function"] == "eppley":
+        temp_regulating_factor = np.exp(tracer.temperature_regulation["coefficient"] * temperature)
+    
+    elif tracer.temperature_regulation["function"] == "q10":
+        # temp_regulating_factor = q10**((temperature-base_temp)/base_temp)
+        temp_regulating_factor = tracer.temperature_regulation["coefficient"]**((temperature - tracer.temperature_regulation["base_temp"]) / tracer.temperature_regulation["base_temp"])
 
     return temp_regulating_factor
 

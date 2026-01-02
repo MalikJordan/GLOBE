@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from functions.seasonal_cycling import *
 from functions.other_functions import concentration_ratio, monod, tracer_elements
-
+from fractions import Fraction
 class Bacteria():
     """
     
@@ -14,11 +14,14 @@ class Bacteria():
         self.name = tracer["long_name"]
         self.type = tracer["type"]
 
-         # Nutrient limitation
-        self.nutrients = []
-        self.nutrient_half_sat = []
-        self.nutrient_limitation_type = tracer["parameters"]["nutrient_limitation"]
-        self.nutrient_limitation_factor = 0.
+        # Nutrient limitation
+        self.nutrient_limitation = tracer["parameters"]["nutrient_limitation"]
+        self.nutrient_limitation_factor = {}
+        self.nutrient_colimitation = 0.
+
+        # Temperature regulation
+        self.temperature_regulation = tracer["parameters"]["temperature_regulation"]
+        self.temp_regulation_factor = 1.
 
         # Composition and concentration arrays
         self.composition = []
@@ -39,6 +42,9 @@ class Bacteria():
         self.d_dt = np.zeros_like(conc)
         self.conc_ratio = np.zeros_like(conc)
 
+        # Production
+        self.upt = {}   # Uptake
+
         # Add relevant reactions
         self.reactions = []
         for reac in reactions:
@@ -54,60 +60,6 @@ class Bacteria():
         self.reactions = [item for item in self.reactions if item["type"] == "uptake"] + [item for item in self.reactions if item["type"] != "uptake"]
 
 
-    # def __init__(self, abbrev, composition, iters, long_name, parameters, reactions, type):
-    #     self.name = long_name
-    #     self.type = type
-
-    #      # Nutrient limitation
-    #     self.nutrients = []
-    #     self.nutrient_half_sat = []
-    #     self.nutrient_limitation_type = parameters["nutrient_limitation"]
-    #     self.nutrient_limitation_factor = 0.
-
-    #     # Composition and concentration arrays
-    #     self.composition = []
-    #     conc = []
-    #     if len(composition) < 1:
-    #         sys.exit("Bacteria: Element required for " + long_name + ". Check documentation adn edit input file.")
-    #     else:
-    #         for key in composition:
-    #             available_elements = ['c','n','p']
-    #             if key in available_elements:
-    #                 self.composition.append(key)
-    #                 conc.append(composition[key])
-    #             else:
-    #                 sys.exit("Bacteria: Element '" + key + "' not recognized. Check documentation and edit input file.")
-    #     hold = np.zeros((len(conc),iters))
-    #     hold[...,0] = conc
-    #     self.conc = np.array(hold)
-    #     self.d_dt = np.zeros_like(conc)
-    #     self.conc_ratio = np.zeros_like(conc)
-
-    #     # Add relevant reactions
-    #     self.reactions = []
-    #     for reac in reactions:
-    #         # Add reaction to dictionary
-    #         if "consumed" in reac and reac["consumed"] != None:    consumed = reac["consumed"]
-    #         else:   consumed = {"empty": "empty"}
-    #         if "produced" in reac and reac["produced"] != None:    produced = reac["produced"]
-    #         else:   produced = {"empty": "empty"}
-    #         if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
-    #             self.reactions.append(reac)
-        
-    #     # Reorder reactions (uptake needs to appear first)
-    #     self.reactions = [item for item in self.reactions if item["type"] == "uptake"] + [item for item in self.reactions if item["type"] != "uptake"]
-
-
-    def add_nutrient(self, nutrient,half_sat):
-        self.nutrients.append(nutrient)
-        self.nutrient_half_sat.append(half_sat)
-        
-    def mortality():
-        pass
-
-    def uptake():
-        pass
-
     def bac(self, iter, tracers):
         
         # Calculate oxygen limitation factor (if necessary)
@@ -118,6 +70,188 @@ class Bacteria():
             self.oxy_limitation_factor = monod(o2, self.oxygen_inhibition["half_sat"], self.oxygen_inhibition["exponent"])
 
         pass
+
+
+    def add_nutrient(self, nutrient):
+        """
+        Add nutrients to phytoplankton and append dictionary of uptake rates
+        """
+        self.upt[nutrient] = np.zeros_like(self.conc[0,...],dtype=float)
+        self.nutrient_limitation_factor[nutrient] = np.zeros_like(self.conc[0,...],dtype=float)
+
+    
+    def calculate_nutrient_limitation(self, base_element, iter, tracers):
+        """
+        Definition:: Calculates nutrient limitation factor as either a minimum, product, or sum of all nutrients which limit phytoplankton growth
+        """
+
+        fN = []
+        for key in self.nutrient_limitation:
+            if key != "colimitation":
+                # Get nutrient chemical constituent
+                element = tracers[key].composition[0]
+
+                # Get index of nutrient chemcical constituent in phytoplankton composition dictionary
+                element_index = self.composition.index(element)
+
+                # Get index of nutrient chemcical constituent in cell quota dictionary
+                quota_index = self.cell_quota.index(element)
+                
+                if self.nutrient_limitation[key]["type"] == "internal":
+                    # Calculate nutrient limitation factor
+                    func = ( self.conc_ratio[element_index] - self.cell_quota["min"][quota_index]) / ( self.cell_quota["opt"][quota_index] - self.cell_quota["min"][quota_index] )
+                    
+                    # Ensures nonzero value
+                    func = np.maximum(1.E-20*np.ones_like(func), func)
+
+                    # Update dictionary
+                    self.nutrient_limitation_factor[key] = func
+
+                    # Append fN for colimitation calculation
+                    if key in self.nutrient_limitation["colimitation"]["nutrients"]:
+                        fN.append(func)
+                
+                elif self.nutrient_limitation[key]["type"] == "external":
+                    # Determine if Hill exponent exists for monod function
+                    if "exponent" in self.nutrient_limitation[key]:
+                        exponent = self.nutrient_limitation[key]["exponent"]
+                    else:   # Default to 1. (no scaling)
+                        exponent = 1.
+
+                    # Calculate nutrient limitation factor
+                    func = monod(tracers[key].conc[...,iter], self.nutrient_limitation[key]["half_sat"], exponent)
+                    
+                    # Ensures nonzero value
+                    func = np.maximum(1.E-20*np.ones_like(func), func)
+
+                    # Update dictionary
+                    self.nutrient_limitation_factor[key] = func
+
+                    # Append fN for colimitation calculation
+                    if key in self.nutrient_limitation["colimitation"]["nutrients"]:
+                        fN.append(func)
+
+                else:
+                    sys.exit("Nutrient limitation type not recognized. Check documentation and edit input file.")
+
+        if "colimitation" in self.nutrient_limitation.keys():   # Multiple nutrients available
+            fN = np.array(fN)
+            if self.nutrient_limitation["colimitation"] == "minimum":
+                self.nutrient_colimitation = np.min(fN, axis=0)
+            elif self.nutrient_limitation["colimitation"] == "product":
+                self.nutrient_colimitation = np.prod(fN, axis=0)
+            elif self.nutrient_limitation["colimitation"] == "sum":
+                self.nutrient_colimitation == np.sum(fN,  axis=0)
+            else:
+                sys.exit("Nutrient colimitation not recognized. Check documentation and edit input file.")
+        else:   # Only one nutrient available
+            self.nutrient_colimitation = fN
+
+        
+    def lysis(self, iter, base_element, parameters, c, p, ec, ep, ic, ip, tracers):
+
+        # Extract dict
+        c = c[0]
+        p = p[0]
+        ec = ec[c]
+        ep = ep[p]
+        ic = ic[c]
+        ip = ip[p]
+
+        # Locate index of base element
+        index = self.composition.index(base_element)
+        bac = np.array(tracers[self.abbrev].conc[index][iter])
+
+        lysis = parameters["lysis_rate"] * self.temp_regulation_factor * ( bac**2 )
+
+        # Convert lysis rate (if necessary)
+        if "convert_lysis" in parameters:
+            if parameters["convert_lysis"] == "cell_quota":
+                quota_index = self.nutrient_limitation["nutrients"].index(c)
+                lysis *= self.nutrient_limitation_factor[quota_index]
+            else:
+                if isinstance(parameters["convert_lysis"],(int,float)) and not isinstance(parameters["convert_lysis"],bool):
+                    lysis *= parameters["convert_lysis"]
+                elif isinstance(parameters["convert_lysis"],str):
+                    lysis *= float(Fraction(parameters["convert_lysis"]))
+            
+        
+        # Update d_dt
+        tracers[c].d_dt -= lysis
+
+        # Apply partition to organic matter group (if necessary)
+        if "partition" in parameters:   tracers[p].d_dt += lysis * parameters["partition"]
+        else:                           tracers[p].d_dt += lysis
+
+    def uptake(self, iter, base_element, parameters, c, p, ec, ep, ic, tracers):
+        
+        # Extract dict
+        ec = ec[c]
+        ep = ep[p]
+        ic = ic[c]
+        ip = ip[p]
+
+        # Identify the chemical constituent of the nutrient(s)
+        element = ec[c[0]]
+
+        # Get concentration of constituent in phytoplankton if present
+        if element in self.composition:     element_index = self.composition.index(element)
+
+        if parameters["strategy"] == "coupled":
+            coupled_uptake = parameters["coupled_uptake"]
+            linked_nutrients = coupled_uptake["link"]
+
+            # Extract uptake rates of linked nutrients
+            uptake_rates = []
+            for nut in linked_nutrients:
+                uptake_rates.append(self.uptake_rates[nut])
+
+            # Calculate total linked uptake rate if multiple linked nutrients are used
+            if len(linked_nutrients) > 1:   # use numpy "maximum" to ensure minimum uptake of 0.
+                if coupled_uptake["method"] == "max":       linked_uptake = np.maximum(np.maximum(uptake_rates), np.zeros_like(self.uptake_rates[nut]))
+                elif coupled_uptake["method"] == "min":     linked_uptake = np.maximum(np.minimum(uptake_rates), np.zeros_like(self.uptake_rates[nut]))
+                elif coupled_uptake["method"] == "product": linked_uptake = np.maximum(np.prod(uptake_rates), np.zeros_like(self.uptake_rates[nut]))
+                elif coupled_uptake["method"] == "sum":     linked_uptake = np.maximum(np.sum(uptake_rates), np.zeros_like(self.uptake_rates[nut]))
+
+            if isinstance(parameters["convert_uptake"],(int,float)) and not isinstance(parameters["convert_uptake"],bool):
+                uptake = self.nutrient_limitation_factor[element] * linked_uptake * coupled_uptake["convert_uptake"]
+            elif isinstance(parameters["convert_uptake"],str):
+                uptake = self.nutrient_limitation_factor[element] * linked_uptake * float(Fraction(parameters["convert_uptake"]))
+
+            # Update d_dt
+            tracers[c].d_dt -= np.array(ec) * np.maximum(uptake, np.zeros_like(uptake))
+            if element in self.composition:     self.d_dt[element_index] += np.maximum(uptake, np.zeros_like(uptake))
+
+        elif parameters["strategy"] == "independent":
+            # Get concentration of element in bacterioplankton
+            if element in self.composition:
+                index = self.composition.index(element)
+            else:   # If element doesn't isn't directly resolved, use base element with conversion factor
+                index = self.composition.index(base_element)
+
+            bac = np.array(self.conc[index][iter])
+
+            # Calculate maximum uptake rate
+            max_uptake = (parameters["max_growth_rate"] + parameters["basal_metabolic_rate"]) / parameters["max_growth_efficiency"]
+
+            # Calculate actual uptake
+            uptake = max_uptake * monod(tracers[c].conc[ic][iter], self.nutrient_limitation_factor["dom1"], 1.) * bac
+
+            # Multiply by conversion (if necessary)
+            if "convert_uptake" in parameters:
+                if isinstance(parameters["convert_uptake"],(int,float)) and not isinstance(parameters["convert_uptake"],bool):
+                    uptake *= coupled_uptake["convert_uptake"]
+                elif isinstance(parameters["convert_uptake"],str):
+                    uptake *= float(Fraction(parameters["convert_uptake"]))
+            
+            if self.temperature_regulation["temp_limited"]:
+                uptake *= self.temp_regulation_factor
+
+            # Update d_dt
+            tracers[c].d_dt -= uptake
+            if element in self.composition:     self.d_dt[index] += uptake
+
+
 
     def respiration(self, iter, base_element, parameters, c, p, tracers):
 
@@ -132,8 +266,41 @@ class Bacteria():
         
         # Aeorbic --> O2 repired
         if tracers["o2"].conc[...,iter] > self.oxygen_inhibition["min_o2"]:
-            tracers["o2"].d_dt -= respiration * parameters["convert_o2"]
+            # tracers["o2"].d_dt -= respiration * parameters["convert_o2"]
+            if "o2" in c:   
+                if isinstance(parameters["convert_o2"],(int,float)) and not isinstance(parameters["convert_o2"],bool):
+                    tracers["o2"].d_dt -= respiration * parameters["convert_o2"]
+                elif isinstance(parameters["convert_o2"],str):
+                    tracers["o2"].d_dt -= respiration * float(Fraction(parameters["convert_o2"]))
+
+        if "co2" in p:  
+            if base_element == "c":     tracers["co2"].d_dt += respiration  
+            else:                       
+                if isinstance(parameters["convert_co2"],(int,float)) and not isinstance(parameters["convert_co2"],bool):
+                    tracers["co2"].d_dt += respiration  * parameters["convert_co2"]   
+                elif isinstance(parameters["convert_co2"],str):   
+                    tracers["co2"].d_dt += respiration  * float(Fraction(parameters["convert_co2"]))
 
         # Update d_dt
         self.d_dt[index] -= respiration
         tracers[p].d_dt += respiration
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        

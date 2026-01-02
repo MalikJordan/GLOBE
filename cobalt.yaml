@@ -51,18 +51,23 @@ tracers:
     long_name: bacteria
     type: bacteria
     composition:
-      c: 
       n: 
-      p: 
     parameters:
       nutrient_limitation:
-        colimitation: minimum           # mininimum, product, or sum of all limiting nutrients
-        
+        colimitation: minimum           # mininimum, product, or sum of all limiting nutrients   
+        dom1:
+          element: n
+          type: external
+          function: monod
+          # half_sat: 5.E-07 # [mol / kg]
+          half_sat: 0.5 # [mmol / m^3]
       oxygen_inhibition:
         function: monod
-        half_sat: 8.0E-06               # [mol O2 / kg]
+        # half_sat: 8.E-06               # [mol O2 / kg]
+        half_sat: 8.E-06 # [mmol / m^3]
         exponent: 4.                    # optional: Hill exponent for Monod function (default to 1. if not included)
-        min_o2: 0.8E-06                 # optional: minimum oxygen concentration for determining aerobic/anerobic respiration [mol O2 / kg]
+        # min_o2: 0.8E-06                 # optional: minimum oxygen concentration for determining aerobic/anerobic respiration [mol O2 / kg]
+        min_o2: 0.8E-06 # [mmol / m^3]
       temperature_regulation:
         function: eppley                # arrhenius, eppley, or q10
         coefficient: 0.063
@@ -72,40 +77,44 @@ tracers:
     long_name: small phytoplankton
     type: phytoplankton
     composition:
-      c:
       n:                                # [mmol N / m^3]
-      p:
-      chl:
-      fe:                             # [nmol Fe / m^3]
+      fe:                               # [nmol Fe / m^3]
     parameters:
       light_attenuation: 0.03
-      stoichometry:
-        constituents: ["c","n","p","chl","fe"]
-        redfield: 
+      cell_quota:
+        constituents: [n,fe]
+        min:
+        max:
+        opt: 
       nutrient_limitation:
         colimitation: minimum           # mininimum, product, or sum of all limiting nutrients
         no3:
           type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
           function: monod               # monod or droop nutrient limitation types
           nh4_inihibited: True          # flag to include additional scaling for no3 limitation
-          half_sat: 0.5 # μmol / kg
+          # half_sat: 0.5 # μmol / kg
+          half_sat: 0.5 # [mmol / m^3]
           exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
         nh4:
           type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
           function: monod
-          half_sat: 0.01 # μmol / kg
+          # half_sat: 0.01 # μmol / kg
+          half_sat: 0.01 # [mmol / m^3]
           exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
         po4:
           type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
           function: monod
-          half_sat: 0.05 # μmol / kg
+          # half_sat: 0.05 # μmol / kg
+          half_sat: 0.05 # [mmol / m^3]
           exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
         fe:
           type: internal                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
           function: monod
-          half_sat: 0.1 # nmol / kg
+          # half_sat: 0.1 # nmol / kg
+          half_sat: 0.1 # [μmol / m^3]
           exponent: 2.                  # optional: Hill exponent for Monod function (default to 1. if not included)
       temperature_regulation:
+        temp_limited: True
         function: eppley                # arrhenius, eppley, or q10
         coefficient: 0.063
         base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
@@ -114,91 +123,105 @@ tracers:
     long_name: large phytoplankton
     type: phytoplankton
     composition:
-      c:
       n:                                # [mmol N / m^3]
-      p:
-      chl:
       fe:                             # [nmol Fe / m^3]
       si:                               # [mmol Si / m^3]
-      parameters:
-        light_attenuation: 0.03
-        stoichometry:
-          constituents: ["c","n","p","chl","fe","si"]
-          redfield: 
-        nutrient_limitation:
-          colimitation: minimum           # mininimum, product, or sum of all limiting nutrients
-          no3:
-            type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
-            function: monod               # monod or droop nutrient limitation types
-            nh4_inihibited: True          # flag to include additional scaling for no3 limitation
-            half_sat: 2.5 # μmol / kg
-            exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
-          nh4:
-            type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
-            function: monod
-            half_sat: 0.05 # μmol / kg
-            exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
-          po4:
-            type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
-            function: monod
-            half_sat: 0.05 # μmol / kg
-            exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
-          fe:
-            type: internal                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
-            function: monod
-            half_sat: 0.5 # nmol / kg
-            exponent: 2.                  # optional: Hill exponent for Monod function (default to 1. if not included)
-          si:
-            type: external
-            function: monod
-            half_sat: 2. # μmol / kg
-            exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
-        temperature_regulation:
-          function: eppley                # arrhenius, eppley, or q10
-          coefficient: 0.063
-          base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
-  
-  phyto3:
-    long_name: diazotrophs
-    type: phytoplankton
-    composition:
-      c:
-      n:                                # [mmol N / m^3]
-      p:
-      chl:
-      fe:                              # [nmol Fe / m^3]
     parameters:
       light_attenuation: 0.03
-      stoichometry:
-          constituents: ["c","n","p","chl","fe"]
-          redfield: 
+      cell_quota:
+        constituents: [n,fe,si]
+        min:
+        max:
+        opt: 
       nutrient_limitation:
-        colimitation: minimum           # mininimum, product, or sum of all limiting nutrients
+        colimitation: 
+          nutrients: # nutrients to be included in colimitation calculation
+          type: minimum                 # mininimum, product, or sum of all limiting nutrients
         no3:
           type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
           function: monod               # monod or droop nutrient limitation types
           nh4_inihibited: True          # flag to include additional scaling for no3 limitation
-          half_sat: 5 # μmol / kg
+          # half_sat: 2.5 # μmol / kg
+          half_sat: 2.5 # [mmol / m^3]
           exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
         nh4:
           type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
           function: monod
-          half_sat: 0.1 # μmol / kg
+          # half_sat: 0.05 # μmol / kg
+          half_sat: 0.05 # [mmol / m^3]
           exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
         po4:
           type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
           function: monod
-          half_sat: 0.05 # μmol / kg
+          # half_sat: 0.05 # μmol / kg
+          half_sat: 0.05 # [mmol / m^3]
           exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
         fe:
           type: internal                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
           function: monod
-          half_sat: 0.5 # nmol / kg
+          # half_sat: 0.5 # nmol / kg
+          half_sat: 0.5 # [μmol / m^3]
+          exponent: 2.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+        si:
+          type: external
+          function: monod
+          # half_sat: 2. # μmol / kg
+          half_sat: 2. # [mmol / m^3]
+          exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+      temperature_regulation:
+        temp_limited: True
+        function: eppley                # arrhenius, eppley, or q10
+        coefficient: 0.063
+        base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
+
+  phyto3:
+    long_name: diazotrophs
+    type: phytoplankton
+    composition:
+      n:                                # [mmol N / m^3]
+      fe:                              # [nmol Fe / m^3]
+    parameters:
+      light_attenuation: 0.03
+      cell_quota:
+        constituents: [n,fe]
+        min:
+        max:
+        opt: 
+      nutrient_limitation:
+        colimitation:
+          nutrients: # nutrients to be included in colimitation calculation
+          type: minimum                 # mininimum, product, or sum of all limiting nutrients
+        no3:
+          type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod               # monod or droop nutrient limitation types
+          nh4_inihibited: True          # flag to include additional scaling for no3 limitation
+          # half_sat: 5. # μmol / kg
+          half_sat: 5. # [mmol / m^3]
+          exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+        nh4:
+          type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod
+          # half_sat: 0.1 # μmol / kg
+          half_sat: 0.1 # [mmol / m^3]
+          exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+        po4:
+          type: external                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod
+          # half_sat: 0.05 # μmol / kg
+          half_sat: 0.05 # [mmol / m^3]
+          exponent: 1.                  # optional: Hill exponent for Monod function (default to 1. if not included)
+        fe:
+          type: internal                # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
+          function: monod
+          # half_sat: 0.5 # nmol / kg
+          half_sat: 0.5 # [μmol / m^3]
           exponent: 2.                  # optional: Hill exponent for Monod function (default to 1. if not included)
       oxygen_inhibition:
-        half_sat: 30 # μmol / kg
+        # half_sat: 30 # μmol / kg
+        half_sat: 30 # [mmol / m^3]
         exponent: 4.                    # optional: Hill exponent for Monod function (default to 1. if not included)
       temperature_regulation:
+        temp_limited: True
         function: eppley                # arrhenius, eppley, or q10
         coefficient: 0.063
         base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
@@ -207,12 +230,16 @@ tracers:
     long_name: small zooplankton
     type: zooplankton
     composition:
-      c: 
       n:                                # [mmol N / m^3]
-      p: 
-      fe: 
-      si: 
     parameters:
+      grazing_preferences:
+        bac1: 0.25                      # [-]
+        phyto1: 1.                      # [-]
+        phyto2: 0.                      # [-]
+        phyto3: 0.                      # [-]
+        zoo1: 0.                        # [-]
+        zoo2: 0.                        # [-]
+        zoo3: 0.                        # [-]
       temperature_regulation:
         function: eppley                # arrhenius, eppley, or q10
         coefficient: 0.063
@@ -222,12 +249,16 @@ tracers:
     long_name: medium zooplankton
     type: zooplankton
     composition:
-      c: 
       n:                                # [mmol N / m^3]
-      p: 
-      fe: 
-      si: 
     parameters:
+      grazing_preferences:
+        bac1: 0.                        # [-]
+        phyto1: 0.                      # [-]
+        phyto2: 1.                      # [-]
+        phyto3: 1.                      # [-]
+        zoo1: 1.                        # [-]
+        zoo2: 0.                        # [-]
+        zoo3: 0.                        # [-]
       temperature_regulation:
         function: eppley                # arrhenius, eppley, or q10
         coefficient: 0.063
@@ -237,25 +268,45 @@ tracers:
     long_name: large zooplankton
     type: zooplankton
     composition:
-      c: 
       n:                                # [mmol N / m^3]
-      p: 
-      fe: 
-      si: 
     parameters:
+      grazing_preferences:
+        bac1: 0.                        # [-]
+        phyto1: 0.                      # [-]
+        phyto2: 1.                      # [-]
+        phyto3: 1.                      # [-]
+        zoo1: 0.                        # [-]
+        zoo2: 1.                        # [-]
+        zoo3: 0.                        # [-]
       temperature_regulation:
         function: eppley                # arrhenius, eppley, or q10
         coefficient: 0.063
         base_temp: 0.                   # optional: exp(coefficient * (T - base_temp)) (default to 0. if not included)
 
   dom1:
-    long_name: dissolved organic matter
+    long_name: labile dissolved organic matter
     type: detritus
     composition:
-      c:                             # [mmol C / m^3]
-      n:                               # [mmol N / m^3]
-      p:                             # [mmol P / m^3]
-      fe:                             # [nmol Fe / m^3]
+      n:                                # [mmol N / m^3]
+      p:                                # [mmol P / m^3]
+    parameters:
+      light_attenuation: 0.
+
+  dom2:
+    long_name: semi-labile dissolved organic matter
+    type: detritus
+    composition:
+      n:                                # [mmol N / m^3]
+      p:                                # [mmol P / m^3]
+    parameters:
+      light_attenuation: 0.
+  
+  dom3:
+    long_name: semi-refractory dissolved organic matter
+    type: detritus
+    composition:
+      n:                                # [mmol N / m^3]
+      p:                                # [mmol P / m^3]
     parameters:
       light_attenuation: 0.
 
@@ -263,11 +314,10 @@ tracers:
     long_name: particulate organic matter
     type: detritus
     composition:
-      c:                              # [mmol C / m^3]
       n:                                # [mmol N / m^3]
-      p:                             # [mmol P / m^3]
-      fe:                             # [nmol Fe / m^3]
-      caco3:                          # [mmol C / m^3]
+      p:                                # [mmol P / m^3]
+      fe:                               # [nmol Fe / m^3]
+      caco3:                            # [mmol C / m^3]
       si:                               # [mmol Si / m^3]
     parameters:
       light_attenuation: 0.
@@ -340,6 +390,13 @@ reactions:
     produced:
       phyto1: [n]
     parameters:
+      basis: growth
+      # "growth": uptake rate calculated using growth rate
+      # "nutrient": uptake rate calculated based on nutrient availability
+      # "constant": multiplier added to growth formulation
+      strategy: independent
+      # "coupled": uptake based on that of different nutrients
+      # "independent": uptake calculated independent of other nutrients
 
   - type: uptake
     consumed:
@@ -347,6 +404,17 @@ reactions:
     produced:
       phyto1: [p]
     parameters:
+      basis: growth
+      # "growth": uptake rate calculated using growth rate
+      # "nutrient": uptake rate calculated based on nutrient availability
+      # "constant": multiplier added to growth formulation
+      strategy: coupled
+      # "coupled": uptake based on that of different nutrients
+      # "independent": uptake calculated independent of other nutrients
+      coupled_uptake:
+        link: ["no3","nh4"]
+        method: sum
+        convert_uptake: 0.0625
 
   - type: uptake
     consumed:
@@ -354,6 +422,15 @@ reactions:
     produced:
       phyto1: [fe]
     parameters:
+      basis: constant
+      # "growth": uptake rate calculated using growth rate
+      # "nutrient": uptake rate calculated based on nutrient availability
+      # "constant": multiplier added to growth formulation
+      strategy: independent
+      # "coupled": uptake based on that of different nutrients
+      # "independent": uptake calculated independent of other nutrients
+      constant: 1.125          
+      convert_uptake: 15.E-06       # [mmol O2 / mmol base_element]
 
   # Nutrient Uptake - Large Phytoplankton (phyto2)
   - type: uptake
@@ -363,6 +440,13 @@ reactions:
     produced:
       phyto2: [n]
     parameters:
+      basis: growth
+      # "growth": uptake rate calculated using growth rate
+      # "nutrient": uptake rate calculated based on nutrient availability
+      # "constant": multiplier added to growth formulation
+      strategy: independent
+      # "coupled": uptake based on that of different nutrients
+      # "independent": uptake calculated independent of other nutrients
 
   - type: uptake
     consumed:
@@ -370,6 +454,17 @@ reactions:
     produced:
       phyto2: [p]
     parameters:
+      basis: constant
+      # "growth": uptake rate calculated using growth rate
+      # "nutrient": uptake rate calculated based on nutrient availability
+      # "constant": multiplier added to growth formulation
+      strategy: independent
+      # "coupled": uptake based on that of different nutrients
+      # "independent": uptake calculated independent of other nutrients
+      coupled_uptake:
+        link: ["no3","nh4"]
+        method: sum
+        convert_uptake: 0.0625
 
   - type: uptake
     consumed:
@@ -377,6 +472,15 @@ reactions:
     produced:
       phyto2: [fe]
     parameters:
+      basis: constant
+      # "growth": uptake rate calculated using growth rate
+      # "nutrient": uptake rate calculated based on nutrient availability
+      # "constant": multiplier added to growth formulation
+      strategy: independent
+      # "coupled": uptake based on that of different nutrients
+      # "independent": uptake calculated independent of other nutrients
+      constant: 1.25          
+      convert_uptake: 15.E-06       # [mmol O2 / mmol base_element]
 
   - type: uptake
     consumed:
@@ -384,6 +488,10 @@ reactions:
     produced:
       phyto2: [si]
     parameters:
+      basis: constant
+      # "growth": uptake rate calculated using growth rate
+      # "nutrient": uptake rate calculated based on nutrient availability
+      # "constant": multiplier added to growth formulation
       strategy: coupled
       # "coupled": uptake based on that of different nutrients
       # "independent": uptake calculated independent of other nutrients
@@ -394,7 +502,7 @@ reactions:
         # "minimum": minimum uptake rate
         # "maximum": maximum uptake rate
         # "product": product of uptake rates of linked nutrients 
-        conversion: 5.        # conversion factor between nutrient being consumed and the linked nutrient [mmol consumed / mmol linked]
+        convert_uptake: 5.        # conversion factor between nutrient being consumed and the linked nutrient [mmol consumed / mmol linked]
 
   # Nutrient Uptake - Diazotrophs (phyto3)
   - type: uptake
@@ -404,6 +512,13 @@ reactions:
     produced:
       phyto3: [n]
     parameters:
+      basis: growth
+      # "growth": uptake rate calculated using growth rate
+      # "nutrient": uptake rate calculated based on nutrient availability
+      # "constant": multiplier added to growth formulation
+      strategy: independent
+      # "coupled": uptake based on that of different nutrients
+      # "independent": uptake calculated independent of other nutrients
 
   - type: uptake
     consumed:
@@ -411,6 +526,17 @@ reactions:
     produced:
       phyto3: [p]
     parameters:
+      basis: constant
+      # "growth": uptake rate calculated using growth rate
+      # "nutrient": uptake rate calculated based on nutrient availability
+      # "constant": multiplier added to growth formulation
+      strategy: independent
+      # "coupled": uptake based on that of different nutrients
+      # "independent": uptake calculated independent of other nutrients
+      coupled_uptake:
+        link: ["no3","nh4"]
+        method: sum
+        convert_uptake: 0.025
 
   - type: uptake
     consumed:
@@ -418,6 +544,15 @@ reactions:
     produced:
       phyto3: [fe]
     parameters:
+      basis: constant
+      # "growth": uptake rate calculated using growth rate
+      # "nutrient": uptake rate calculated based on nutrient availability
+      # "constant": multiplier added to growth formulation
+      strategy: independent
+      # "coupled": uptake based on that of different nutrients
+      # "independent": uptake calculated independent of other nutrients
+      constant: 1.25          
+      convert_uptake: 15.E-06       # [mmol O2 / mmol base_element]
 
   # Photosynthesis
   - type: photosynthesis
@@ -429,7 +564,7 @@ reactions:
       light_limitation: geider
       light_location: integrated
       initial_PI_slope: 2.4E-05     # [(mg C . m^2) / (mg Chl μE)]
-      max_photo_rate: 1.25          # [1/d]
+      max_photo_rate: 1.125          # [1/d]
       theta_max: 0.03               # [g Chl / g C]
       theta_min: 0.002              # [g Chl / g C]
 
@@ -469,7 +604,7 @@ reactions:
     parameters:
       activity_respiration_frac: 0.05   # [-]
       basal_respiration_rate: 0.03      # [1/d]
-      convert_o2: 7.375                 # [mol O2 / mol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
+      convert_o2: 7.375                 # [mmol O2 / mmol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
 
   - type: respiration
     consumed:
@@ -480,7 +615,7 @@ reactions:
     parameters:
       activity_respiration_frac: 0.05   # [-]
       basal_respiration_rate: 0.05      # [1/d]
-      convert_o2: 7.375                 # [mol O2 / mol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
+      convert_o2: 7.375                 # [mmol O2 / mmol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
 
   - type: respiration
     consumed:
@@ -491,7 +626,7 @@ reactions:
     parameters:
       activity_respiration_frac: 0.05   # [-]
       basal_respiration_rate: 0.05      # [1/d]
-      convert_o2: 7.375                 # [mol O2 / mol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
+      convert_o2: 7.375                 # [mmol O2 / mmol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
 
   # Bacteria Respiration
   - type: respiration
@@ -505,8 +640,197 @@ reactions:
       anoxic_respiration_frac:          # [-]
 
       respiration_rate: 0.0075          # [1/d]
-      convert_o2: 7.375                 # [mol O2 / mol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
-      min_o2: 0.8E-06                   # [mol O2 / kg] -- minimum oxygen concentration for determining aerobic/anerobic respiration
+      convert_o2: 7.375                 # [mmol O2 / mmol base_element] -- Ammonia production 16*NH4+ + 106*CO2 + 62*H2O <-> C106H172O38N16 + 118*O2 + 16*H+
+      # min_o2: 0.8E-06                   # [mol O2 / kg] -- minimum oxygen concentration for determining aerobic/anerobic respiration
+      min_o2: 0.8                       # [mol O2 / kg] -- minimum oxygen concentration for determining aerobic/anerobic respiration
+
+  # Phytoplankton Exudation
+  - type: exudation
+    consumed:
+      phyto1: [n]
+    produced:
+      dom1: [n]
+    parameters:
+      method: uptake                    # options: uptake, photosynthesis
+      # "photosynthesis": exudation rate calculated using excreted fraction of photosynthesis
+      # "uptake": exudation rate calculated using constant excreted fraction of nutrient uptake
+      excreted_fraction: 0.13
+
+  - type: exudation
+    consumed:
+      phyto2: [n]
+    produced:
+      dom1: [n]
+    parameters:
+      method: uptake                    # options: uptake, photosynthesis
+      # "photosynthesis": exudation rate calculated using excreted fraction of photosynthesis
+      # "uptake": exudation rate calculated using constant excreted fraction of nutrient uptake
+      excreted_fraction: 0.13
+
+  - type: exudation
+    consumed:
+      phyto3: [n]
+    produced:
+      dom1: [n]
+    parameters:
+      method: uptake                    # options: uptake, photosynthesis
+      # "photosynthesis": exudation rate calculated using excreted fraction of photosynthesis
+      # "uptake": exudation rate calculated using constant excreted fraction of nutrient uptake
+      excreted_fraction: 0.13
+
+  # Phytoplankton Lysis
+  - type: lysis
+    consumed:
+      phyto1: [n]
+    produced:
+      dom1: [n]
+    parameters:
+      partition:
+      method: constant                  # options: constant, cell_quota
+      # "constant": lysis rate calculated as a quadratic loss term using constant rate
+      # "cell_quota": lysis rate calculated using intracellular nutrient quota to release excess
+      lysis_rate: 0.2E06                # [mmol N / m^3]
+
+  - type: lysis
+    consumed:
+      phyto1: [n]
+    produced:
+      dom2: [n]
+    parameters:
+      partition:
+      method: constant                  # options: constant, cell_quota
+      # "constant": lysis rate calculated as a quadratic loss term using constant rate
+      # "cell_quota": lysis rate calculated using intracellular nutrient quota to release excess
+      lysis_rate: 0.2E06                # [mmol N / m^3]
+
+  - type: lysis
+    consumed:
+      phyto1: [n]
+    produced:
+      dom3: [n]
+    parameters:
+      partition:
+      method: constant                  # options: constant, cell_quota
+      # "constant": lysis rate calculated as a quadratic loss term using constant rate
+      # "cell_quota": lysis rate calculated using intracellular nutrient quota to release excess
+      lysis_rate: 0.2E06                # [mmol N / m^3]
+  
+  - type: lysis
+    consumed:
+      phyto1: 
+    produced:
+      dom1: [p]
+    parameters:
+      partition: 
+      method: constant                  # options: constant, cell_quota
+      # "constant": lysis rate calculated as a quadratic loss term using constant rate
+      # "cell_quota": lysis rate calculated using intracellular nutrient quota to release excess
+      lysis_rate: 0.2E06                # [mmol N / m^3]
+      convert_lysis: 0.0625
+
+  - type: lysis
+    consumed:
+      phyto1: 
+    produced:
+      dom2: [p]
+    parameters:
+      partition:
+      method: constant                  # options: constant, cell_quota
+      # "constant": lysis rate calculated as a quadratic loss term using constant rate
+      # "cell_quota": lysis rate calculated using intracellular nutrient quota to release excess
+      lysis_rate: 0.2E06                # [mmol N / m^3]
+      convert_lysis: 0.0625
+
+  - type: lysis
+    consumed:
+      phyto1: 
+    produced:
+      dom3: [p]
+    parameters:
+      partition:
+      method: constant                  # options: constant, cell_quota
+      # "constant": lysis rate calculated as a quadratic loss term using constant rate
+      # "cell_quota": lysis rate calculated using intracellular nutrient quota to release excess
+      lysis_rate: 0.2E06                # [mmol N / m^3]
+      convert_lysis: 0.0625
+
+  - type: lysis
+    consumed:
+      phyto1: [fe]
+    produced:
+      pom1: [fe]
+    parameters:
+      partition: 
+      method: constant                  # options: constant, cell_quota
+      # "constant": lysis rate calculated as a quadratic loss term using constant rate
+      # "cell_quota": lysis rate calculated using intracellular nutrient quota to release excess
+      lysis_rate: 0.2E06                # [mmol N / m^3]
+      convert_lysis: cell_quota
+
+  # Phytoplankton Aggregation
+  - type: aggregation
+    consumed:
+      phyto1: [n]
+    produced:
+      pom1: [n]
+    parameters:
+      aggregation_loss: 0.1E06
+      aggregation_frac: 0.25
+      max_photo_rate: 1.125
+
+  - type: aggregation
+    consumed:
+      phyto1: 
+    produced:
+      pom1: [p]
+    parameters:
+      aggregation_loss: 0.1E06
+      aggregation_frac: 0.25
+      max_photo_rate: 1.125
+      convert_aggregation: 0.0625
+
+  - type: aggregation
+    consumed:
+      phyto1: 
+    produced:
+      pom1: [fe]
+    parameters:
+      aggregation_loss: 0.1E06
+      aggregation_frac: 0.25
+      max_photo_rate: 1.125
+      convert_aggregation: cell_quota
+
+  - type: aggregation
+    consumed:
+      phyto3: [n]
+    produced:
+      pom1: [n]
+    parameters:
+      aggregation_loss: 0.1E06
+      aggregation_frac: 0.25
+      max_photo_rate: 0.5
+
+  - type: aggregation
+    consumed:
+      phyto3: 
+    produced:
+      pom1: [p]
+    parameters:
+      aggregation_loss: 0.1E06
+      aggregation_frac: 0.25
+      max_photo_rate: 0.5
+      convert_aggregation: 0.025
+
+  - type: aggregation
+    consumed:
+      phyto3: 
+    produced:
+      pom1: [fe]
+    parameters:
+      aggregation_loss: 0.1E06
+      aggregation_frac: 0.25
+      max_photo_rate: 0.5
+      convert_aggregation: cell_quota
 
 
-  # Bacteria Growth
+

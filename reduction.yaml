@@ -1,0 +1,25 @@
+reduction:
+  title: average phytoplankton concentration
+
+  target: # target tracer constituents for reduction scheme
+    phyto1: [n]
+    phyto2: [n]
+    phyto3: [n]
+
+  safe:   # tracers to be retained in reduction, regardless of interaction coefficient
+    no3: [n]
+    nh4: [n]
+    po4: [p]
+    sio4: [si]
+    fe: [fe]
+
+  mode: average     # average, peak, or time_of_peak
+  # "average": average concentration over specified time period
+  # "peak": peak concentration during specified time period
+  # "time_of_peak": time of peak concentration during specified time period
+
+  period: # time period (in days) used in mode
+    start: 730
+    end: 820
+
+
