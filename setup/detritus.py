@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from functions.seasonal_cycling import *
 from functions.other_functions import concentration_ratio, tracer_elements
-
+from fractions import Fraction
 class Detritus():
     """
     
@@ -93,7 +93,10 @@ class Detritus():
 
         tracers[consumed].d_dt -= ec * remineralization
         if "o2" in c:
-            tracers["o2"].d_dt -=  remineralization / parameters["mw_carbon"]
+            if isinstance(parameters["convert_o2"],(int,float)) and not isinstance(parameters["convert_o2"],bool):
+                tracers["o2"].d_dt -= remineralization * parameters["convert_o2"]
+            elif isinstance(parameters["convert_o2"],str):
+                tracers["o2"].d_dt -= remineralization * float(Fraction(parameters["convert_o2"]))
         
         if p[0] == None:    pass
         else:

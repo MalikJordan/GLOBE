@@ -7,8 +7,10 @@ tracers:
     composition:
       n: 4.0                          # mmol N / m^3
     parameters:
-      temp_limited: False
-      q10: 2.0
+      temperature_regulation:
+        temp_limited: False
+        function: q10
+        coefficient: 2.0
 
   phyto1:
     long_name: diatoms
@@ -16,11 +18,18 @@ tracers:
     composition:                      # element : initial concentration
       n: 2.5                          # mmol N / m^3
     parameters:
+      cell_quota:
+        constituents: ["n"]
+        opt: [1.]
       nutrient_limitation: 
-        type: external
-        nutrients: ["no3"]
-      temp_limited: False
-      q10: 2.0
+        no3:
+          type: external
+          # function: monod
+          half_sat: 1.
+      temperature_regulation:
+        temp_limited: False
+        function: q10
+        coefficient: 2.0
 
   zoo1:
     long_name: mesozooplankton
@@ -30,18 +39,31 @@ tracers:
     parameters:
       assimilation_efficiency: 1.0
       ingestion_efficiency: 1.0
+      cell_quota:
+        constituents: ["n"]
+        opt: [1.]
       grazing_preferences:
        phyto1: 1.0
-      temp_limited: False
-      q10: 2.0
+      temperature_regulation:
+        temp_limited: False
+        function: q10
+        coefficient: 2.0
+      oxygen_inhibition:
+        oxygen_limited: False
 
   pom1:
     long_name: particulate organic matter
     type: detritus
     composition:                      # element : initial concentration
       n: 0.0                          # mmol N / m^3
+    parameters:
+      light_attenuation: 0.
   
+# -------------------------------------------------------------------------------------------------
 parameters:
+  constants:
+    einstein_to_watts: 0.217
+
   environment:
     base_temp: 20.0                   # degC
     summer_mld: 10.0                  # m
@@ -50,18 +72,23 @@ parameters:
     winter_salt: 37.0                 # psu
     summer_sun: 120.0                 # W / m^2
     winter_sun: 10.0                  # W / m^2
-    summer_temp: 15.0                 # degC
-    winter_temp: 15.0                 # degC
+    summer_temp: 15.5                 # degC
+    winter_temp: 15.5                 # degC
     summer_wind: 10.0                 # m/s
     winter_wind: 20.0                 # m/s
+    light_attenuation_water: 0.0435        # [1/m]
+    latitude: 45.0
+
   simulation:
     latitude: 45.0                    # deg
     num_days: 365                     # d
     timestep: 86400.0                 # s
+
   water_column:
     column_depth: 10.0                # m
     num_layers: 1
 
+# -------------------------------------------------------------------------------------------------
 reactions:
   - type: grazing
     consumed: 
@@ -72,6 +99,7 @@ reactions:
       function: ivlev
       max_grazing_rate: 1.0
       ivlev: 0.2
+      half_sat_grazing: 0.
 
   - type: egestion
     consumed: 
@@ -88,21 +116,14 @@ reactions:
     parameters:
       function: grazing
 
-  - type: mortality
+  - type: exudation
     consumed: 
       phyto1: [n]
     produced: 
       no3: [n]
     parameters:
-      mortality_rate: [0.1,0.]
-
-  - type: mortality
-    consumed: 
-      phyto1: [n]
-    produced: 
-      pom1: [n]
-    parameters:
-      mortality_rate: [0.15,0.]
+      method: constant
+      excreted_fraction: 0.1
 
   - type: mortality
     consumed: 
@@ -112,19 +133,26 @@ reactions:
     parameters:
       mortality_rate: [0.2,0.]
 
+  - type: photosynthesis
+    consumed:
+      phyto1: [n]
+    produced:
+    parameters:
+      light_limitation: 0.25
+      max_photo_rate: eppley
+      type: base_b
+      a: 0.6
+      b: 1.066
+      c: 1.0
+
   - type: uptake
     consumed: 
       no3: [n]
     produced: 
       phyto1: [n]
     parameters:
-      nutrient_limitation: variable
-      half_sat_nutrient: 1
-      light_limitation: 0.25
-      max_photo_rate: variable
-      a: 0.6
-      b: 1.066
-      c: 1.0
+      strategy: independent
+      basis: growth
 
   - type: remineralization
     consumed: 
@@ -133,3 +161,12 @@ reactions:
       no3: [n]
     parameters:
       remineralization_rate: 0.4
+
+  - type: respiration
+    consumed:
+      phyto1: [n]
+    produced:
+      pom1: [n]
+    parameters:
+      activity_respiration_frac: 0.
+      basal_respiration_rate: 0.15

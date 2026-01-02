@@ -1,23 +1,30 @@
 import os
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-# SETUP_PATH = Path()
-from setup.initialize import import_model
-from functions.bgc_rate_eqns import bgc_rate_eqns
+folder = os.getcwd() + '/tests/npzd'
 
 # ----------------------------------------------------------------------------------------------------
 # GLOBE model simulation
 # ----------------------------------------------------------------------------------------------------
-# Import and initialize model
-file = 'tests/npzd/test_npzd.yaml'
-file_path = os.getcwd() + '/' + file
-base_element, parameters, reactions, tracers = import_model(file_path)
+# Get GLOBE Data --------------------------------------------------------------------
+# Load solution
+path = os.getcwd() + "/tests/npzd/data/npzd.npz"
+solution = np.load(path, allow_pickle=True)
+conc = solution["concentration"]     # concentratrion matrix
+time = solution["time"]     # time array
 
-# Begin simulation
-for iter in range(0,parameters["simulation"]["iters"]-1):
-    bgc_rate_eqns(iter, base_element, parameters, tracers)
+# Load tracer indices
+path = os.getcwd() + "/tests/npzd/data/tracer_indices_npzd.npz"
+indices = np.load(path, allow_pickle=True)
+tracer_indices = {}
+for file in indices.files:
+    tracer_indices[file] = list(indices[file])
+
+no3 = conc[tracer_indices["no3"][0]]
+phyto = conc[tracer_indices["phyto1"][0]]
+zoo = conc[tracer_indices["zoo1"][0]]
+pom = conc[tracer_indices["pom1"][0]]
 
 # ----------------------------------------------------------------------------------------------------
 # Test case and parameters from Riley Brady
@@ -79,37 +86,65 @@ for idx in np.arange(1, NUM_STEPS, 1):
     Z[idx] = DT * (beta*zoo_graze - g*Z[t]) + Z[t]  
     D[idx] = DT * (r*P[t] + (1-alpha-beta)*zoo_graze - phi*D[t]) + D[t]
 
+    # bgc_rate_eqns(t, base_element, parameters, tracers)
+
+    # dn = N[idx] - tracers["no3"].conc[0][idx]
+    # dp = P[idx] - tracers["phyto1"].conc[0][idx]
+    # dz = Z[idx] - tracers['zoo1'].conc[0][idx]
+    # dd = D[idx] - tracers['pom1'].conc[0][idx]
+
+    # pause = 1
+
+
 x = np.arange(1, NUM_STEPS + 1, 1)
 
 # ----------------------------------------------------------------------------------------------------
 # Plot results
 # ----------------------------------------------------------------------------------------------------
-fig, ax = plt.subplots()
+# fig, ax = plt.subplots()
 
 months = [0,30,60,90,120,150,180]
 marks = ['J','F','M','A','M','J','J']
-ax.plot(x,tracers["no3"].conc[0,:-1])
-ax.plot(x,N,'--k')
-ax.plot(x,tracers["phyto1"].conc[0,:-1])
-ax.plot(x,P,'--k')
-ax.plot(x,tracers["zoo1"].conc[0,:-1])
-ax.plot(x,Z,'--k')
-ax.plot(x,tracers["pom1"].conc[0,:-1])
-ax.plot(x,D,'--k')
+marks_blank = ['','','','','','','']
 
-plt.ylabel("mmol N / m^3")
-plt.xlabel("Time (days)")
-plt.xlabel("Time [months]")
-plt.xlim([0,180])
-plt.xticks(months,marks)
-# plt.xlim([0,365])
+fig, axs = plt.subplots(2,2,figsize=(10,10), sharex=True)
 
-# Shrink current axis by 10%
-box = ax.get_position()
-ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+# axs[0,0].plot(x,tracers["no3"].conc[0,:-1],label='GLOBE')
+axs[0,0].plot(x,no3[:-1],label='GLOBE')
+axs[0,0].plot(x,N,linestyle=(0, (5, 10)),color='black',label='NPZD')
+axs[0,0].set_title("Nitrate")
+axs[0,0].set_xticks(months,marks_blank)
+axs[0,0].set_xlim([0,180])
+axs[0,0].set_ylabel("mmol N $\mathregular{m^{-3}}$")
 
-# Put a legend to the right of the current axis
-ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-plt.legend(['N','','P','','Z','','D',''],loc='center left', bbox_to_anchor=(1, 0.5))
+# axs[0,1].plot(x,tracers["pom1"].conc[0,:-1],label='GLOBE')
+axs[0,1].plot(x,pom[:-1],label='GLOBE')
+axs[0,1].plot(x,D,linestyle=(0, (5, 10)),color='black',label='NPZD')
+axs[0,1].set_title("Particulate Organic Nitrogen")
+axs[0,1].set_xticks(months,marks_blank)
+axs[0,1].set_xlim([0,180])
 
-plt.savefig("test_npzd.jpg")
+# axs[1,0].plot(x,tracers["phyto1"].conc[0,:-1],label='GLOBE')
+axs[1,0].plot(x,phyto[:-1],label='GLOBE')
+axs[1,0].plot(x,P,linestyle=(0, (5, 10)),color='black',label='NPZD')
+axs[1,0].set_title("Phytoplankton")
+axs[1,0].set_xlabel("Time [months]")
+axs[1,0].set_xticks(months,marks)
+axs[1,0].set_xlim([0,180])
+axs[1,0].set_ylabel("mmol N $\mathregular{m^{-3}}$")
+
+# axs[1,1].plot(x,tracers["zoo1"].conc[0,:-1],label='GLOBE')
+axs[1,1].plot(x,zoo[:-1],label='GLOBE')
+axs[1,1].plot(x,Z,linestyle=(0, (5, 10)),color='black',label='NPZD')
+axs[1,1].set_title("Zooplankton")
+axs[1,1].set_xlabel("Time [months]")
+axs[1,1].set_xticks(months,marks)
+axs[1,1].set_xlim([0,180])
+
+handles, labels = axs[0,0].get_legend_handles_labels()
+fig.legend(handles,labels, loc='lower center', ncol=2)
+
+fig.tight_layout(h_pad=2.5,w_pad=2.5,rect=[0,0.025,1,1])
+
+npzd = os.path.join(folder + "/figures", "npzd")
+plt.savefig(npzd)

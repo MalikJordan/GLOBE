@@ -1,4 +1,4 @@
-base_element: c                             # [mmol C / m^3]
+base_element: c
 
 tracers:
   o2:
@@ -7,7 +7,8 @@ tracers:
     composition:
       o: 230.                               # [mmol O / m^3]
     parameters:
-      temp_limited: False
+      temperature_regulation:
+        temp_limited: False
 
   no3:
     long_name: nitrate
@@ -15,8 +16,11 @@ tracers:
     composition:
       n: 1.                                 # [mmol N / m^3]
     parameters:
-      temp_limited: True
-      q10: 2.367
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 2.367
+        base_temp: 10.
 
   nh4:
     long_name: ammonium
@@ -24,8 +28,11 @@ tracers:
     composition:
       n: 0.06                               # [mmol N / m^3]
     parameters:
-      temp_limited: True
-      q10: 2.367
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 2.367
+        base_temp: 10.
 
   po4:
     long_name: phosphate
@@ -33,7 +40,8 @@ tracers:
     composition:
       p: 0.06                               # [mmol P / m^3]
     parameters:
-      temp_limited: False
+      temperature_regulation:
+        temp_limited: False
 
   hs:
     long_name: reduction equivalents
@@ -41,46 +49,8 @@ tracers:
     composition:
       s: 1.                                 # [mmol S / m^3]
     parameters:
-      temp_limited: False
-
-  phyto1:
-    long_name: diatoms
-    type: phytoplankton
-    composition:                            # element : initial concentration
-      # c: 12.                                # [mg C / m^3]
-      c: 1.                                 # [mmol C / m^3]
-      n: 0.1512                             # [mmol N / m^3]
-      p: 9.432E-03                         # [mmol P / m^3]
-      chl: 0.192                            # [mg Chl / m^3]
-    parameters:
-      # nutrient_limitation: minimum    # mininimum, product, or sum of all limiting nutrients
-      # nutrient_limitation_type: internal  # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
-      temp_limited: True
-      q10: 2.0
-      nutrient_limitation:  
-        type: internal                      # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
-        colimitation: minimum               # mininimum, product, or sum of all limiting nutrients
-        nutrients: ["no3", "po4"]
-        # max_quota: [0.025, 2.5E-03]
-        # min_quota: [6.873E-03, 4.29E-04]
-        # opt_quota: [1.26E-02, 7.86E-04]
-        max_quota: [0.3, 0.03]
-        min_quota: [8.244E-03, 5.148E-03]
-        opt_quota: [0.1512, 9.432E-0]
-      cell_quota:
-        constituents: ["c","n","p","chl"]
-        # max: [1., 0.025, 2.5E-03, 0.016]
-        # min: [1., 6.873E-03, 4.29E-04, 0.016]
-        # opt: [1., 1.26E-02, 7.86E-04, 0.016]
-        max: [1., 0.3, 0.03, 0.192]
-        min: [1., 8.244E-03, 5.148E-03, 0.192]
-        opt: [1., 0.1512, 9.432E-03, 0.192]
-      light_attenuation: 0.03               # [m^2 / mg Chl]
-
-
-
-
-
+      temperature_regulation:
+        temp_limited: False
 
   phyto1:
     long_name: diatoms
@@ -88,35 +58,41 @@ tracers:
     composition:                            # element : initial concentration
       c: 12.                                # [mg C / m^3]
       n: 0.1512                             # [mmol N / m^3]
-      p: 9.432E-03                         # [mmol P / m^3]
+      p: 9.432E-03                          # [mmol P / m^3]
       chl: 0.192                            # [mg Chl / m^3]
     parameters:
-      nutrient_limitation: minimum    # mininimum, product, or sum of all limiting nutrients
-      nutrient_limitation_type: internal  # internal (cell quota for nutrient w.r.t. base element) or external (availability of nutrient in system using half-saturation constant)
-      temp_limited: True
-      q10: 2.0
+      light_attenuation: 0.03               # [m^2 / mg Chl]
+      max_photo_rate: 1.6                   # [1/d]
       cell_quota:
         constituents: ["c","n","p","chl"]
         max: [1., 0.025, 2.5E-03, 0.016]
         min: [1., 6.873E-03, 4.29E-04, 0.016]
         opt: [1., 1.26E-02, 7.86E-04, 0.016]
-      light_attenuation: 0.03               # [m^2 / mg Chl]
-
-
-
-
-
-
-
-
-
+      nutrient_limitation:  
+        colimitation: minimum               # mininimum, product, or sum of all limiting nutrients
+        include: ["no3","po4"]              # nutrients included for calculation of colimitation factor
+        no3:
+          type: internal
+          function: droop
+          nh4_inihibited: True
+        nh4:
+          type: external
+          function: monod
+          half_sat: 1.
+        po4:
+          type: internal
+          function: droop
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 2.
+        base_temp: 10.
 
   zoo1:
     long_name: mesozooplankton
     type: zooplankton
     composition:                            # element : initial concentration
-      # c: 12.                                # [mg C / m^3]
-      c: 1.                                 # [mmol C / m^3]
+      c: 12.                                # [mg C / m^3]
       n: 0.2004                             # [mmol N / m^3]
       p: 0.0222                             # [mmol P / m^3]
     parameters:
@@ -124,20 +100,24 @@ tracers:
       ingestion_efficiency: 0.25
       cell_quota:
         constituents: ["c","n","p"]
-        # opt: [1., 1.67E-02, 1.85E-03]
-        opt: [1., 0.2004, 0.0222]
+        opt: [1., 1.67E-02, 1.85E-03]
       grazing_preferences: 
         phyto1: 1.0
-      temp_limited: True
-      q10: 2.0
-      oxygen_limited: True
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 2.0
+        base_temp: 10.
+      oxygen_inhibition:
+        oxygen_limited: True
+        function: monod
+        half_sat: 50.                       # [mmol O2 / m^3]
 
   dom1:
     long_name: dissolved organic matter
     type: detritus
     composition:
-      # c: 12.                                # [mg C / m^3]
-      c: 1.                                 # [mmol C / m^3]
+      c: 12.                                # [mg C / m^3]
       n: 0.1512                             # [mmol N / m^3]
       p: 9.4344E-03                         # [mmol P / m^3]
     parameters:
@@ -147,13 +127,11 @@ tracers:
     long_name: particulate organic matter
     type: detritus
     composition:                            # element : initial concentration
-      # c: 12.                                # [mg C / m^3]
-      c: 1.                                 # [mmol C / m^3]
+      c: 12.                                # [mg C / m^3]
       n: 0.1512                             # [mmol N / m^3]
       p: 9.4344E-03                         # [mmol P / m^3]
     parameters:
-      # light_attenuation: 1.0E-04            # [m^2 / mg C]
-      light_attenuation: 1.2E-03            # [m^2 / mmol C]
+      light_attenuation: 1.0E-04            # [m^2 / mg C]
 
 # -------------------------------------------------------------------------------------------------
 parameters:
@@ -193,10 +171,8 @@ reactions:
       phyto1: [chl]
     parameters:
       eps_PAR: 0.4                        # [-]
-      # initial_PI_slope: 1.52E-05
-      initial_PI_slope: 1.266E-06     # [(mmol C . m^2) / (mg Chl μE)]
-      # chl_quota: 0.016                    # [mg Chl / mg C]
-      chl_quota: 0.192                    # [mg Chl / mg C]
+      initial_PI_slope: 1.52E-05
+      chl_quota: 0.016                    # [mg Chl / mg C]
       chl_relax_rate: 0.            # [(mg C . m^2) / (mg Chl μE)]
       optimal_Epar_Ek: 0.0
       max_photo_rate: 1.6                 # [1/d]
@@ -227,8 +203,7 @@ reactions:
       nh4: [n]
     parameters:
       function: grazing
-      # optimal_nutrient_quota: 0.0167      # [mmol N / mg C]
-      optimal_nutrient_quota: 0.2004      # [mmol N / mmol C]
+      optimal_nutrient_quota: 0.0167      # [mmol N / mg C]
 
   - type: excretion
     consumed:
@@ -237,8 +212,7 @@ reactions:
       po4: [p]
     parameters:
       function: grazing
-      # optimal_nutrient_quota: 1.85E-03    # [mmol P / mg C]
-      optimal_nutrient_quota: 0.0222      # [mmol P / mmol C]
+      optimal_nutrient_quota: 1.85E-03    # [mmol P / mg C]
 
   - type: excretion
     consumed: 
@@ -268,6 +242,9 @@ reactions:
     produced:
       dom1: [c]
     parameters:
+      method: photosynthesis              # options: uptake, photosynthesis
+      # "photosynthesis": exudation rate calculated using excreted fraction of photosynthesis
+      # "uptake": exudation rate calculated using constant excreted fraction of nutrient uptake
       excreted_fraction: 0.05             # [-]
 
   - type: grazing
@@ -278,11 +255,9 @@ reactions:
     parameters:
       function: holling-2
       ingestion_type: feeding_threshold
-      # feeding_threshold: 50.0             # [mg C / m^3]
-      feeding_threshold: 4.1667           # [mmol C / m^3]
+      feeding_threshold: 50.0             # [mg C / m^3]
       max_grazing_rate: 2.0               # [1/d]
-      # half_sat_grazing: 200.0             # [mg C / m^3]
-      half_sat_grazing: 16.667            # [mmol C / m^3]
+      half_sat_grazing: 200.0             # [mg C / m^3]
 
   - type: gross_primary_production
     consumed:
@@ -290,8 +265,7 @@ reactions:
       phyto1: [c]
       o2: [o]
     parameters:
-      # mw_carbon: 12.0
-      mw_carbon: 1.0
+      convert_o2: 1/12
 
   - type: lysis
     consumed:
@@ -299,6 +273,7 @@ reactions:
     produced:
       dom1: [c,n,p]
     parameters:
+      method: cell_quota
       extra_lysis_rate: 0.0               # [1/d]
       half_sat_stress_lysis: 0.1
       half_sat_extra_lysis: 0.0
@@ -311,6 +286,7 @@ reactions:
     produced:
       pom1: [c,n,p]
     parameters:
+      method: cell_quota
       extra_lysis_rate: 0.0               # [1/d]
       half_sat_stress_lysis: 0.1
       half_sat_extra_lysis: 0.0
@@ -350,7 +326,7 @@ reactions:
     parameters:
       half_sat_oxygen: 10.0               # [mmol O2 / m^3]
       nitrification_rate: 0.01            # [1/d]
-      nitrification_stoic_coeff: 2.0
+      convert_o2: 2.0
 
   - type: photosynthesis
     consumed:
@@ -362,8 +338,7 @@ reactions:
       light_location: integrated
       light_attenuation_water: 0.0435
       light_attenuation_phyto: 0.03
-      # initial_PI_slope: 1.52E-05     # [(mg C . m^2) / (mg Chl μE)]
-      initial_PI_slope: 1.266E-06     # [(mmol C . m^2) / (mg Chl μE)]
+      initial_PI_slope: 1.52E-05     # [(mg C . m^2) / (mg Chl μE)]
       max_photo_rate: 1.6                 # [1/d]
 
   - type: reaeration
@@ -385,8 +360,7 @@ reactions:
     produced:
     parameters:
       remineralization_rate: 0.3          # [1/d]
-      # mw_carbon: 12.0
-      mw_carbon: 1.0
+      convert_o2: 1/12
 
   - type: remineralization
     consumed:
@@ -411,8 +385,7 @@ reactions:
     produced:
     parameters:
       remineralization_rate: 0.3          # [1/d]
-      # mw_carbon: 12.0
-      mw_carbon: 1.0
+      convert_o2: 1/12
 
   - type: remineralization
     consumed:
@@ -438,7 +411,7 @@ reactions:
     parameters:
       half_sat_oxygen: 10.0               # [mmol O2 / m^3]
       reoxidation_rate: 0.05              # [1/d]
-      reoxidation_stoic_coeff: 0.5        # [mmol HS- / mmol O2]
+      convert_o2: 2.         # [mmol O2 / mmol HS-]
 
   - type: respiration
     consumed:
@@ -448,9 +421,8 @@ reactions:
     parameters:
       activity_respiration_frac: 0.05     # [-]
       basal_respiration_rate: 0.05        # [1/d]
-      # mw_carbon: 12.0
-      mw_carbon: 1.0
-  
+      convert_o2: 1/12                    # [mmol O2 / unit base_element]
+
   - type: respiration
     consumed:
       zoo1: [c]
@@ -458,8 +430,7 @@ reactions:
     produced:
     parameters:
       respiration_rate: 0.02              # [1/d]
-      # mw_carbon: 12.0
-      mw_carbon: 1.0
+      convert_o2: 1/12
 
   - type: uptake
     consumed:
@@ -469,12 +440,16 @@ reactions:
       phyto1: [n]
       dom1: [n]
     parameters:
+      basis: nutrient
+      strategy: independent
+      form: affinity                      # options: affinity or constituent
+      # affinity: uses specific affinity, based on cell quota w.r.t base element
+      # constituent: uses concentration of phytoplankton constituent of nutrient element
       half_sat_nh4_preference: 1.0
       half_sat_nh4_uptake: 1.5            # [mmol N-NH4 / m^3]
       luxury_storage: 1.5
       max_photo_rate: 1.6                 # [1/d]
-      # specific_affinity: 0.025            # [m^3 / (mg C . d)]
-      specific_affinity: 0.3              # [m^3 / (mmol C . d)]
+      specific_affinity: 0.025            # [m^3 / (mg C . d)]
 
   - type: uptake
     consumed:
@@ -483,10 +458,14 @@ reactions:
       phyto1: [p]
       dom1: [p]
     parameters:
+      basis: nutrient
+      strategy: independent
+      form: affinity                      # options: affinity or constituent
+      # affinity: uses specific affinity, based on cell quota w.r.t base element
+      # constituent: uses concentration of phytoplankton constituent of nutrient element
       luxury_storage: 1.0
       max_photo_rate: 1.6                 # [1/d]
-      # specific_affinity: 0.0025           # [m^3 / (mg C . d)]
-      specific_affinity: 0.03             # [m^3 / (mmol C . d)]
+      specific_affinity: 0.0025           # [m^3 / (mg C . d)]
 
 
   

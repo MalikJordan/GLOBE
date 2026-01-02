@@ -2,8 +2,8 @@ import os
 import sys
 import numpy as np
 from functions.seasonal_cycling import *
-from functions.other_functions import concentration_ratio, nutrient_limitation, temperature_regulation, tracer_elements
-
+from functions.other_functions import concentration_ratio, nutrient_limitation, temperature_dependence, tracer_elements
+from fractions import Fraction
 class Inorganic():
     """
     
@@ -15,12 +15,10 @@ class Inorganic():
         self.type = tracer["type"]
 
         # Temperature regulation
-        self.temp_limited = tracer["parameters"]["temp_limited"]
-        if self.temp_limited:
-            self.q10 = tracer["parameters"]["q10"]
-        self.temp_regulation_factor = 1.
+        self.temperature_regulation = tracer["parameters"]["temperature_regulation"]
+        self.temperature_regulation["temperature_regulation_factor"] = 1.
 
-        # Oxygen regulation
+        # Oxygen inhibition
         
 
         # Concentration array
@@ -54,8 +52,10 @@ class Inorganic():
     def inorg(self, iter, base_element, base_temp, coordinates, dz, mixed_layer_depth, surface_PAR, temperature, salinity, wind, tracers):
         check_conc = self.conc[:,iter]
         
-        if self.temp_limited:
-            self.temp_regulation_factor = temperature_regulation(base_temp, temperature, self.q10)   # calculate temperature regulation factor for nitrification
+        # if self.temp_limited:
+        if self.temperature_regulation["temp_limited"]:
+            # self.temperature_regulation["temperature_regulation_factor"] = temperature_dependence(base_temp, temperature, self)   # calculate temperature regulation factor for nitrification
+            self.temperature_regulation["temperature_regulation_factor"] = temperature_dependence(temperature, self)   # calculate temperature regulation factor for nitrification
         
         for reac in self.reactions:
             c, p, ec, ep, ic, ip = tracer_elements(base_element, reac, tracers)
@@ -74,6 +74,7 @@ class Inorganic():
         if self.abbrev == 'nh4':
             x=1
         if self.abbrev == 'o2':
+            o2=self.conc[0][iter]
             x=1
         x=1
 
@@ -81,12 +82,17 @@ class Inorganic():
         """
         Definition:: Calculates nitrification rate
         """
-        nitrification = self.temp_regulation_factor * oxy_limitation_factor * parameters["nitrification_rate"] * tracers["nh4"].conc[...,iter]
+        nitrification = self.temperature_regulation["temperature_regulation_factor"] * oxy_limitation_factor * parameters["nitrification_rate"] * tracers["nh4"].conc[...,iter]
         nitrification = np.maximum(np.zeros_like(nitrification),nitrification)
         
         tracers["nh4"].d_dt -= nitrification
-        if "o2" in tracers: tracers["o2"].d_dt -= parameters["nitrification_stoic_coeff"] * nitrification    # '2. *' for stoichiometry, NH4(+) + 2O2 --> NO3(-) + H2O + 2H(+)
         tracers["no3"].d_dt += nitrification
+
+        if "o2" in tracers: 
+            if isinstance(parameters["convert_o2"],(int,float)) and not isinstance(parameters["convert_o2"],bool):
+                tracers["o2"].d_dt -= nitrification * parameters["convert_o2"]
+            elif isinstance(parameters["convert_o2"],str):
+                tracers["o2"].d_dt -= nitrification * float(Fraction(parameters["convert_o2"]))
 
 
     def reaeration(self, iter, parameters, dz, temperature, salinity, wind):
@@ -126,4 +132,11 @@ class Inorganic():
 
         # Update d_dt
         tracers["hs"].d_dt -= reoxidation
-        tracers["o2"].d_dt -= reoxidation / parameters["reoxidation_stoic_coeff"]
+        if isinstance(parameters["convert_o2"],(int,float)) and not isinstance(parameters["convert_o2"],bool):
+            tracers["o2"].d_dt -= reoxidation * parameters["convert_o2"]
+        elif isinstance(parameters["convert_o2"],str):
+            tracers["o2"].d_dt -= reoxidation * float(Fraction(parameters["convert_o2"]))
+
+
+    def caco3_saturation():
+        pass
