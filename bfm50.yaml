@@ -22,7 +22,7 @@ tracers:
     long_name: total alkalinity
     type: inorganic
     composition:
-      c: 2660.
+      eq: 2660.
     parameters:
       calc_alkalinity: False
 
@@ -45,7 +45,7 @@ tracers:
         temp_limited: True
         function: q10
         coefficient: 2.367
-        base_temp: 10.
+        base_temp: 20.
 
   nh4:
     long_name: ammonium
@@ -57,7 +57,7 @@ tracers:
         temp_limited: True
         function: q10
         coefficient: 2.367
-        base_temp: 10.
+        base_temp: 20.
 
   n2:
     long_name: nitrogen sink
@@ -72,10 +72,13 @@ tracers:
     long_name: silicate
     type: inorganic
     composition:
-      si:
+      si: 8.
     parameters:
       temperature_regulation:
-        temp_limited:
+        temp_limited: True
+        function: q10
+        coefficient: 1.49
+        base_temp: 20.
 
   hs:
     long_name: reduction equivalents
@@ -95,7 +98,10 @@ tracers:
       p: 1.85E-03
     parameters:
       temperature_regulation:
-        temp_limited:
+        temp_limited: True
+        function: q10
+        coefficient: 2.95
+        base_temp: 20.
 
   phyto1:
     long_name: diatoms
@@ -134,8 +140,8 @@ tracers:
       temperature_regulation:
         temp_limited: True
         function: q10
-        coefficient: 
-        base_temp:
+        coefficient: 2.
+        base_temp: 20.
 
   phyto2:
     long_name: nanoflagellates
@@ -170,8 +176,8 @@ tracers:
       temperature_regulation:
         temp_limited: True
         function: q10
-        coefficient: 
-        base_temp:
+        coefficient: 2.
+        base_temp: 20.
 
   phyto3:
     long_name: picophytoplankton
@@ -206,8 +212,8 @@ tracers:
       temperature_regulation:
         temp_limited: True
         function: q10
-        coefficient: 
-        base_temp:
+        coefficient: 2.
+        base_temp: 20.
 
   phyto4:
     long_name: large phytoplankton
@@ -242,8 +248,8 @@ tracers:
       temperature_regulation:
         temp_limited: True
         function: q10
-        coefficient: 
-        base_temp:
+        coefficient: 2.
+        base_temp: 20.
 
   mesozoo1:
     long_name: carnivorous mesozooplankton
@@ -272,8 +278,8 @@ tracers:
       temperature_regulation:
         temp_limited: True
         function: q10
-        coefficient: 
-        base_temp:
+        coefficient: 2.
+        base_temp: 20.
       oxygen_inhibition:
         oxygen_limited:
         function:
@@ -306,8 +312,8 @@ tracers:
       temperature_regulation:
         temp_limited: True
         function: q10
-        coefficient: 
-        base_temp:
+        coefficient: 2.
+        base_temp: 20.
       oxygen_inhibition:
         oxygen_limited:
         function:
@@ -339,8 +345,8 @@ tracers:
       temperature_regulation:
         temp_limited: True
         function: q10
-        coefficient: 
-        base_temp:
+        coefficient: 2.
+        base_temp: 20.
       oxygen_inhibition:
         oxygen_limited:
         function:
@@ -372,8 +378,8 @@ tracers:
       temperature_regulation:
         temp_limited: True
         function: q10
-        coefficient: 
-        base_temp:
+        coefficient: 2.
+        base_temp: 20.
       oxygen_inhibition:
         oxygen_limited:
         function:
@@ -415,4 +421,177 @@ tracers:
       si: 0.0145
     parameters:
       light_attenuation:
+  
+# -------------------------------------------------------------------------------------------------
+reactions:
+  # Primary production
+  # phyto1
+  - type: photosynthesis
+    consumed:
+      phyto1: [c]
+    produced:
+    parameters:
+      eps_PAR: 0.4
+      light_limitation: platt
+      light_location: integrated
+      light_attenuation_water: 0.0435
+      initial_PI_slope: 1.38E-05
+      max_photo_rate: 2.5
+
+  - type: gross_primary_production
+    consumed:
+      phyto1: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      convert_o2: 1/12
+
+  # phyto2
+  - type: photosynthesis
+    consumed:
+      phyto2: [c]
+    produced:
+    parameters:
+      eps_PAR: 0.4
+      light_limitation: platt
+      light_location: integrated
+      light_attenuation_water: 0.0435
+      initial_PI_slope: 1.38E-05
+      max_photo_rate: 1.6
+
+  - type: gross_primary_production
+    consumed:
+      phyto2: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      convert_o2: 1/12
+
+  # phyto3
+  - type: photosynthesis
+    consumed:
+      phyto3: [c]
+    produced:
+    parameters:
+      eps_PAR: 0.4
+      light_limitation: platt
+      light_location: integrated
+      light_attenuation_water: 0.0435
+      initial_PI_slope: 1.38E-05
+      max_photo_rate: 1.02
+
+  - type: gross_primary_production
+    consumed:
+      phyto3: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      convert_o2: 1/12
+
+  # phyto4
+  - type: photosynthesis
+    consumed:
+      phyto4: [c]
+    produced:
+    parameters:
+      eps_PAR: 0.4
+      light_limitation: platt
+      light_location: integrated
+      light_attenuation_water: 0.0435
+      initial_PI_slope: 1.38E-05
+      max_photo_rate: 0.83
+
+  - type: gross_primary_production
+    consumed:
+      phyto4: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      convert_o2: 1/12
+
+  # Phytoplankton uptake
+  # phyto1
+  - type: uptake
+    consumed:
+      no3: [n]
+      nh4: [n]
+    produced:
+      phyto1: [n]
+      dom1: [n]
+    parameters:
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto1: [p]
+      dom1: [p]
+    parameters:
+
+  - type: uptake
+    consumed:
+      si04: [si]
+    produced:
+      phyto1: [si]
+    parameters:
+
+  # phyto2
+  - type: uptake
+    consumed:
+      no3: [n]
+      nh4: [n]
+    produced:
+      phyto2: [n]
+      dom1: [n]
+    parameters:
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto2: [p]
+      dom1: [p]
+    parameters:
+
+  # phyto3
+  - type: uptake
+    consumed:
+      no3: [n]
+      nh4: [n]
+    produced:
+      phyto3: [n]
+      dom1: [n]
+    parameters:
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto3: [p]
+      dom1: [p]
+    parameters:
+
+  # phyto4
+  - type: uptake
+    consumed:
+      no3: [n]
+      nh4: [n]
+    produced:
+      phyto4: [n]
+      dom1: [n]
+    parameters:
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto4: [p]
+      dom1: [p]
+    parameters:
+
+
   
