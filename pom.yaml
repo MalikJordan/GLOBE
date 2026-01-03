@@ -1,0 +1,28 @@
+simulation:
+  timestep: 360.
+  days: 730
+  sec_per_day: 86400
+
+water_column:
+  column_depth: 150.  # depth [m]
+  upper_depth: 5.     # depth where lateral advection starts [m]
+  num_layers: 151     # number of layers in water column
+  surf_log: 2         # surface logarithmic layers distribution
+  bot_log: 150        # bottom logarithmic layers distribution
+
+
+input_files:
+  wind_stress: '/inputs/POM_BFM17/monthly_surf_wind_stress_bermuda_killworth2.da'
+  shortwave_solar_radiation: '/inputs/POM_BFM17/monthly_surf_qs_bermuda_killworth2.da'
+  inorganic_suspended_matter: '/inputs/POM_BFM17/monthly_clima_ISM_150m_bermuda_killworth.da'
+  surface_salinity: '/inputs/POM_BFM17/monthly_surf_salt_bermuda_150m_killworth2.da'
+  salinity: '/inputs/POM_BFM17/monthly_clima_salt_150m_bermuda_killworth2.da'
+  salinity_IC: '/inputs/POM_BFM17/init_prof_S_150m_bermuda_killworth2.da'
+  temperature: '/inputs/POM_BFM17/monthly_clima_temp_150m_bermuda_killworth2.da'
+  temperature_IC: '/inputs/POM_BFM17/init_prof_T_150m_bermuda_killworth2.da'
+  w_velocity: '/inputs/POM_BFM17/monthly_clima_w_150m_bermuda_ekman.da'
+  eddy_w_velocity_1: '/inputs/POM_BFM17/bimonthly_random_eddy_w_150m_bermuda_norm1.da'
+  eddy_w_velocity_2: '/inputs/POM_BFM17/bimonthly_random_eddy_w_150m_bermuda_norm2.da'
+  heat_flux_loss: '/inputs/POM_BFM17/monthly_surf_rad_bermuda_killworth2.da'
+  surface_nutrients: '/inputs/POM_BFM17/NutrientsARPAOGS.da'
+  bottom_nutrients: '/inputs/POM_BFM17/monthly_bott_nut_bermuda_150m_killworth.da'

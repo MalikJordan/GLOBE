@@ -1,0 +1,418 @@
+base_element: c
+
+tracers:
+  o2:
+    long_name: oxygen
+    type: inorganic
+    composition:
+      o: 300.                            # [mmol O / m^3]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+
+  co2:
+    long_name: carbon dioxide
+    type: inorganic
+    composition:
+      c: 27060.
+    parameters:
+
+
+  ta:
+    long_name: total alkalinity
+    type: inorganic
+    composition:
+      c: 2660.
+    parameters:
+      calc_alkalinity: False
+
+  po4:
+    long_name: phosphate
+    type: inorganic
+    composition:
+      p: 1.                               # [mmol P / m^3]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+
+  no3:
+    long_name: nitrate
+    type: inorganic
+    composition:
+      n: 5.                                 # [mmol N / m^3]
+    parameters:
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 2.367
+        base_temp: 10.
+
+  nh4:
+    long_name: ammonium
+    type: inorganic
+    composition:
+      n: 1.                               # [mmol N / m^3]
+    parameters:
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 2.367
+        base_temp: 10.
+
+  n2:
+    long_name: nitrogen sink
+    type: inorganic
+    composition:
+      n: 200.
+    parameters:
+      temperature_regulation:
+        temp_limited:
+
+  si04:
+    long_name: silicate
+    type: inorganic
+    composition:
+      si:
+    parameters:
+      temperature_regulation:
+        temp_limited:
+
+  hs:
+    long_name: reduction equivalents
+    type: inorganic
+    composition:
+      s: 1.                                 # [mmol S / m^3]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+
+  bac1:
+    long_name: bacteria
+    type: bacteria
+    composition:
+      c: 1.
+      n: 0.0167
+      p: 1.85E-03
+    parameters:
+      temperature_regulation:
+        temp_limited:
+
+  phyto1:
+    long_name: diatoms
+    type: phytoplankton
+    composition:
+      c: 1.
+      n: 0.0126
+      p: 7.86E-04
+      chl: 0.025
+      si: 0.01
+    parameters:
+      light_attenuation:
+      max_photo_rate:
+      cell_quota:
+        constituents: ["c","n","p","chl","si"]
+        max: [1., 0.252, 1.572E-03, 0.025, 0.01]
+        min: [1., 4.193E-03, 1.8E-04, 0.025, 0.]
+        opt: [1., 0.0126, 7.86E-04, 0.025, 0.01]
+      nutrient_limitation:
+        colimitation: minimum
+        include: ["no3","po4","si04"]
+        no3:
+          type: internal
+          function: droop
+          nh4_inihibited: True
+        nh4:
+          type: external
+          function: monod
+          half_sat: 
+        po4:
+          type: internal
+          function: droop
+        sio4:
+          type:
+          function:
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 
+        base_temp:
+
+  phyto2:
+    long_name: nanoflagellates
+    type: phytoplankton
+    composition:
+      c: 1.
+      n: 0.0126
+      p: 7.86E-04
+      chl: 0.015
+    parameters:
+      light_attenuation: 0.03
+      max_photo_rate:
+      cell_quota:
+        constituents: ["c","n","p","chl"]
+        max: [1., 0.252, 1.572E-03, 0.015]
+        min: [1., 4.193E-03, 1.8E-04, 0.015]
+        opt: [1., 0.0126, 7.86E-04, 0.015]
+      nutrient_limitation:
+        colimitation: minimum
+        include: ["no3","po4"]
+        no3:
+          type: internal
+          function: droop
+          nh4_inihibited: True
+        nh4:
+          type: external
+          function: monod
+          half_sat: 
+        po4:
+          type: internal
+          function: droop
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 
+        base_temp:
+
+  phyto3:
+    long_name: picophytoplankton
+    type: phytoplankton
+    composition:
+      c: 1.
+      n: 0.0126
+      p: 7.86E-04
+      chl: 0.02
+    parameters:
+      light_attenuation: 0.03
+      max_photo_rate:
+      cell_quota:
+        constituents: ["c","n","p","chl"]
+        max: [1., 0.252, 1.572E-03, 0.02]
+        min: [1., 4.193E-03, 1.8E-04, 0.02]
+        opt: [1., 0.0126, 7.86E-04, 0.02]
+      nutrient_limitation:
+        colimitation: minimum
+        include: ["no3","po4"]
+        no3:
+          type: internal
+          function: droop
+          nh4_inihibited: True
+        nh4:
+          type: external
+          function: monod
+          half_sat: 
+        po4:
+          type: internal
+          function: droop
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 
+        base_temp:
+
+  phyto4:
+    long_name: large phytoplankton
+    type: phytoplankton
+    composition:
+      c: 1.
+      n: 0.0126
+      p: 7.86E-04
+      chl: 0.02
+    parameters:
+      light_attenuation: 0.03
+      max_photo_rate:
+      cell_quota:
+        constituents: ["c","n","p","chl"]
+        max: [1., 0.0252, 1.572E-03, 0.02]
+        min: [1., 6.87E-03, 4.29E-04, 0.02]
+        opt: [1., 0.0126, 7.86E-04, 0.02]
+      nutrient_limitation:
+        colimitation: minimum
+        include: ["no3","po4"]
+        no3:
+          type: internal
+          function: droop
+          nh4_inihibited: True
+        nh4:
+          type: external
+          function: monod
+          half_sat: 
+        po4:
+          type: internal
+          function: droop
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 
+        base_temp:
+
+  mesozoo1:
+    long_name: carnivorous mesozooplankton
+    type: zooplankton
+    composition:
+      c: 1.
+      n: 0.015
+      p: 1.67E-03
+    parameters:
+      assimilation_efficiency:
+      ingestion_efficiency: 
+      cell_quota:
+        constituents: ["c","n","p"]
+        max:
+        min:
+        opt:
+      grazing_preferences:
+        phyto1: 0.
+        phyto2: 0.
+        phyto3: 0.
+        phyto4: 0.
+        mesozoo1: 1.
+        mesozoo2: 1.
+        microzoo1: 0.
+        microzoo2: 0.
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 
+        base_temp:
+      oxygen_inhibition:
+        oxygen_limited:
+        function:
+        half_sat:
+
+  mesozoo2:
+    long_name: omnivorous mesozooplankton
+    type: zooplankton
+    composition:
+      c: 1.
+      n: 0.015
+      p: 1.67E-03
+    parameters:
+      assimilation_efficiency:
+      ingestion_efficiency: 
+      cell_quota:
+        constituents: ["c","n","p"]
+        max:
+        min:
+        opt:
+      grazing_preferences:
+        phyto1: 1.
+        phyto2: 0.
+        phyto3: 0.
+        phyto4: 0.7
+        mesozoo1: 0.
+        mesozoo2: 1.
+        microzoo1: 1.
+        microzoo2: 0.
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 
+        base_temp:
+      oxygen_inhibition:
+        oxygen_limited:
+        function:
+        half_sat:
+
+  microzoo1:
+    long_name: microzooplankton
+    type: zooplankton
+    composition:
+      c: 1.
+      n: 0.0167
+      p: 1.85E-03
+    parameters:
+      assimilation_efficiency:
+      ingestion_efficiency: 
+      cell_quota:
+        constituents: ["c","n","p"]
+        max:
+        min:
+        opt:
+      grazing_preferences:
+        bac1: 0.1
+        phyto1: 0.2
+        phyto2: 1.
+        phyto3: 0.1
+        phyto4: 0.
+        microzoo1: 1.
+        microzoo2: 0.8
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 
+        base_temp:
+      oxygen_inhibition:
+        oxygen_limited:
+        function:
+        half_sat:
+
+  microzoo2:
+    long_name: heterotrophic flagellates
+    type: zooplankton
+    composition:
+      c: 1.
+      n: 0.0167
+      p: 1.85E-03
+    parameters:
+      assimilation_efficiency:
+      ingestion_efficiency: 
+      cell_quota:
+        constituents: ["c","n","p"]
+        max:
+        min:
+        opt:
+      grazing_preferences:
+        bac1: 0.9
+        phyto1: 0.
+        phyto2: 0.1
+        phyto3: 1.
+        phyto4: 0.0
+        microzoo1: 0.
+        microzoo2: 0.2
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 
+        base_temp:
+      oxygen_inhibition:
+        oxygen_limited:
+        function:
+        half_sat:
+
+  dom1:
+    long_name: labile dissolved organic matter
+    type: detritus
+    composition:
+      c: 1.
+      n: 0.0126
+      p: 7.862E-04
+    parameters:
+      light_attenuation:
+
+  dom2:
+    long_name: semi-labile dissolved organic matter
+    type: detritus
+    composition:
+      c: 0.1
+    parameters:
+      light_attenuation:
+
+  dom3:
+    long_name: semi-refractory dissolved organic matter
+    type: detritus
+    composition:
+      c: 1.
+    parameters:
+      light_attenuation:
+
+  pom1:
+    long_name: particulate organic matter
+    type: detritus
+    composition:
+      c: 1.
+      n: 0.0126
+      p: 7.862E-04
+      si: 0.0145
+    parameters:
+      light_attenuation:
+  
