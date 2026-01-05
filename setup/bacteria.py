@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 from functions.seasonal_cycling import *
-from functions.other_functions import concentration_ratio, monod, tracer_elements
+from functions.other_functions import concentration_ratio, monod, nutrient_limitation, tracer_elements
 from fractions import Fraction
 class Bacteria():
     """
@@ -182,6 +182,47 @@ class Bacteria():
         # Apply partition to organic matter group (if necessary)
         if "partition" in parameters:   tracers[p].d_dt += lysis * parameters["partition"]
         else:                           tracers[p].d_dt += lysis
+
+
+    def mortality(self, iter, parameters, c, p, ec, ep, ic, ip, tracers):
+        """
+        Definition:: Calculates the non-grazing mortality of planktoninc species
+        """
+
+        # Extract dict
+        c = c[0]
+        p = p[0]
+        ec = ec[c]
+        ep = ep[p]
+        ic = ic[c]
+        ip = ip[p]
+        tc = np.array(tracers[c].conc[ic][iter])
+
+        # Calculate mortality rate
+        mortality = ( parameters["mortality_rate"][0] * tc ) + ( parameters["mortality_rate"][1] * (tc**2) )
+
+        # Oxygen limitation
+        if "oxygen_limited" in parameters and parameters["oxygen_limited"]:
+            oxy_limitation_factor = np.minimum(1., nutrient_limitation(tracers["o2"].conc[...,iter], parameters["half_sat_oxygen"]))
+            mortality += (1. - oxy_limitation_factor) * parameters["mortality_rate_oxy"] * tc
+
+        # # Temperature regulation
+        # if self.temp_limited:
+        #     mortality = mortality #* self.temp_regulation_factor
+
+        # Calculate concentration ratios
+        # concentration_ratio(iter, ic, tracers[c])
+        # concentration_ratio(iter, ip, tracers[p])
+
+        # Update d_dt
+        if parameters != None and "partition" in parameters:   # Mortality can be partitioned between dissolved and particulate detrital pools
+            tracers[c].d_dt -= ec * tracers[c].conc_ratio * mortality * parameters["partition"]
+            tracers[p].d_dt += ep * tracers[c].conc_ratio * mortality * parameters["partition"]
+
+        else:
+            tracers[c].d_dt -= ec * tracers[c].conc_ratio * mortality
+            tracers[p].d_dt += ep * tracers[c].conc_ratio * mortality
+
 
     def uptake(self, iter, base_element, parameters, c, p, ec, ep, ic, tracers):
         

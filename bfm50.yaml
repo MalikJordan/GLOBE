@@ -152,8 +152,6 @@ tracers:
       p: 7.86E-04
       chl: 0.015
     parameters:
-      light_attenuation: 0.03
-      max_photo_rate:
       cell_quota:
         constituents: ["c","n","p","chl"]
         max: [1., 0.252, 1.572E-03, 0.015]
@@ -173,6 +171,11 @@ tracers:
         po4:
           type: internal
           function: droop
+      primary_production:
+        eps_PAR:
+        light_attenuation: 0.03
+        max_photo_rate:
+        initial_PI_slope: 
       temperature_regulation:
         temp_limited: True
         function: q10
@@ -188,8 +191,6 @@ tracers:
       p: 7.86E-04
       chl: 0.02
     parameters:
-      light_attenuation: 0.03
-      max_photo_rate:
       cell_quota:
         constituents: ["c","n","p","chl"]
         max: [1., 0.252, 1.572E-03, 0.02]
@@ -209,6 +210,11 @@ tracers:
         po4:
           type: internal
           function: droop
+      primary_production:
+        eps_PAR:
+        light_attenuation: 0.03
+        max_photo_rate:
+        initial_PI_slope: 
       temperature_regulation:
         temp_limited: True
         function: q10
@@ -224,8 +230,6 @@ tracers:
       p: 7.86E-04
       chl: 0.02
     parameters:
-      light_attenuation: 0.03
-      max_photo_rate:
       cell_quota:
         constituents: ["c","n","p","chl"]
         max: [1., 0.0252, 1.572E-03, 0.02]
@@ -245,6 +249,11 @@ tracers:
         po4:
           type: internal
           function: droop
+      primary_production:
+        eps_PAR:
+        light_attenuation: 0.03
+        max_photo_rate:
+        initial_PI_slope: 
       temperature_regulation:
         temp_limited: True
         function: q10
@@ -259,13 +268,15 @@ tracers:
       n: 0.015
       p: 1.67E-03
     parameters:
-      assimilation_efficiency:
-      ingestion_efficiency: 
       cell_quota:
         constituents: ["c","n","p"]
         max:
         min:
         opt:
+      grazing:
+        assimilation_efficiency:
+        ingestion_efficiency: 
+        max_grazing_rate: 
       grazing_preferences:
         phyto1: 0.
         phyto2: 0.
@@ -293,13 +304,15 @@ tracers:
       n: 0.015
       p: 1.67E-03
     parameters:
-      assimilation_efficiency:
-      ingestion_efficiency: 
       cell_quota:
         constituents: ["c","n","p"]
         max:
         min:
         opt:
+      grazing:
+        assimilation_efficiency:
+        ingestion_efficiency: 
+        max_grazing_rate: 
       grazing_preferences:
         phyto1: 1.
         phyto2: 0.
@@ -327,13 +340,15 @@ tracers:
       n: 0.0167
       p: 1.85E-03
     parameters:
-      assimilation_efficiency:
-      ingestion_efficiency: 
       cell_quota:
         constituents: ["c","n","p"]
         max:
         min:
         opt:
+      grazing:
+        assimilation_efficiency:
+        ingestion_efficiency: 
+        max_grazing_rate: 
       grazing_preferences:
         bac1: 0.1
         phyto1: 0.2
@@ -360,13 +375,15 @@ tracers:
       n: 0.0167
       p: 1.85E-03
     parameters:
-      assimilation_efficiency:
-      ingestion_efficiency: 
       cell_quota:
         constituents: ["c","n","p"]
         max:
         min:
         opt:
+      grazing:
+        assimilation_efficiency:
+        ingestion_efficiency: 
+        max_grazing_rate: 
       grazing_preferences:
         bac1: 0.9
         phyto1: 0.
@@ -424,8 +441,117 @@ tracers:
   
 # -------------------------------------------------------------------------------------------------
 reactions:
-  # Primary production
-  # phyto1
+  # ---------------------------------------------------
+  # Bacteria
+  # ---------------------------------------------------
+  - type: mortality
+    consumed:
+      bac1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      mortality_rate:
+      mortality_rate_oxy:
+      partition:
+  
+  - type: mortality
+    consumed:
+      bac1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      mortality_rate:
+      partition:
+  
+  - type: respiration
+    consumed:
+      bac1: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      oxygen_limited: True
+      respiration_rate:
+      convert_o2: 1/12
+  
+  
+  - type: uptake
+    consumed:
+      dom1: [c,n,p]
+    produced:
+      bac1: [c,n,p]
+    parameters:
+      strategy: independent
+
+  - type: uptake
+    consumed:
+      pom1: [c,n,p]
+    produced:
+      bac1: [c,n,p]
+    parameters:
+      strategy: independent
+
+  # ---------------------------------------------------
+  # Phytoplankton
+  # ---------------------------------------------------
+  # Phyto1
+  - type: chlorophyll_synthesis
+    consumed:
+    produced:
+      phyto1: [chl]
+    parameters:
+      eps_PAR: 0.4                        # [-]
+      initial_PI_slope: 
+      chl_quota:                     # [mg Chl / mg C]
+      chl_relax_rate:             # [(mg C . m^2) / (mg Chl μE)]
+      optimal_Epar_Ek: 
+      max_photo_rate:                  # [1/d]
+      light_attenuation_water: 0.0435     # [1/m]
+      light_attenuation_phyto: 0.03       # [m^2 / mg Chl]
+
+  - type: exudation
+    consumed:
+      phyto1: [c]
+    produced:
+      dom2: [c]
+    parameters:
+      method: photosynthesis
+
+  - type: gross_primary_production
+    consumed:
+      phyto1: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      convert_o2: 1/12
+
+  - type: lysis
+    consumed:
+      phyto1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      method: cell_quota
+      extra_lysis_rate:                # [1/d]
+      half_sat_stress_lysis: 
+      half_sat_extra_lysis: 
+      max_stress_lysis_rate:          # [1/d]
+      om_type: dissolved
+
+  - type: lysis
+    consumed:
+      phyto1: [c,n,p,si]
+    produced:
+      pom1: [c,n,p,si]
+    parameters:
+      method: cell_quota
+      extra_lysis_rate:                # [1/d]
+      half_sat_stress_lysis: 
+      half_sat_extra_lysis: 
+      max_stress_lysis_rate:          # [1/d]
+      om_type: particulate
+
   - type: photosynthesis
     consumed:
       phyto1: [c]
@@ -438,83 +564,17 @@ reactions:
       initial_PI_slope: 1.38E-05
       max_photo_rate: 2.5
 
-  - type: gross_primary_production
+  - type: respiration
     consumed:
       phyto1: [c]
       o2: [o]
     produced:
       co2: [c]
     parameters:
-      convert_o2: 1/12
-
-  # phyto2
-  - type: photosynthesis
-    consumed:
-      phyto2: [c]
-    produced:
-    parameters:
-      eps_PAR: 0.4
-      light_limitation: platt
-      light_location: integrated
-      light_attenuation_water: 0.0435
-      initial_PI_slope: 1.38E-05
-      max_photo_rate: 1.6
-
-  - type: gross_primary_production
-    consumed:
-      phyto2: [c]
-      o2: [o]
-    produced:
-      co2: [c]
-    parameters:
-      convert_o2: 1/12
-
-  # phyto3
-  - type: photosynthesis
-    consumed:
-      phyto3: [c]
-    produced:
-    parameters:
-      eps_PAR: 0.4
-      light_limitation: platt
-      light_location: integrated
-      light_attenuation_water: 0.0435
-      initial_PI_slope: 1.38E-05
-      max_photo_rate: 1.02
-
-  - type: gross_primary_production
-    consumed:
-      phyto3: [c]
-      o2: [o]
-    produced:
-      co2: [c]
-    parameters:
-      convert_o2: 1/12
-
-  # phyto4
-  - type: photosynthesis
-    consumed:
-      phyto4: [c]
-    produced:
-    parameters:
-      eps_PAR: 0.4
-      light_limitation: platt
-      light_location: integrated
-      light_attenuation_water: 0.0435
-      initial_PI_slope: 1.38E-05
-      max_photo_rate: 0.83
-
-  - type: gross_primary_production
-    consumed:
-      phyto4: [c]
-      o2: [o]
-    produced:
-      co2: [c]
-    parameters:
-      convert_o2: 1/12
-
-  # Phytoplankton uptake
-  # phyto1
+      activity_respiration_frac:      # [-]
+      basal_respiration_rate:         # [1/d]
+      convert_o2: 1/12                    # [mmol O2 / unit base_element]
+  
   - type: uptake
     consumed:
       no3: [n]
@@ -539,7 +599,87 @@ reactions:
       phyto1: [si]
     parameters:
 
-  # phyto2
+  # Phyto2
+  - type: chlorophyll_synthesis
+    consumed:
+    produced:
+      phyto2: [chl]
+    parameters:
+      eps_PAR: 0.4                        # [-]
+      initial_PI_slope: 
+      chl_quota:                     # [mg Chl / mg C]
+      chl_relax_rate:             # [(mg C . m^2) / (mg Chl μE)]
+      optimal_Epar_Ek: 
+      max_photo_rate:                  # [1/d]
+      light_attenuation_water: 0.0435     # [1/m]
+      light_attenuation_phyto: 0.03       # [m^2 / mg Chl]
+
+  - type: exudation
+    consumed:
+      phyto2: [c]
+    produced:
+      dom2: [c]
+    parameters:
+      method: photosynthesis
+
+  - type: gross_primary_production
+    consumed:
+      phyto2: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      convert_o2: 1/12
+
+  - type: lysis
+    consumed:
+      phyto2: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      method: cell_quota
+      extra_lysis_rate:                # [1/d]
+      half_sat_stress_lysis: 
+      half_sat_extra_lysis: 
+      max_stress_lysis_rate:          # [1/d]
+      om_type: dissolved
+
+  - type: lysis
+    consumed:
+      phyto2: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      method: cell_quota
+      extra_lysis_rate:                # [1/d]
+      half_sat_stress_lysis: 
+      half_sat_extra_lysis: 
+      max_stress_lysis_rate:          # [1/d]
+      om_type: particulate
+
+  - type: photosynthesis
+    consumed:
+      phyto2: [c]
+    produced:
+    parameters:
+      eps_PAR: 0.4
+      light_limitation: platt
+      light_location: integrated
+      light_attenuation_water: 0.0435
+      initial_PI_slope: 1.38E-05
+      max_photo_rate: 1.6
+
+  - type: respiration
+    consumed:
+      phyto2: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      activity_respiration_frac: 0.05     # [-]
+      basal_respiration_rate: 0.05        # [1/d]
+      convert_o2: 1/12                    # [mmol O2 / unit base_element]
+  
   - type: uptake
     consumed:
       no3: [n]
@@ -557,7 +697,87 @@ reactions:
       dom1: [p]
     parameters:
 
-  # phyto3
+  # Phyto3
+  - type: chlorophyll_synthesis
+    consumed:
+    produced:
+      phyto3: [chl]
+    parameters:
+      eps_PAR: 0.4                        # [-]
+      initial_PI_slope: 
+      chl_quota:                     # [mg Chl / mg C]
+      chl_relax_rate:             # [(mg C . m^2) / (mg Chl μE)]
+      optimal_Epar_Ek: 
+      max_photo_rate:                  # [1/d]
+      light_attenuation_water: 0.0435     # [1/m]
+      light_attenuation_phyto: 0.03       # [m^2 / mg Chl]
+
+  - type: exudation
+    consumed:
+      phyto3: [c]
+    produced:
+      dom2: [c]
+    parameters:
+      method: photosynthesis
+
+  - type: gross_primary_production
+    consumed:
+      phyto3: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      convert_o2: 1/12
+
+  - type: lysis
+    consumed:
+      phyto3: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      method: cell_quota
+      extra_lysis_rate:                # [1/d]
+      half_sat_stress_lysis: 
+      half_sat_extra_lysis: 
+      max_stress_lysis_rate:          # [1/d]
+      om_type: dissolved
+
+  - type: lysis
+    consumed:
+      phyto3: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      method: cell_quota
+      extra_lysis_rate:                # [1/d]
+      half_sat_stress_lysis: 
+      half_sat_extra_lysis: 
+      max_stress_lysis_rate:          # [1/d]
+      om_type: particulate
+
+  - type: photosynthesis
+    consumed:
+      phyto3: [c]
+    produced:
+    parameters:
+      eps_PAR: 0.4
+      light_limitation: platt
+      light_location: integrated
+      light_attenuation_water: 0.0435
+      initial_PI_slope: 1.38E-05
+      max_photo_rate: 1.02
+
+  - type: respiration
+    consumed:
+      phyto3: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      activity_respiration_frac: 0.05     # [-]
+      basal_respiration_rate: 0.05        # [1/d]
+      convert_o2: 1/12                    # [mmol O2 / unit base_element]
+  
   - type: uptake
     consumed:
       no3: [n]
@@ -575,7 +795,87 @@ reactions:
       dom1: [p]
     parameters:
 
-  # phyto4
+  # Phyto4
+  - type: chlorophyll_synthesis
+    consumed:
+    produced:
+      phyto1: [chl]
+    parameters:
+      eps_PAR: 0.4                        # [-]
+      initial_PI_slope: 
+      chl_quota:                     # [mg Chl / mg C]
+      chl_relax_rate:             # [(mg C . m^2) / (mg Chl μE)]
+      optimal_Epar_Ek: 
+      max_photo_rate:                  # [1/d]
+      light_attenuation_water: 0.0435     # [1/m]
+      light_attenuation_phyto: 0.03       # [m^2 / mg Chl]
+
+  - type: exudation
+    consumed:
+      phyto4: [c]
+    produced:
+      dom2: [c]
+    parameters:
+      method: photosynthesis
+
+  - type: gross_primary_production
+    consumed:
+      phyto4: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      convert_o2: 1/12
+
+  - type: lysis
+    consumed:
+      phyto4: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      method: cell_quota
+      extra_lysis_rate:                # [1/d]
+      half_sat_stress_lysis: 
+      half_sat_extra_lysis: 
+      max_stress_lysis_rate:          # [1/d]
+      om_type: dissolved
+
+  - type: lysis
+    consumed:
+      phyto4: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      method: cell_quota
+      extra_lysis_rate:                # [1/d]
+      half_sat_stress_lysis: 
+      half_sat_extra_lysis: 
+      max_stress_lysis_rate:          # [1/d]
+      om_type: particulate
+
+  - type: photosynthesis
+    consumed:
+      phyto4: [c]
+    produced:
+    parameters:
+      eps_PAR: 0.4
+      light_limitation: platt
+      light_location: integrated
+      light_attenuation_water: 0.0435
+      initial_PI_slope: 1.38E-05
+      max_photo_rate: 0.83
+
+  - type: respiration
+    consumed:
+      phyto4: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      activity_respiration_frac: 0.05     # [-]
+      basal_respiration_rate: 0.05        # [1/d]
+      convert_o2: 1/12                    # [mmol O2 / unit base_element]
+  
   - type: uptake
     consumed:
       no3: [n]
@@ -592,6 +892,472 @@ reactions:
       phyto4: [p]
       dom1: [p]
     parameters:
+
+  # ---------------------------------------------------
+  # Zooplankton
+  # ---------------------------------------------------
+  # Mesozoo1
+  - type: grazing
+    consumed:
+      mesozoo1: [c,n,p]
+    produced:
+      mesozoo1: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      mesozoo2: [c,n,p]
+    produced:
+      mesozoo1: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: excretion
+    consumed:
+      mesozoo1: [n]
+    produced:
+      nh4: [n]
+    parameters:
+      function: grazing
+
+  - type: excretion
+    consumed:
+      mesozoo1: [p]
+    produced:
+      po4: [p]
+    parameters:
+      function: grazing
+
+  - type: excretion
+    consumed: 
+      mesozoo1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      function: grazing
+      partition: []        # c,n,p [-]
+
+  - type: excretion
+    consumed: 
+      mesozoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      function: grazing
+      partition: []        # c,n,p [-]
+
+  - type: mortality
+    consumed:
+      mesozoo1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+
+  - type: mortality
+    consumed:
+      mesozoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+
+  - type: respiration
+    consumed:
+      mesozoo1: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      respiration_rate:
+      convert_o2: 1/12
+
+  # Mesozoo2
+  - type: grazing
+    consumed:
+      phyto1: [c,n,p,chl,si]
+    produced:
+      mesozoo2: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      phyto4: [c,n,p,chl]
+    produced:
+      mesozoo2: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      mesozoo2: [c,n,p]
+    produced:
+      mesozoo2: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      microzoo1: [c,n,p]
+    produced:
+      mesozoo2: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: excretion
+    consumed:
+      mesozoo2: [n]
+    produced:
+      nh4: [n]
+    parameters:
+      function: grazing
+
+  - type: excretion
+    consumed:
+      mesozoo2: [p]
+    produced:
+      po4: [p]
+    parameters:
+      function: grazing
+
+  - type: excretion
+    consumed: 
+      mesozoo2: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      function: grazing
+      partition: []        # c,n,p [-]
+
+  - type: excretion
+    consumed: 
+      mesozoo2: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      function: grazing
+      partition: []        # c,n,p [-]
+
+  - type: mortality
+    consumed:
+      mesozoo2: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+
+  - type: mortality
+    consumed:
+      mesozoo2: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+
+  - type: respiration
+    consumed:
+      mesozoo2: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      respiration_rate:
+      convert_o2: 1/12
+
+  # Microzoo1
+  - type: grazing
+    consumed:
+      bac1: [c,n,p]
+    produced:
+      microzoo1: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      phyto1: [c,n,p,chl,si]
+    produced:
+      microzoo1: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      phyto2: [c,n,p,chl]
+    produced:
+      mesozoo2: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      phyto3: [c,n,p,chl]
+    produced:
+      mesozoo2: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      microzoo1: [c,n,p]
+    produced:
+      microzoo1: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      microzoo2: [c,n,p]
+    produced:
+      microzoo1: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: excretion
+    consumed:
+      microzoo1: [n]
+    produced:
+      nh4: [n]
+    parameters:
+      function: grazing
+
+  - type: excretion
+    consumed:
+      microzoo1: [p]
+    produced:
+      po4: [p]
+    parameters:
+      function: grazing
+
+  - type: excretion
+    consumed: 
+      microzoo1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      function: grazing
+      partition: []        # c,n,p [-]
+
+  - type: excretion
+    consumed: 
+      microzoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      function: grazing
+      partition: []        # c,n,p [-]
+
+  - type: mortality
+    consumed:
+      microzoo1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+
+  - type: mortality
+    consumed:
+      microzoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+
+  - type: respiration
+    consumed:
+      microzoo1: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      respiration_rate:
+      convert_o2: 1/12
+
+  # Microzoo2
+  - type: grazing
+    consumed:
+      bac1: [c,n,p]
+    produced:
+      microzoo2: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      phyto2: [c,n,p,chl]
+    produced:
+      microzoo2: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      phyto3: [c,n,p,chl]
+    produced:
+      microzoo2: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: grazing
+    consumed:
+      microzoo2: [c,n,p]
+    produced:
+      microzoo2: [c,n,p]
+    parameters:
+      function: holling-2
+      feeding_threshold:              # [mg C / m^3]
+      max_grazing_rate:                # [1/d]
+      half_sat_grazing:              # [mg C / m^3]
+
+  - type: excretion
+    consumed:
+      microzoo2: [n]
+    produced:
+      nh4: [n]
+    parameters:
+      function: grazing
+
+  - type: excretion
+    consumed:
+      microzoo2: [p]
+    produced:
+      po4: [p]
+    parameters:
+      function: grazing
+
+  - type: excretion
+    consumed: 
+      microzoo2: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+      function: grazing
+      partition: []        # c,n,p [-]
+
+  - type: excretion
+    consumed: 
+      microzoo2: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+      function: grazing
+      partition: []        # c,n,p [-]
+
+  - type: mortality
+    consumed:
+      microzoo2: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+    parameters:
+
+  - type: mortality
+    consumed:
+      microzoo2: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+    parameters:
+
+  - type: respiration
+    consumed:
+      microzoo2: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    parameters:
+      respiration_rate:
+      convert_o2: 1/12
+
+  - type:
+    consumed:
+    produced:
+    parameters:
+  - type:
+    consumed:
+    produced:
+    parameters:
+  - type:
+    consumed:
+    produced:
+    parameters:
+  - type:
+    consumed:
+    produced:
+    parameters:
+  - type:
+    consumed:
+    produced:
+    parameters:
+  - type:
+    consumed:
+    produced:
+    parameters:
+  - type:
+    consumed:
+    produced:
+    parameters:
+  - type:
+    consumed:
+    produced:
+    parameters:
+  - type:
+    consumed:
+    produced:
+    parameters:
+  - type:
+    consumed:
+    produced:
+    parameters:
+  - type:
+    consumed:
+    produced:
+    parameters:
+  - type:
+    consumed:
+    produced:
+    parameters:
+
+  
 
 
   
