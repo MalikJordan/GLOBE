@@ -9,7 +9,8 @@ class Inorganic():
     
     """
 
-    def __init__(self, abbrev, iters, reactions, **tracer):
+
+    def __init__(self, abbrev, iters, num_layers, reactions, **tracer):
         self.abbrev = abbrev
         self.name = tracer["long_name"]
         self.type = tracer["type"]
@@ -29,9 +30,21 @@ class Inorganic():
         else:   pass
 
         for key in tracer["composition"]: 
+            # Add constituent to composition/concentration
             self.composition.append(key)
-            conc.append(tracer["composition"][key])
-        hold = np.zeros((len(conc),iters))
+
+            # Set initial conditions
+            if isinstance(tracer["composition"][key], str): # Read initial conditions from file
+                conc.append( np.fromfile(os.getcwd() + tracer["composition"][key]) )
+            elif isinstance(tracer["composition"][key], (int,float)): # Create array of initial conditions
+                if num_layers == 1: # 0d configuration
+                    conc.append(tracer["composition"][key])
+                else: # 1d configuration
+                    conc.append(tracer["composition"][key] * np.ones(num_layers))
+            elif isinstance(tracer["composition"][key], (list,np.ndarray)):
+                conc.append(np.array(tracer["composition"][key]))
+
+        hold = np.zeros((len(conc),iters),dtype=np.ndarray)
         hold[...,0] = conc
         self.conc = np.array(hold)
         self.d_dt = np.zeros_like(conc)
@@ -47,6 +60,47 @@ class Inorganic():
             else:   produced = {"empty": "empty"}
             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
+   
+
+
+    # def __init__(self, abbrev, iters, reactions, **tracer):
+    #     self.abbrev = abbrev
+    #     self.name = tracer["long_name"]
+    #     self.type = tracer["type"]
+
+    #     # Temperature regulation
+    #     self.temperature_regulation = tracer["parameters"]["temperature_regulation"]
+    #     self.temperature_regulation["temperature_regulation_factor"] = 1.
+
+    #     # Oxygen inhibition
+        
+
+    #     # Concentration array
+    #     self.composition = []
+    #     conc = []
+    #     if len(tracer["composition"]) > 1:    sys.exit("Inorganic: Only one element accepted per inorganic nutrient. Check documentation adn edit input file.")
+    #     elif len(tracer["composition"]) < 1:  sys.exit("Inorganic: Element required for " + self.name + ". Check documentation adn edit input file.")
+    #     else:   pass
+
+    #     for key in tracer["composition"]: 
+    #         self.composition.append(key)
+    #         conc.append(tracer["composition"][key])
+    #     hold = np.zeros((len(conc),iters))
+    #     hold[...,0] = conc
+    #     self.conc = np.array(hold)
+    #     self.d_dt = np.zeros_like(conc)
+    #     self.conc_ratio = np.ones_like(self.conc[...,0])
+
+    #     # Add relevant reactions
+    #     self.reactions = []
+    #     for reac in reactions:
+    #         # Add reaction to dictionary
+    #         if "consumed" in reac and reac["consumed"] != None:    consumed = reac["consumed"]
+    #         else:   consumed = {"empty": "empty"}
+    #         if "produced" in reac and reac["produced"] != None:    produced = reac["produced"]
+    #         else:   produced = {"empty": "empty"}
+    #         if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
+    #             self.reactions.append(reac)
         
     
     def inorg(self, iter, base_element, base_temp, coordinates, dz, mixed_layer_depth, surface_PAR, temperature, salinity, wind, tracers):

@@ -1,15 +1,26 @@
-simulation:
-  timestep: 360.
-  days: 730
-  sec_per_day: 86400
+general:
+  water_specific_heat_times_density:  4.187E06
+  earth_angular_velocity: 7.29E-05
+  idiagn: 1           # switch between prognostic (idiagn = 0) and diagnostic (idiagn = 1) mode
+  smoth: 0.1          # parameter for hasselin filter
+  ihotst: 0           # switch for cold start (ihotst = 0) and hot start, ie reading restart (ihotst = 1)
 
-water_column:
-  column_depth: 150.  # depth [m]
-  upper_depth: 5.     # depth where lateral advection starts [m]
-  num_layers: 151     # number of layers in water column
-  surf_log: 2         # surface logarithmic layers distribution
-  bot_log: 150        # bottom logarithmic layers distribution
+relaxation_times:
+  trt: 0              # lateral temperature advection
+  srt: 1              # lateral salinity advection
+  ssrt: 5.68          # surface salinity flux
 
+relaxation_velocities:
+  nrt_o2o: 0.06       # oxygen
+  nrt_n1p: 0.06       # phosphate
+  nrt_n3n: 0.06       # nitrate
+  nrt_n4n: 0.05       # ammonium
+
+background_diffusion:
+  umol: 1.e-06        # general
+  umolt: 1.e-07       # temperature
+  umols: 1.3e-07      # salalinity
+  umolbfm: 1.e-04     # bfm
 
 input_files:
   wind_stress: '/inputs/POM_BFM17/monthly_surf_wind_stress_bermuda_killworth2.da'

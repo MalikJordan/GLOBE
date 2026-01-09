@@ -9,7 +9,8 @@ class Bacteria():
     
     """
 
-    def __init__(self, abbrev, iters, reactions, **tracer):
+
+    def __init__(self, abbrev, base_element, iters, num_layers, reactions, **tracer):
         self.abbrev = abbrev
         self.name = tracer["long_name"]
         self.type = tracer["type"]
@@ -30,15 +31,34 @@ class Bacteria():
             sys.exit("Bacteria: Element required for " + self.name + ". Check documentation adn edit input file.")
         else:
             for key in tracer["composition"]:
-                available_elements = ['c','n','p']
+                available_elements = ['c','n','p','fe']
                 if key in available_elements:
+                    # Add constituent to composition/concentration
                     self.composition.append(key)
-                    conc.append(tracer["composition"][key])
+
+                    # Set initial conditions
+                    if isinstance(tracer["composition"][key], str): # Read initial conditions from file
+                        conc.append( np.fromfile(os.getcwd() + tracer["composition"][key]) )
+                    elif isinstance(tracer["composition"][key], (int,float)): # Create array of initial conditions
+                        if num_layers == 1: # 0d configuration
+                            conc.append(tracer["composition"][key])
+                        else: # 1d configuration
+                            conc.append(tracer["composition"][key] * np.ones(num_layers))
+                    elif isinstance(tracer["composition"][key], (list,np.ndarray)):
+                        conc.append(np.array(tracer["composition"][key]))
+                    elif isinstance(tracer["composition"][key], dict): # Create array of initial conditions based off ratio to base element
+                        index = self.composition.index(base_element)
+                        if num_layers == 1: # 0d configuration
+                            conc.append(tracer["composition"][key][base_element] * conc[index] )
+                        else: # 1d configuration
+                            conc.append(tracer["composition"][key][base_element] * conc[index] * np.ones(num_layers))
+
                 else:
                     sys.exit("Bacteria: Element '" + key + "' not recognized. Check documentation and edit input file.")
-        hold = np.zeros((len(conc),iters))
+        
+        hold = np.zeros((len(conc),iters),dtype=np.ndarray)
         hold[...,0] = conc
-        self.conc = np.array(hold)
+        self.conc = hold
         self.d_dt = np.zeros_like(conc)
         self.conc_ratio = np.zeros_like(conc)
 
@@ -58,6 +78,58 @@ class Bacteria():
         
         # Reorder reactions (uptake needs to appear first)
         self.reactions = [item for item in self.reactions if item["type"] == "uptake"] + [item for item in self.reactions if item["type"] != "uptake"]
+
+
+
+    # def __init__(self, abbrev, iters, reactions, **tracer):
+    #     self.abbrev = abbrev
+    #     self.name = tracer["long_name"]
+    #     self.type = tracer["type"]
+
+    #     # Nutrient limitation
+    #     self.nutrient_limitation = tracer["parameters"]["nutrient_limitation"]
+    #     self.nutrient_limitation_factor = {}
+    #     self.nutrient_colimitation = 0.
+
+    #     # Temperature regulation
+    #     self.temperature_regulation = tracer["parameters"]["temperature_regulation"]
+    #     self.temp_regulation_factor = 1.
+
+    #     # Composition and concentration arrays
+    #     self.composition = []
+    #     conc = []
+    #     if len(tracer["composition"]) < 1:
+    #         sys.exit("Bacteria: Element required for " + self.name + ". Check documentation adn edit input file.")
+    #     else:
+    #         for key in tracer["composition"]:
+    #             available_elements = ['c','n','p','fe']
+    #             if key in available_elements:
+    #                 self.composition.append(key)
+    #                 conc.append(tracer["composition"][key])
+    #             else:
+    #                 sys.exit("Bacteria: Element '" + key + "' not recognized. Check documentation and edit input file.")
+    #     hold = np.zeros((len(conc),iters))
+    #     hold[...,0] = conc
+    #     self.conc = np.array(hold)
+    #     self.d_dt = np.zeros_like(conc)
+    #     self.conc_ratio = np.zeros_like(conc)
+
+    #     # Production
+    #     self.upt = {}   # Uptake
+
+    #     # Add relevant reactions
+    #     self.reactions = []
+    #     for reac in reactions:
+    #         # Add reaction to dictionary
+    #         if "consumed" in reac and reac["consumed"] != None:    consumed = reac["consumed"]
+    #         else:   consumed = {"empty": "empty"}
+    #         if "produced" in reac and reac["produced"] != None:    produced = reac["produced"]
+    #         else:   produced = {"empty": "empty"}
+    #         if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
+    #             self.reactions.append(reac)
+        
+    #     # Reorder reactions (uptake needs to appear first)
+    #     self.reactions = [item for item in self.reactions if item["type"] == "uptake"] + [item for item in self.reactions if item["type"] != "uptake"]
 
 
     def bac(self, iter, tracers):

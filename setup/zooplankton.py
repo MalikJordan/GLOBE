@@ -8,7 +8,98 @@ class Zooplankton():
     """
     """
 
-    def __init__(self, abbrev, iters, reactions, **tracer):
+    def __init__(self, abbrev, base_element, iters, num_layers, reactions, **tracer):
+        self.abbrev = abbrev
+        self.name = tracer["long_name"]
+        self.type = tracer["type"]
+
+        # Intracellular nutrinet quotas
+        if "cell_quota" in tracer["parameters"]:
+            self.cell_quota = tracer["parameters"]["cell_quota"]
+        
+        # Temperature regulation
+        self.temperature_regulation = tracer["parameters"]["temperature_regulation"]
+        self.temp_regulation_factor = 1.
+
+        # Oxygen inhibition
+        self.oxygen_inhibition = tracer["parameters"]["oxygen_inhibition"]
+        self.oxy_limitation_factor = 1.
+
+        # Grazing parameters
+        self.grazing_preferences = tracer["parameters"]["grazing_preferences"]
+        self.assimilation_efficiency = tracer["parameters"]["assimilation_efficiency"]
+        self.ingestion_efficiency = tracer["parameters"]["ingestion_efficiency"]
+        self.grazing_rates = {}
+        self.prey_availability = {}
+        
+        # Composition and concentration arrays
+        self.composition = []
+        conc = []
+        if len(tracer["composition"]) < 1:
+            sys.exit("Zooplankton: Element required for " + self.name + ". Check documentation adn edit input file.")
+        else:
+            for key in tracer["composition"]:
+                available_elements = ['c','n','p','fe']
+                if key in available_elements:
+                    # Add constituent to composition/concentration
+                    self.composition.append(key)
+
+                    # Set initial conditions
+                    if isinstance(tracer["composition"][key], str): # Read initial conditions from file
+                        conc.append( np.fromfile(os.getcwd() + tracer["composition"][key]) )
+                    elif isinstance(tracer["composition"][key], (int,float)): # Create array of initial conditions
+                        if num_layers == 1: # 0d configuration
+                            conc.append(tracer["composition"][key])
+                        else: # 1d configuration
+                            conc.append(tracer["composition"][key] * np.ones(num_layers))
+                    elif isinstance(tracer["composition"][key], (list,np.ndarray)):
+                        conc.append(np.array(tracer["composition"][key]))
+                    elif isinstance(tracer["composition"][key], dict): # Create array of initial conditions based off ratio to base element
+                        index = self.composition.index(base_element)
+                        if num_layers == 1: # 0d configuration
+                            conc.append(tracer["composition"][key][base_element] * conc[index] )
+                        else: # 1d configuration
+                            conc.append(tracer["composition"][key][base_element] * conc[index] * np.ones(num_layers))
+
+                else:
+                    sys.exit("Zooplankton: Element '" + key + "' not recognized. Check documentation and edit input file.")
+        
+        hold = np.zeros((len(conc),iters),dtype=np.ndarray)
+        hold[...,0] = conc
+        self.conc = hold
+        self.d_dt = np.zeros_like(conc)
+        self.conc_ratio = np.copy(self.cell_quota["opt"])
+
+        # Add relevant reactions
+        self.reactions = []
+        for reac in reactions:
+            # Add reaction to dictionary
+            if "consumed" in reac and reac["consumed"] != None:    consumed = reac["consumed"]
+            else:   consumed = {"empty": "empty"}
+            if "produced" in reac and reac["produced"] != None:    produced = reac["produced"]
+            else:   produced = {"empty": "empty"}
+            if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
+                self.reactions.append(reac)
+        
+        # Boolean to determine whether activity and basal respiration will be calculated for zooplankton processes
+        self.calc_respiration = False
+        for reac in self.reactions:
+            if reac["type"] == "respiration":
+                self.calc_respiration = True
+                break
+        # Boolean to determine whether grazing rates will be calculated for zooplankton processes
+        self.calc_grazing = False
+        for reac in self.reactions:
+            if reac["type"] == "grazing":
+                self.calc_grazing = True
+                break
+
+        # Reorder reactions (grazing needs to appear first)
+        self.reactions = [item for item in self.reactions if item["type"] == "respiration"] + [item for item in self.reactions if item["type"] != "respiration"]
+        self.reactions = [item for item in self.reactions if item["type"] == "grazing"] + [item for item in self.reactions if item["type"] != "grazing"]
+
+
+    # def __init__(self, abbrev, iters, reactions, **tracer):
         self.abbrev = abbrev
         self.name = tracer["long_name"]
         self.type = tracer["type"]

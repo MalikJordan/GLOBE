@@ -1,7 +1,7 @@
 import os
 # import sys
 import numpy as np
-from setup.initialize import import_model
+from setup.initialize import import_bgc_model, import_physical_model
 from functions.bgc_rate_eqns import bgc_rate_eqns
 import matplotlib.pyplot as plt
 
@@ -19,15 +19,36 @@ import matplotlib.pyplot as plt
 #         sys.exit()
 #     check_file = os.path.exists(file)
 #     first_check = False
-file = 'tests/npzd/npzd.yaml'
+
+# Import physical model
+file = 'physical.yaml'
 file_path = os.getcwd() + '/' + file
-base_element, parameters, reactions, tracers = import_model(file_path)
+physical = import_physical_model(file_path)
+
+file = 'tests/bfm17/bfm17-1d.yaml'
+file_path = os.getcwd() + '/' + file
+base_element, reactions, tracers = import_bgc_model(file_path, physical)
 
 # ----------------------------------------------------------------------------------------------------
 # Begin simulation
 # ----------------------------------------------------------------------------------------------------
-for iter in range(0,parameters["simulation"]["iters"]-1):
-    bgc_rate_eqns(iter, base_element, parameters, tracers)
+# for iter in range(0,physical["simulation"]["iters"]-1):
+#     bgc_rate_eqns(iter, base_element, parameters, tracers)
+
+
+for iter in range(0,physical["simulation"]["iters"]-1):
+    t=0
+
+
+
+
+
+
+
+
+
+
+
 
 concentration = []
 tracer_indices = {}
@@ -42,7 +63,7 @@ for t in tracers:
 
 concentration = np.array(concentration,dtype=float)
 
-np.savez('npzd.npz',concentration=concentration,time=parameters["simulation"]["time"])
+np.savez('npzd.npz',concentration=concentration,time=physical["simulation"]["time"])
 np.savez('tracer_indices_npzd.npz',**tracer_indices)
 
 print('Simulation complete.')

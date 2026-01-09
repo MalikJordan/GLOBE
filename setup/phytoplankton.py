@@ -9,7 +9,7 @@ class Phytoplankton():
     
     """
 
-    def __init__(self, abbrev, iters, reactions, **tracer):
+    def __init__(self, abbrev, base_element, iters, num_layers, reactions, **tracer):
         self.abbrev = abbrev
         self.name = tracer["long_name"]
         self.type = tracer["type"]
@@ -46,20 +46,36 @@ class Phytoplankton():
             for key in tracer["composition"]:
                 available_elements = ['c','n','p','chl','fe','si','caco3']
                 if key in available_elements:
+                    # Add constituent to composition/concentration
                     self.composition.append(key)
-                    conc.append(tracer["composition"][key])
+
+                    # Set initial conditions
+                    if isinstance(tracer["composition"][key], str): # Read initial conditions from file
+                        conc.append( np.fromfile(os.getcwd() + tracer["composition"][key]) )
+                    elif isinstance(tracer["composition"][key], (int,float)): # Create array of initial conditions
+                        if num_layers == 1: # 0d configuration
+                            conc.append(tracer["composition"][key])
+                        else: # 1d configuration
+                            conc.append(tracer["composition"][key] * np.ones(num_layers))
+                    elif isinstance(tracer["composition"][key], (list,np.ndarray)):
+                        conc.append(np.array(tracer["composition"][key]))
+                    elif isinstance(tracer["composition"][key], dict): # Create array of initial conditions based off ratio to base element
+                        index = self.composition.index(base_element)
+                        if num_layers == 1: # 0d configuration
+                            conc.append(tracer["composition"][key][base_element] * conc[index] )
+                        else: # 1d configuration
+                            conc.append(tracer["composition"][key][base_element] * conc[index] * np.ones(num_layers))
+
                 else:
                     sys.exit("Phytoplankton: Element '" + key + "' not recognized. Check documentation and edit input file.")
-        
+                
         hold = np.zeros((len(conc),iters),dtype=np.ndarray)
-        for i in range(0,len(conc)):
-            hold[i,0] = np.array(conc[i])
-        self.conc = np.array(hold)
+        hold[...,0] = conc
+        self.conc = hold
         self.d_dt = np.zeros_like(conc)
         self.conc_ratio = np.copy(self.cell_quota["opt"])
 
         # Production 
-        # self.exu = np.ones_like(self.conc[0,...],dtype=float)   # Exudation (Initialzied to 1 for use in respiration)
         self.exu = np.zeros_like(self.conc[0,...],dtype=float)   # Exudation (Initialzied to 1 for use in respiration)
         self.gpp = np.zeros_like(self.conc[0,...],dtype=float)   # Gross Primary Production (Initialized to 1 for use in exudation and respiration)
         self.lys = np.zeros_like(self.conc[0,...],dtype=float)  # Lysis (carbon)
@@ -104,6 +120,103 @@ class Phytoplankton():
             if reac["type"] == "respiration":
                 self.calc_respiration = True
                 break
+
+
+# def __init__(self, abbrev, iters, reactions, **tracer):
+#         self.abbrev = abbrev
+#         self.name = tracer["long_name"]
+#         self.type = tracer["type"]
+
+#         # Nutrient limitation
+#         self.nutrient_limitation = tracer["parameters"]["nutrient_limitation"]
+#         self.nutrient_limitation_factor = {}
+#         self.nutrient_colimitation = 0.
+        
+#         # Intracellular nutrinet quotas
+#         self.cell_quota = tracer["parameters"]["cell_quota"]
+
+#         # Light limitation
+#         if "light_attenuation" in tracer["parameters"]:
+#             self.light_attenuation = tracer["parameters"]["light_attenuation"]
+#         else:
+#             self.light_attenuation = 0.
+
+#         # Temperature regulation
+#         self.temperature_regulation = tracer["parameters"]["temperature_regulation"]
+#         self.temp_regulation_factor = 1.
+
+#         # Oxygen inhibition
+#         if "oxygen_inhibition" in tracer["parameters"]:
+#             self.oxygen_inhibition = tracer["parameters"]["oxygen_inhibition"]
+#             self.oxy_limitation_factor = 1.
+
+#         # Composition and concentration arrays
+#         self.composition = []
+#         conc = []
+#         if len(tracer["composition"]) < 1:
+#             sys.exit("Phytoplankton: Element required for " + self.name + ". Check documentation and edit input file.")
+#         else:
+#             for key in tracer["composition"]:
+#                 available_elements = ['c','n','p','chl','fe','si','caco3']
+#                 if key in available_elements:
+#                     self.composition.append(key)
+#                     conc.append(tracer["composition"][key])
+#                 else:
+#                     sys.exit("Phytoplankton: Element '" + key + "' not recognized. Check documentation and edit input file.")
+        
+#         hold = np.zeros((len(conc),iters),dtype=np.ndarray)
+#         for i in range(0,len(conc)):
+#             hold[i,0] = np.array(conc[i])
+#         self.conc = np.array(hold)
+#         self.d_dt = np.zeros_like(conc)
+#         self.conc_ratio = np.copy(self.cell_quota["opt"])
+
+#         # Production 
+#         # self.exu = np.ones_like(self.conc[0,...],dtype=float)   # Exudation (Initialzied to 1 for use in respiration)
+#         self.exu = np.zeros_like(self.conc[0,...],dtype=float)   # Exudation (Initialzied to 1 for use in respiration)
+#         self.gpp = np.zeros_like(self.conc[0,...],dtype=float)   # Gross Primary Production (Initialized to 1 for use in exudation and respiration)
+#         self.lys = np.zeros_like(self.conc[0,...],dtype=float)  # Lysis (carbon)
+#         self.npp = np.zeros_like(self.conc[0,...],dtype=float)  # Net Primary Production
+#         self.psn = np.zeros_like(self.conc[0,...],dtype=float)  # Photosynthesis
+#         self.rsp = np.zeros_like(self.conc[0,...],dtype=float)  # Respiration
+#         self.upt = {}   # Uptake
+
+#         # self.uptn = np.zeros_like(self.conc[0,...],dtype=float) # Nitrogen uptake
+#         # self.uptp = np.zeros_like(self.conc[0,...],dtype=float) # Phosophorus uptake
+
+#         # Add relevant reactions
+#         self.reactions = []
+#         for reac in reactions:
+#             # Add reaction to dictionary
+#             if "consumed" in reac and reac["consumed"] != None:    consumed = reac["consumed"]
+#             else:   consumed = {"empty": "empty"}
+#             if "produced" in reac and reac["produced"] != None:    produced = reac["produced"]
+#             else:   produced = {"empty": "empty"}
+#             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
+#                 self.reactions.append(reac)
+
+#         # Reorder reactions
+#         # uptake / gpp --> exu --> mortality --> respiration --> synthesis
+#         self.reactions = [item for item in self.reactions if item["type"] == "respiration"] + [item for item in self.reactions if item["type"] != "respiration"]
+#         self.reactions = [item for item in self.reactions if item["type"] == "mortality"] + [item for item in self.reactions if item["type"] != "mortality"]
+#         self.reactions = [item for item in self.reactions if item["type"] == "exudation"] + [item for item in self.reactions if item["type"] != "exudation"]
+#         self.reactions = [item for item in self.reactions if item["type"] == "gross_primary_production"] + [item for item in self.reactions if item["type"] != "gross_primary_production"]
+#         self.reactions = [item for item in self.reactions if item["type"] == "uptake"] + [item for item in self.reactions if item["type"] != "uptake"]
+#         self.reactions = [item for item in self.reactions if item["type"] == "photosynthesis"] + [item for item in self.reactions if item["type"] != "photosynthesis"]
+
+#         # Switch to determine if it is necessary to calculate growth parameters
+#         self.growth_switch = False
+#         for reac in self.reactions:
+#             if reac["type"] == "gross_primary_production" or reac["type"] == "uptake":
+#                 self.growth_switch = True
+#                 break
+
+#         # Boolean to determine whether activity and basal respiration will be calculated for chlorophyll synthesis
+#         self.calc_respiration = False
+#         for reac in self.reactions:
+#             if reac["type"] == "respiration":
+#                 self.calc_respiration = True
+#                 break
 
 
     def phyto(self, iter, base_element, base_temp, light_attenuation_water, coordinates, dz, mixed_layer_depth, surface_PAR, temperature, tracers):

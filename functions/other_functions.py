@@ -97,7 +97,7 @@ def light_limitation(phyto, iter, parameters, dz, irrad, k_PAR, Vm):
 
 def max_growth_rate(parameters, temperature):
     """
-    Defiition:: Calculates the temperature-dependent maximum phytoplankton grwoth rate, Vm
+    Defiition:: Calculates the temperature-dependent maximum phytoplankton growth rate, Vm
     """
     if parameters["type"] == "base_b":
         Vm = parameters["a"] * ( parameters["b"] ** ( parameters["c"] * temperature ) )
