@@ -1,7 +1,6 @@
 simulation:
-  timestep: 360.      # time step [s]
+  dt: 360.      # time step [s]
   days: 730           # days in simulation [d]
-  sec_per_day: 86400  # seconds per day [s/d]
   configuration: 1d   # Options: 0d or 1d
 
 water_column:

@@ -1,9 +1,15 @@
 general:
-  water_specific_heat_times_density:  4.187E06
+  water_specific_heat_times_density: 4.187E+06
   earth_angular_velocity: 7.29E-05
   idiagn: 1           # switch between prognostic (idiagn = 0) and diagnostic (idiagn = 1) mode
   smoth: 0.1          # parameter for hasselin filter
   ihotst: 0           # switch for cold start (ihotst = 0) and hot start, ie reading restart (ihotst = 1)
+
+flags:
+  nbct: 2             # temperature boundary conditions
+  nbcs: 1             # salinity boundary conditions
+  nbcbgc: 1           # bgc boundary conditions
+  ntp: 2              # jerlov water type ( 1 = I, 2 = IA, 3 = IB, 4 = II, 5 = III)
 
 relaxation_times:
   trt: 0              # lateral temperature advection
@@ -20,7 +26,7 @@ background_diffusion:
   umol: 1.e-06        # general
   umolt: 1.e-07       # temperature
   umols: 1.3e-07      # salalinity
-  umolbfm: 1.e-04     # bfm
+  umolbgc: 1.e-04     # bgc
 
 input_files:
   wind_stress: '/inputs/POM_BFM17/monthly_surf_wind_stress_bermuda_killworth2.da'
