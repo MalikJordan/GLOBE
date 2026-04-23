@@ -17,10 +17,10 @@ relaxation_times:
   ssrt: 5.68          # surface salinity flux
 
 relaxation_velocities:
-  nrt_o2o: 0.06       # oxygen
-  nrt_n1p: 0.06       # phosphate
-  nrt_n3n: 0.06       # nitrate
-  nrt_n4n: 0.05       # ammonium
+  nrt_o2: 0.06        # oxygen
+  nrt_po4: 0.06       # phosphate
+  nrt_no3: 0.06       # nitrate
+  nrt_nh4: 0.05       # ammonium
 
 background_diffusion:
   umol: 1.e-06        # general

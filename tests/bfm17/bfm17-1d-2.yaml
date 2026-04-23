@@ -20,7 +20,6 @@ tracers:
       temperature_regulation:
         temp_limited: True
         function: q10
-        # coefficient: 2.367
         coefficient: 2.
         base_temp: 20.
 
@@ -28,12 +27,12 @@ tracers:
     long_name: ammonium
     type: inorganic
     composition:
-      n: /inputs/BFM17_BERM_INIT/init_prof_Am_150m_bermuda_killworth.da
+      # n: /inputs/BFM17_BERM_INIT/init_prof_Am_150m_bermuda_killworth.da
+      n: 0.
     parameters:
       temperature_regulation:
         temp_limited: True
         function: q10
-        # coefficient: 2.367
         coefficient: 2.
         base_temp: 20.
 
@@ -46,14 +45,14 @@ tracers:
       temperature_regulation:
         temp_limited: False
 
-  hs:
-    long_name: reduction equivalents
-    type: inorganic
-    composition:
-      s: 1.                                 # [mmol S / m^3]
-    parameters:
-      temperature_regulation:
-        temp_limited: False
+  # hs:
+  #   long_name: reduction equivalents
+  #   type: inorganic
+  #   composition:
+  #     s: 1.                                 # [mmol S / m^3]
+  #   parameters:
+  #     temperature_regulation:
+  #       temp_limited: False
 
   phyto1:
     long_name: diatoms
@@ -85,6 +84,23 @@ tracers:
         po4:
           type: internal
           function: droop
+      exudation:
+        excreted_fraction: 0.05
+      growth:
+        light_attenuation: 0.03
+        max_photo_rate: 1.6
+        chl_quota: 0.016                    # [mg Chl / mg C]
+        chl_relax_rate: 0.            # [(mg C . m^2) / (mg Chl μE)]
+        initial_PI_slope: 1.52E-05
+        eps_PAR: 0.4
+      lysis:
+        extra_lysis_rate: 0.
+        half_sat_stress_lysis: 0.1
+        half_sat_extra_lysis: 0.0
+        max_stress_lysis_rate: 0.05         # [1/d]
+      respiration:
+        activity_respiration_frac: 0.05     # [-]
+        basal_respiration_rate: 0.05        # [1/d]
       sedimentation:
         sinking: False
         sinking_rate: 0.
@@ -111,7 +127,7 @@ tracers:
         opt: [1., 1.258E-02, 7.862E-04]
       grazing_preferences: 
         phyto1: 1.0
-        # zoo1: 1.0
+        zoo1: 1.0E-06
       temperature_regulation:
         temp_limited: True
         function: q10
@@ -125,10 +141,13 @@ tracers:
   dom1:
     long_name: dissolved organic matter
     type: detritus
+    form: dissolved
     composition:
       c: /inputs/BFM17_BERM_INIT/init_prof_DOC_150m_bermuda_killworth.da
-      n: {c: 0.0126}
-      p: {c: 7.862E-04}
+      # n: {c: 0.0126}
+      # p: {c: 7.862E-04}
+      n: {c: 6.3E-03}
+      p: {c: 3.931E-04}
     parameters:
       light_attenuation: 0.0                # [m^2 / mg C]
       sedimentation:
@@ -139,6 +158,7 @@ tracers:
   pom1:
     long_name: particulate organic matter
     type: detritus
+    form: particulate
     composition:                            # element : initial concentration
       c: /inputs/BFM17_BERM_INIT/init_prof_POC_150m_bermuda_killworth.da
       n: {c: 0.0126}
@@ -287,7 +307,6 @@ reactions:
     parameters:
       oxygen_limited: True
       half_sat_oxygen: 0.5                # [mmol O2 / m^3]
-      # mortality_rate: [0.0,0.0]          # linear [1/d], quadratic [1/d^2]
       mortality_rate: [1.E-06,0.0]          # linear [1/d], quadratic [1/d^2]
       mortality_rate_oxy: 0.25            # [1/d]
       partition: [0.60,0.72,0.832]        # c,n,p   [-]
@@ -300,7 +319,6 @@ reactions:
     parameters:
       oxygen_limited: True
       half_sat_oxygen: 0.5                # [mmol O2 / m^3]
-      # mortality_rate: [0.0,0.0]          # linear [1/d], quadratic [1/d^2]
       mortality_rate: [1.E-06,0.0]          # linear [1/d], quadratic [1/d^2]
       mortality_rate_oxy: 0.25            # [1/d]
       partition: [0.40,0.28,0.168]        # c,n,p   [-]
@@ -347,7 +365,6 @@ reactions:
       o2: [o]
     produced:
     parameters:
-      # remineralization_rate: 0.3          # [1/d]
       remineralization_rate: 0.05          # [1/d]
       convert_o2: 1/12
 
@@ -357,7 +374,6 @@ reactions:
     produced:
       nh4: [n]
     parameters:
-      # remineralization_rate: 0.3          # [1/d]
       remineralization_rate: 0.05          # [1/d]
 
   - type: remineralization
@@ -366,7 +382,6 @@ reactions:
     produced:
       po4: [p]
     parameters:
-      # remineralization_rate: 0.25         # [1/d]
       remineralization_rate: 0.05          # [1/d]
 
   - type: remineralization
@@ -375,7 +390,6 @@ reactions:
       o2: [o]
     produced:
     parameters:
-      # remineralization_rate: 0.3          # [1/d]
       remineralization_rate: 0.1          # [1/d]
       convert_o2: 1/12
 
@@ -385,7 +399,6 @@ reactions:
     produced:
       nh4: [n]
     parameters:
-      # remineralization_rate: 0.3          # [1/d]
       remineralization_rate: 0.1          # [1/d]
 
   - type: remineralization
@@ -394,18 +407,17 @@ reactions:
     produced:
       po4: [p]
     parameters:
-      # remineralization_rate: 0.3          # [1/d]
       remineralization_rate: 0.1          # [1/d]
 
-  - type: reoxidation
-    consumed:
-      hs: [s]
-      o2: [o]
-    produced:
-    parameters:
-      half_sat_oxygen: 10.0               # [mmol O2 / m^3]
-      reoxidation_rate: 0.05              # [1/d]
-      convert_o2: 2.         # [mmol O2 / mmol HS-]
+  # - type: reoxidation
+  #   consumed:
+  #     hs: [s]
+  #     o2: [o]
+  #   produced:
+  #   parameters:
+  #     half_sat_oxygen: 10.0               # [mmol O2 / m^3]
+  #     reoxidation_rate: 0.05              # [1/d]
+  #     convert_o2: 2.         # [mmol O2 / mmol HS-]
 
   - type: respiration
     consumed:
@@ -440,10 +452,8 @@ reactions:
       # affinity: uses specific affinity, based on cell quota w.r.t base element
       # constituent: uses concentration of phytoplankton constituent of nutrient element
       half_sat_nh4_preference: 1.5
-      # half_sat_nh4_preference: 1.0
-      half_sat_nh4_uptake: 1.5            # [mmol N-NH4 / m^3]
+      # half_sat_nh4_uptake: 1.5            # [mmol N-NH4 / m^3]
       luxury_storage: 1.
-      # luxury_storage: 1.5
       max_photo_rate: 1.6                 # [1/d]
       specific_affinity: 0.025            # [m^3 / (mg C . d)]
 

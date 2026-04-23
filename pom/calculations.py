@@ -1,24 +1,54 @@
 import numpy as np
+from pom.check_diffusion import a, c, vh, vhp
+
+# def density_profile(physical):
+    
+#     gravity = 9.806
+#     vertical_density_profile = np.zeros(physical["water_column"]["num_layers"])
+
+#     pressure = -gravity * 1.025 * physical["vertical_grid"]["dzz"][:-1] * physical["water_column"]["column_depth"] * 0.01
+
+#     cr = 1449.1 + (0.0821*pressure) + (4.55*physical["temperature"]["tb"][:-1]) - (0.045*np.power(physical["temperature"]["tb"][:-1],2)) + (1.34*(physical["salinity"]["sb"][:-1] - 35.0))
+#     cr = pressure/np.power(cr,2)
+    
+#     density = 999.842594 + (6.793952e-02*physical["temperature"]["tb"][:-1]) - (9.095290e-03*np.power(physical["temperature"]["tb"][:-1],2)) \
+#             + (1.001685e-04*np.power(physical["temperature"]["tb"][:-1],3)) - (1.120083e-06*np.power(physical["temperature"]["tb"][:-1],4)) + (6.536332e-09*np.power(physical["temperature"]["tb"][:-1],5)) \
+#             + (0.824493 - (4.0899e-03*physical["temperature"]["tb"][:-1]) + (7.6438e-05*np.power(physical["temperature"]["tb"][:-1],2))
+#                     - (8.2467e-07*np.power(physical["temperature"]["tb"][:-1],3)) + (5.3875e-09*np.power(physical["temperature"]["tb"][:-1],4))) * physical["salinity"]["sb"][:-1] \
+#             + (-5.72466e-03 + 1.0227e-04*physical["temperature"]["tb"][:-1] - (1.6546e-06*np.power(physical["temperature"]["tb"][:-1],2))) * (np.power(np.abs(physical["salinity"]["sb"][:-1]),1.5)) \
+#                     + (4.8314e-04*np.power(physical["salinity"]["sb"][:-1],2)) + 1.0e05*cr*(1.0 - (2*cr))
+    
+#     vertical_density_profile[:-1] = (density - 1000.) * 1.e-03
+#     vertical_density_profile[-1] = vertical_density_profile[-2]
+
+#     physical["density"] = vertical_density_profile
+
+#     return physical
 
 
 def density_profile(physical):
     
     gravity = 9.806
     vertical_density_profile = np.zeros(physical["water_column"]["num_layers"])
-
     pressure = -gravity * 1.025 * physical["vertical_grid"]["dzz"][:-1] * physical["water_column"]["column_depth"] * 0.01
 
-    cr = 1449.1 + (0.0821*pressure) + (4.55*physical["temperature"]["tb"][:-1]) - (0.045*np.power(physical["temperature"]["tb"][:-1],2)) + (1.34*(physical["salinity"]["sb"][:-1] - 35.0))
-    cr = pressure/np.power(cr,2)
-    
-    density = 999.842594 + (6.793952e-02*physical["temperature"]["tb"][:-1]) - (9.095290e-03*np.power(physical["temperature"]["tb"][:-1],2)) \
-            + (1.001685e-04*np.power(physical["temperature"]["tb"][:-1],3)) - (1.120083e-06*np.power(physical["temperature"]["tb"][:-1],4)) + (6.536332e-09*np.power(physical["temperature"]["tb"][:-1],5)) \
-            + (0.824493 - (4.0899e-03*physical["temperature"]["tb"][:-1]) + (7.6438e-05*np.power(physical["temperature"]["tb"][:-1],2))
-                    - (8.2467e-07*np.power(physical["temperature"]["tb"][:-1],3)) + (5.3875e-09*np.power(physical["temperature"]["tb"][:-1],4))) * physical["salinity"]["sb"][:-1] \
-            + (-5.72466e-03 + 1.0227e-04*physical["temperature"]["tb"][:-1] - (1.6546e-06*np.power(physical["temperature"]["tb"][:-1],2))) * (np.power(np.abs(physical["salinity"]["sb"][:-1]),1.5)) \
-                    + (4.8314e-04*np.power(physical["salinity"]["sb"][:-1],2)) + 1.0e05*cr*(1.0 - (2*cr))
-    
-    vertical_density_profile[:-1] = (density - 1000.) * 1.e-03
+    # density = 999.842594 + (6.793952E-02 * physical["temperature"]["tb"][:-1]) - (9.095290E-03 * np.power(physical["temperature"]["tb"][:-1],2)) \
+    #         + (1.001685E-04 * np.power(physical["temperature"]["tb"][:-1],3)) - (1.120083E-06 * np.power(physical["temperature"]["tb"][:-1],4)) \
+    #         + (6.536332E-09 * np.power(physical["temperature"]["tb"][:-1],5))
+    # density = density + (0.824493 - (4.0899E-03 * physical["temperature"]["tb"][:-1]) + (7.6438E-05 * np.power(physical["temperature"]["tb"][:-1],2)) \
+    #         - (8.2467E-07 * np.power(physical["temperature"]["tb"][:-1],3)) + (5.3875E-09 * np.power(physical["temperature"]["tb"][:-1],4))) * physical["salinity"]["sb"][:-1] \
+    #         + (-5.72466E-03 + (1.0227E-04 * physical["temperature"]["tb"][:-1]) - (1.6546E-06 * np.power(physical["temperature"]["tb"][:-1],2))) * (np.power(np.abs(physical["salinity"]["sb"][:-1]),1.5)) \
+    #         + 4.8314E-4*np.power(physical["salinity"]["sb"][:-1],2)
+
+    density = 999.842594 + (6.793952E-02 * physical["temperature"]["t"][:-1]) - (9.095290E-03 * np.power(physical["temperature"]["t"][:-1],2)) \
+            + (1.001685E-04 * np.power(physical["temperature"]["t"][:-1],3)) - (1.120083E-06 * np.power(physical["temperature"]["t"][:-1],4)) \
+            + (6.536332E-09 * np.power(physical["temperature"]["t"][:-1],5))
+    density = density + (0.824493 - (4.0899E-03 * physical["temperature"]["t"][:-1]) + (7.6438E-05 * np.power(physical["temperature"]["t"][:-1],2)) \
+            - (8.2467E-07 * np.power(physical["temperature"]["t"][:-1],3)) + (5.3875E-09 * np.power(physical["temperature"]["t"][:-1],4))) * physical["salinity"]["s"][:-1] \
+            + (-5.72466E-03 + (1.0227E-04 * physical["temperature"]["t"][:-1]) - (1.6546E-06 * np.power(physical["temperature"]["t"][:-1],2))) * (np.power(np.abs(physical["salinity"]["s"][:-1]),1.5)) \
+            + 4.8314E-4*np.power(physical["salinity"]["s"][:-1],2)
+
+    vertical_density_profile[:-1] = (density - 1000.) * 1.E-03
     vertical_density_profile[-1] = vertical_density_profile[-2]
 
     physical["density"] = vertical_density_profile
@@ -331,11 +361,17 @@ def temperature_and_salinity_profiles(physical, pom1d, property, case):
     
     if nbc == 1:
         VH[0] = A[0] / (A[0] - 1.)
-        VHP[0] = -physical["simulation"]["dt2"] * (surface_flux + physical["swrad"]) / (-physical["vertical_grid"]["dz"][0] * physical["water_column"]["column_depth"]) - forward[0]
+        if case == 'BGC':   # Exclude shortwave radiation in calculations
+            VHP[0] = -physical["simulation"]["dt2"] * (surface_flux + 0.) / (-physical["vertical_grid"]["dz"][0] * physical["water_column"]["column_depth"]) - forward[0]
+        else:
+            VHP[0] = -physical["simulation"]["dt2"] * (surface_flux + physical["swrad"]) / (-physical["vertical_grid"]["dz"][0] * physical["water_column"]["column_depth"]) - forward[0]
         VHP[0] = VHP[0] / (A[0] - 1.)
 
     elif nbc == 2:
-        vertical_radiation_profile[:] = physical["swrad"] * (RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD1[pom1d["flags"]["ntp"]]) + (1. - RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD2[pom1d["flags"]["ntp"]])))  # ***
+        if case == 'BGC':   # Exclude shortwave radiation in calculations
+            vertical_radiation_profile[:] = 0. * (RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD1[pom1d["flags"]["ntp"]]) + (1. - RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD2[pom1d["flags"]["ntp"]])))  # ***
+        else:
+            vertical_radiation_profile[:] = physical["swrad"] * (RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD1[pom1d["flags"]["ntp"]]) + (1. - RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD2[pom1d["flags"]["ntp"]])))  # ***
         vertical_radiation_profile[physical["water_column"]["num_layers"] - 1] = 0.
 
         VH[0] = A[0] / (A[0] - 1.)
@@ -347,7 +383,10 @@ def temperature_and_salinity_profiles(physical, pom1d, property, case):
         VHP[0] = surface_value
 
     elif nbc == 4:
-        vertical_radiation_profile[:] = physical["swrad"] * (RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD1[pom1d["flags"]["ntp"]]) + (1. - RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD2[pom1d["flags"]["ntp"]])))  # ***
+        if case == 'BGC':   # Exclude shortwave radiation in calculations
+            vertical_radiation_profile[:] = 0. * (RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD1[pom1d["flags"]["ntp"]]) + (1. - RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD2[pom1d["flags"]["ntp"]])))  # ***
+        else:
+            vertical_radiation_profile[:] = physical["swrad"] * (RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD1[pom1d["flags"]["ntp"]]) + (1. - RP[pom1d["flags"]["ntp"]] * np.exp(physical["vertical_grid"]["z"][:] * physical["water_column"]["column_depth"] / AD2[pom1d["flags"]["ntp"]])))  # ***
         vertical_radiation_profile[physical["water_column"]["num_layers"] - 1] = 0.
 
         VH[0] = 0.

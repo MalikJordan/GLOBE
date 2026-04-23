@@ -42,6 +42,9 @@ def forcing_manager(iter, physical, forcing, pom1d):
     forcing["counters"]["day_interpolator"] = forcing["counters"]["day_interpolator"] + 1
     forcing["counters"]["day_ratio"] = forcing["counters"]["day_interpolator"] / forcing["counters"]["timesteps_per_day"]
 
+    if forcing["counters"]["day_ratio"] == 1:
+        x=1
+
     forcing["counters"]["month_interpolator"] = forcing["counters"]["month_interpolator"] + 1
     forcing["counters"]["month_ratio"] = forcing["counters"]["month_interpolator"] / forcing["counters"]["timesteps_per_month"]
 

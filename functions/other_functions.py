@@ -1,35 +1,25 @@
 import numpy as np
 import sys
 
-# def light_attenuation(parameters, phyto):
-#     """
-#     Definition:: Calculates light attenuation factor for photosynthesis
-#     Beer's Law attenuation coefficient
-#     """
-#     k_PAR = parameters["light_attenuation_water"] + parameters["light_attenuation_phyto"] * phyto
-
-#     return k_PAR
-
-
 def light_attenuation(abbrev, iter, base_element, light_attenuation_water, tracers):
     """
     Definition:: Calculates light attenuation factor for photosynthesis
     Beer's Law attenuation coefficient
     """
-    k_PAR = light_attenuation_water * np.ones_like(tracers[abbrev].conc[0][iter])
+    k_PAR = light_attenuation_water * np.ones_like(tracers[abbrev].conc[0,:,iter])
 
     for key in tracers:
         if tracers[key].type == "detritus":
             base_index = tracers[key].composition.index(base_element)
-            k_PAR += tracers[key].light_attenuation * np.array(tracers[key].conc[base_index][iter])
+            k_PAR += tracers[key].light_attenuation * np.array(tracers[key].conc[base_index,:,iter])
         if tracers[key].type == "phytoplankton":
             # Light attenuation coefficient for phytoplankton is calculated using chl if available
             if "chl" in tracers[key].composition:
                 chl_index = tracers[key].composition.index("chl")
-                k_PAR += tracers[key].light_attenuation * np.array(tracers[key].conc[chl_index][iter])
+                k_PAR += tracers[key].light_attenuation * np.array(tracers[key].conc[chl_index,:,iter])
             else:
                 base_index = tracers[key].composition.index(base_element)
-                k_PAR += tracers[key].light_attenuation * np.array(tracers[key].conc[base_index][iter])
+                k_PAR += tracers[key].light_attenuation * np.array(tracers[key].conc[base_index,:,iter])
 
     return k_PAR
 
@@ -65,9 +55,9 @@ def light_limitation(phyto, iter, parameters, dz, irrad, k_PAR, Vm):
         if {"c","chl"}.issubset(phyto.composition): # Carbon and Chlorophyll concentrations (if preselt)
         # if "c" in self.composition and "chl"  in self.composition:
             carbon_index = phyto.composition.index("c")
-            pc = phyto.conc[carbon_index][iter]
+            pc = phyto.conc[carbon_index,:,iter]
             chl_index = phyto.composition.index("chl")
-            pl = phyto.conc[chl_index][iter]
+            pl = phyto.conc[chl_index,:,iter]
             pl_pc = pl / pc     # Chl:C ratio (used in light limitation)
         else: # Geider et al. (1997) Dynamic Model
             if "theta_min" not in parameters: parameters["theta_min"] = 0.
@@ -114,7 +104,13 @@ def irradiance(eps_PAR, surface_PAR, depth, k_PAR):
     0.217 = conversion from Einstein to Watts
     """
 
-    irradiance = surface_PAR * eps_PAR / 0.217
+    # irradiance = surface_PAR * eps_PAR / 0.217
+
+    irradiance = np.zeros(len(depth))
+    irradiance[0] = surface_PAR * eps_PAR / 0.217
+    if len(depth) > 1:
+        for i in range(1,len(depth)):
+            irradiance[i] = irradiance[i-1] * np.exp(-1. * k_PAR[i-1] * depth[i-1])
 
     return irradiance
 
@@ -172,16 +168,20 @@ def concentration_ratio(iter, index, tracer):
     """
     Definition:: Calculates concentration ratio of elements in tracer composition to its base element
     """
-    for const in range(0,len(tracer.conc[...,iter])):
-        tracer.conc_ratio[const] = tracer.conc[const,iter] / (tracer.conc[index,iter] + 1E-20)
+    # for const in range(0,len(tracer.conc[...,iter])):
+    #     tracer.conc_ratio[const] = tracer.conc[const,iter] / (tracer.conc[index,iter] + 1E-20)
+
+    for const in range(0,len(tracer.conc)):
+        tracer.conc_ratio[const] = tracer.conc[const,:,iter] / (tracer.conc[index,:,iter] + 1E-20)
+
 
         # Detritus may be initialized to zero, fix concentration ratio
-        if iter == 0 and tracer.type == 'detritus':
-            if tracer.conc[const,iter] == 0.:
-                tracer.conc_ratio[const] = 1.   # Initialize first concentration ratio for detritus to 1
+        # if iter == 0 and tracer.type == 'detritus':
+        #     if tracer.conc[const,:,iter].all() == np.zeros(len(tracer.conc[const,:,iter])):
+        #         tracer.conc_ratio[const,:] = 1.   # Initialize first concentration ratio for detritus to 1
     
     # Concentration ratio of base element is alway 1
-    tracer.conc_ratio[index] = 1.
+    tracer.conc_ratio[index,:] = 1.
 
 
 def concentration_ratio_solveivp(concentration, index, indices, tracer):
@@ -256,16 +256,23 @@ def tracer_elements(base_element, reaction, tracers):
     return c, p, ec, ep, ic, ip
 
 
+# def on_off(parameter):
+
+#     x = len(parameter)
+#     if 
+
 
 def switch(parameter):
-    # x = len(parameter)
-    # x = np.shape(parameter)[0]
-    # switch = np.zeros(x)
-    # for i in range(0,x):
-    #     if parameter[i] > 0.0:
-    #         switch[i] = 1.0
 
-    if parameter > 0.:  switch = 1.
-    else:   switch = 0.
+    x = len(parameter)
+    if x > 1:
+        x = np.shape(parameter)[0]
+        switch = np.zeros(x)
+        for i in range(0,x):
+            if parameter[i] > 0.0:
+                switch[i] = 1.0
+    else:
+        if parameter > 0.:  switch = 1.
+        else:   switch = 0.
 
     return switch

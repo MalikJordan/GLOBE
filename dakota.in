@@ -1,0 +1,31 @@
+environment
+  tabular_data
+    tabular_data_file = 'None'
+
+method
+  sampling
+    samples = 100
+    seed = 12345
+    sample_type = lhs
+
+model
+  single
+
+variables
+  continuous_design = 54
+    initial_point     0.06 0.06 0.06 0.05 1e-06 1e-07 1.3e-07 0.0001 10.0 0.01 0.25 0.00687 0.0126 0.0025 0.000429 0.000786 0.016 0.016 0.016 0.05 0.03 1.6 0.0 1.52e-05 0.4 0.0 0.0 0.1 0.05 0.05 0.05 1.5 1.0 0.025 1.0 0.0025 0.01258 0.0007862 0.25 0.5 1.0 1e-06 50.0 2.0 200.0 0.5 [1e-06, 0.0] 0.25 0.02 0.05 0.0001 0.1 1.0 1.0
+    lower_bounds      None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None
+    upper_bounds      None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None None
+    descriptors       'pom1d.relaxation_velocities.nrt_o2' 'pom1d.relaxation_velocities.nrt_po4' 'pom1d.relaxation_velocities.nrt_no3' 'pom1d.relaxation_velocities.nrt_nh4' 'pom1d.background_diffusion.umol' 'pom1d.background_diffusion.umolt' 'pom1d.background_diffusion.umols' 'pom1d.background_diffusion.umolbgc' 'bfm17_new_structure.nh4.nitrification.half_sat_oxygen' 'bfm17_new_structure.nh4.nitrification.nitrification_rate' 'bfm17_new_structure.phyto1.cell_quota.n.max' 'bfm17_new_structure.phyto1.cell_quota.n.min' 'bfm17_new_structure.phyto1.cell_quota.n.opt' 'bfm17_new_structure.phyto1.cell_quota.p.max' 'bfm17_new_structure.phyto1.cell_quota.p.min' 'bfm17_new_structure.phyto1.cell_quota.p.opt' 'bfm17_new_structure.phyto1.cell_quota.chl.max' 'bfm17_new_structure.phyto1.cell_quota.chl.min' 'bfm17_new_structure.phyto1.cell_quota.chl.opt' 'bfm17_new_structure.phyto1.exudation.excreted_fraction' 'bfm17_new_structure.phyto1.growth.light_attenuation' 'bfm17_new_structure.phyto1.growth.max_photo_rate' 'bfm17_new_structure.phyto1.growth.chl_relax_rate' 'bfm17_new_structure.phyto1.growth.initial_PI_slope' 'bfm17_new_structure.phyto1.growth.eps_PAR' 'bfm17_new_structure.phyto1.lysis.extra_lysis_rate' 'bfm17_new_structure.phyto1.lysis.half_sat_extra_lysis' 'bfm17_new_structure.phyto1.lysis.half_sat_stress_lysis' 'bfm17_new_structure.phyto1.lysis.max_stress_lysis_rate' 'bfm17_new_structure.phyto1.respiration.activity_respiration_frac' 'bfm17_new_structure.phyto1.respiration.basal_respiration_rate' 'bfm17_new_structure.phyto1.uptake.n.half_sat_nh4_preference' 'bfm17_new_structure.phyto1.uptake.n.luxury_storage' 'bfm17_new_structure.phyto1.uptake.n.specific_affinity' 'bfm17_new_structure.phyto1.uptake.p.luxury_storage' 'bfm17_new_structure.phyto1.uptake.p.specific_affinity' 'bfm17_new_structure.zoo1.cell_quota.n.opt' 'bfm17_new_structure.zoo1.cell_quota.p.opt' 'bfm17_new_structure.zoo1.excretion.assimilation_efficiency' 'bfm17_new_structure.zoo1.excretion.ingestion_efficiency' 'bfm17_new_structure.zoo1.grazing.grazing_preferences.phyto1' 'bfm17_new_structure.zoo1.grazing.grazing_preferences.zoo1' 'bfm17_new_structure.zoo1.grazing.feeding_threshold' 'bfm17_new_structure.zoo1.grazing.max_grazing_rate' 'bfm17_new_structure.zoo1.grazing.half_sat_grazing' 'bfm17_new_structure.zoo1.mortality.half_sat_oxygen' 'bfm17_new_structure.zoo1.mortality.mortality_rate' 'bfm17_new_structure.zoo1.mortality.mortality_rate_oxy' 'bfm17_new_structure.zoo1.respiration.respiration_rate' 'bfm17_new_structure.dom1.remineralization.remineralization_rate' 'bfm17_new_structure.pom1.light_attenuation' 'bfm17_new_structure.pom1.remineralization.remineralization_rate' 'bfm17_new_structure.pom1.sinking.sinking_rate' 'bfm17_new_structure.pom1.sinking.burial_velocity'
+
+interface
+  fork
+    analysis_driver = 'None'
+    asynchronous
+    evaluation_concurrency = '8'
+
+responses
+  num_objective_functions = 1
+  no_gradients
+  no_hessians
+

@@ -19,9 +19,11 @@ class Inorganic():
         self.temperature_regulation = tracer["parameters"]["temperature_regulation"]
         self.temperature_regulation["temperature_regulation_factor"] = 1.
 
-        # Oxygen inhibition
+        # Air-sea flux
+        if "surface_flux" in tracer["parameters"]:
+            if tracer["parameters"]["surface_flux"] == True:
+                self.surf_flux = 0.
         
-
         # Concentration array
         self.composition = []
         conc = []
@@ -44,12 +46,24 @@ class Inorganic():
             elif isinstance(tracer["composition"][key], (list,np.ndarray)):
                 conc.append(np.array(tracer["composition"][key]))
 
-        hold = np.zeros((len(conc),iters),dtype=np.ndarray)
-        hold[...,0] = conc
-        self.conc = np.array(hold)
-        self.d_dt = np.zeros_like(conc)
-        self.conc_ratio = np.ones_like(self.conc[...,0])
 
+        # hold = np.zeros((len(conc),iters),dtype=np.ndarray)  
+        # hold[...,0] = conc     
+        # self.conc = np.array(hold)
+        # self.d_dt = np.zeros_like(conc)
+        # self.conc_ratio = np.ones_like(self.conc[...,0])
+
+        if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
+            self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=float)
+            for const in range(0,len(self.composition)):
+                self.conc[const,:,0] = conc[const][:-1]
+        else:   # Model as single box
+            self.conc = np.zeros((len(self.composition),iters),dtype=float)
+            for const in range(0,len(self.composition)):
+                self.conc[const,:,0] = conc[const]
+        self.d_dt = np.zeros_like(self.conc[...,0],dtype=float)
+        self.conc_ratio = np.ones_like(self.conc[...,0],dtype=float)
+        
         # Add relevant reactions
         self.reactions = []
         for reac in reactions:
@@ -103,13 +117,13 @@ class Inorganic():
     #             self.reactions.append(reac)
         
     
-    def inorg(self, iter, base_element, base_temp, coordinates, dz, mixed_layer_depth, surface_PAR, temperature, salinity, wind, tracers):
-        check_conc = self.conc[:,iter]
+    def inorg(self, iter, base_element, physical, tracers):
+        # check_conc = self.conc[:,iter]
         
         # if self.temp_limited:
         if self.temperature_regulation["temp_limited"]:
             # self.temperature_regulation["temperature_regulation_factor"] = temperature_dependence(base_temp, temperature, self)   # calculate temperature regulation factor for nitrification
-            self.temperature_regulation["temperature_regulation_factor"] = temperature_dependence(temperature, self)   # calculate temperature regulation factor for nitrification
+            self.temperature_regulation["temperature_regulation_factor"] = temperature_dependence(physical["bgc_phys_vars"]["temperature"], self)   # calculate temperature regulation factor for nitrification
         
         for reac in self.reactions:
             c, p, ec, ep, ic, ip = tracer_elements(base_element, reac, tracers)
@@ -117,19 +131,20 @@ class Inorganic():
                 if "o2" in tracers: oxy_limitation_factor = nutrient_limitation(tracers["o2"].conc[...,iter],reac["parameters"]["half_sat_oxygen"])
                 else:   oxy_limitation_factor = 1.
                 self.nitrification(iter, reac["parameters"], oxy_limitation_factor, tracers)
-            if reac["type"] == "reaeration":    self.reaeration(iter, reac["parameters"], dz, temperature, salinity, wind)
+            # if reac["type"] == "reaeration":    self.reaeration(iter, reac["parameters"], physical["bgc_phys_vars"]["dz"], physical["bgc_phys_vars"]["temperature"], physical["bgc_phys_vars"]["salinity"], physical["bgc_phys_vars"]["wind"])
+            if reac["type"] == "reaeration":    self.reaeration(iter, reac["parameters"], physical["bgc_phys_vars"]["z"], physical["bgc_phys_vars"]["temperature"], physical["bgc_phys_vars"]["salinity"], physical["bgc_phys_vars"]["wind"])
             if reac["type"] == "reoxidation" and self.abbrev == "hs":   
                 if "o2" in tracers: oxy_limitation_factor = nutrient_limitation(tracers["o2"].conc[...,iter],reac["parameters"]["half_sat_oxygen"])
                 else:   oxy_limitation_factor = 1.
                 self.reoxidation(iter, reac["parameters"], oxy_limitation_factor, tracers)
         
-        if iter % 50 == 0:
-            x=1
-        if self.abbrev == 'nh4':
-            x=1
-        if self.abbrev == 'o2':
-            o2=self.conc[0][iter]
-            x=1
+        # if iter % 50 == 0:
+        #     x=1
+        # if self.abbrev == 'nh4':
+        #     x=1
+        # if self.abbrev == 'o2':
+        #     o2=self.conc[0][iter]
+        #     x=1
         x=1
 
     def nitrification(self, iter, parameters, oxy_limitation_factor,  tracers):
@@ -155,8 +170,10 @@ class Inorganic():
         abt = (temperature + 273.15) / 100.
 
         # Calculate theoretical oxygen saturatino for temp + salt and conver into proper units of [mmol O2 / m3]
-        # oxy_sat = np.exp(-173.4292 + (249.6339/abt) + (143.3483*np.log(abt))-(21.8492*abt) + salinity*(-0.033096 + 0.014259*abt - 0.0017*(abt**2)))/(24.4665E-3)
-        oxy_sat = np.exp(-173.4292 + (249.6339/abt) + (143.3483*np.log(abt))-(21.8492*abt) + salinity*(-0.033096 + 0.014259*abt - 0.0017*(abt**2)))*44.661
+        oxy_sat = np.exp(-173.4292 + (249.6339/abt) + (143.3483*np.log(abt))-(21.8492*abt) + salinity*(-0.033096 + 0.014259*abt - 0.0017*(abt**2)))/(24.4665E-3)
+
+        # Use this one with BFM17 0D
+        # oxy_sat = np.exp(-173.4292 + (249.6339/abt) + (143.3483*np.log(abt))-(21.8492*abt) + salinity*(-0.033096 + 0.014259*abt - 0.0017*(abt**2)))*44.661
 
         # Calculate Schmidt number, ratio between the kinematic viscosity and the molecular diffusivity of CO2
         schmidt_number = parameters["k1"] - ( parameters["k2"]*temperature ) + ( parameters["k3"]*(temperature**2) ) - ( parameters["k4"]*(temperature**3) )
@@ -172,10 +189,14 @@ class Inorganic():
         wind_dependency = wind_dependency * 0.01 * 24
 
         # Calculate flux of o2
-        d_o2 = wind_dependency * (oxy_sat - self.conc[...,iter]) / dz
+        d_o2 = wind_dependency * (oxy_sat - self.conc[...,iter])# / dz
 
+        surf_o2 = np.zeros_like(dz)
+        surf_o2[0] = d_o2[0,0] / dz[0]
+        
         # Update d_dt
-        self.d_dt += d_o2
+        self.d_dt += np.array(surf_o2, dtype=float)
+        self.surf_flux = np.array(d_o2)
 
 
     def reoxidation(self, iter, parameters, oxy_limitation_factor, tracers):

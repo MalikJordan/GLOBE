@@ -1,6 +1,6 @@
 simulation:
   dt: 360.      # time step [s]
-  days: 730           # days in simulation [d]
+  days: 1825           # days in simulation [d]
   configuration: 1d   # Options: 0d or 1d
 
 water_column:
@@ -17,7 +17,7 @@ environment:
   base_temp: 10.0  
   PAR_frac: 0.4
   light_attenuation_water: 0.0435        # [1/m]
-  latitude: 0.0
+  latitude: 45.0
   seasonal_cycling:
     summer_mld: 10.0
     winter_mld: 40.0

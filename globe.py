@@ -4,9 +4,12 @@ import numpy as np
 import yaml
 from setup.initialize import import_bgc_model, import_physical_model
 from functions.bgc_rate_eqns import bgc_rate_eqns
+from functions.calculate_averages import average
 from pom.calculations import density_profile, kinetic_energy_profile, temperature_and_salinity_profiles, zonal_velocity_profile, meridional_velocity_profile
 from pom.forcing import forcing_manager
 from pom.initialize import initialize_pom
+from pom.coupling import pom_bgc_1d
+from pom.check_phys import dens, u, ub, v, vb, t, tb, s, sb, q2, q2b, q2l, q2lb, km, kh, kq
 # ----------------------------------------------------------------------------------------------------
 # Import and initialize model
 # ----------------------------------------------------------------------------------------------------
@@ -27,7 +30,7 @@ file = 'physical.yaml'
 file_path = os.getcwd() + '/' + file
 physical = import_physical_model(file_path)
 
-file = 'tests/bfm17/bfm17-1d.yaml'
+file = 'tests/bfm17/bfm17-1d-2.yaml'
 file_path = os.getcwd() + '/' + file
 base_element, reactions, tracers = import_bgc_model(file_path, physical)
 
@@ -39,14 +42,15 @@ if physical["environment"]["forcing"] == "pom1d":
         pom1d = yaml.full_load(f)
     physical, forcing = initialize_pom(pom1d, physical)
     physical = density_profile(physical)
-    pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * np.pi / 360.)
+    # pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * np.pi / 360.)
+    pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * (3.14159265359) / 360.)
+
 
 # ----------------------------------------------------------------------------------------------------
 # Begin simulation
 # ----------------------------------------------------------------------------------------------------
 # for iter in range(0,physical["simulation"]["iters"]-1):
 #     bgc_rate_eqns(iter, base_element, parameters, tracers)
-
 
 for iter in range(0,physical["simulation"]["iters"]-1):
     
@@ -62,7 +66,6 @@ for iter in range(0,physical["simulation"]["iters"]-1):
     if pom1d["general"]["idiagn"] == 0:
         # Prognostic mode
         # Temperature and salinity fully computed by model
-        physical["water_column"]["upper_depth"]
         physical["temperature"]["surf"] = physical["temperature"]["tf"][0]
         physical["salinity"]["surf"] = physical["salinity"]["sf"][0]
         if pom1d["relaxation_times"]["trt"] != 0:
@@ -123,57 +126,70 @@ for iter in range(0,physical["simulation"]["iters"]-1):
     # Update density
     physical = density_profile(physical)
 
-    # if not pom_bfm_parameters.pom_only:
-    #     bfm_phys_vars = pom_to_bfm(bfm_phys_vars, vertical_grid, temperature, salinity, inorganic_suspended_matter, shortwave_radiation, density, wind_stress)
-    #     bfm_phys_vars.vertical_extinction = vertical_extinction(bfm_phys_vars, d3state, species)
-    #     bfm_phys_vars.irradiance = light_distribution(bfm_phys_vars)
+    if iter < 10:
+        delta_q2 = physical["kinetic_energy"]["ke"][:150] - q2[iter]
+        delta_q2b = physical["kinetic_energy"]["keb"][:150] - q2b[iter]
+        delta_q2l = physical["kinetic_energy"]["kel"][:150] - q2l[iter]
+        delta_q2lb = physical["kinetic_energy"]["kelb"][:150] - q2lb[iter]
 
-    #     d3state, d3stateb, d3ave = pom_bfm_1d(i, vertical_grid, t, diffusion, nutrients, bfm_phys_vars, d3state, d3stateb, d3ave, include, species)    
+        delta_t = physical["temperature"]["t"][:150] - t[iter]
+        delta_tb = physical["temperature"]["tb"][:150] - tb[iter]
+        delta_s = physical["salinity"]["s"][:150] - s[iter]
+        delta_sb = physical["salinity"]["sb"][:150] - sb[iter]
+
+        delta_u = physical["velocity"]["u"][:150] - u[iter]
+        delta_ub = physical["velocity"]["ub"][:150] - ub[iter]
+        delta_v = physical["velocity"]["v"][:150] - v[iter]
+        delta_vb = physical["velocity"]["vb"][:150] - vb[iter]
+
+        delta_rho = physical["density"][:150] - dens[iter]
+
+        delta_km = physical["diffusion"]["momentum"][:] - km[iter]
+        delta_kh = physical["diffusion"]["tracers"][:] - kh[iter]
+        delta_kq = physical["diffusion"]["kinetic_energy"][:] - kq[iter]
+
+        x = 1
+
+    pom_bgc_1d(iter, base_element, physical, pom1d, tracers)
 
 
-
-
-
-
+# ----------------------------------------------------------------------------------------------------
+# Write outputs to npz file
+# ----------------------------------------------------------------------------------------------------
 concentration = []
-tracer_indices = {}
-index = 0   # counting number to keep track of tracer index in concentration matrix
-for t in tracers:
-    num_constituents = len(tracers[t].composition)
-    tracer_indices[t] = list(np.arange(index, index+num_constituents, 1))
+npp_exists = False  # initialize writing of npp
+tracer_indices = {} # used to keep track of tracer/consitient index in concentration matriz
+index = 0   # counting number for tracer indices
+for trac in tracers:
+    num_constituents = len(tracers[trac].composition)
+    tracer_indices[trac] = list(np.arange(index, index+num_constituents, 1))   # identify tracer constituents with their own index
     for i in range(num_constituents):
-        concentration.append(tracers[t].conc[i,...])
+        concentration.append(tracers[trac].conc[i,...])    # add concentration to matrix
 
-        index += 1
+        index += 1  # update index
 
-concentration = np.array(concentration,dtype=float)
+    # Update npp
+    if tracers[trac].type == "phytoplankton":
+        if not npp_exists:  # first phytoplankton group
+            npp = tracers[trac].npp
+            npp_exists = True   # npp now exists, update to True to append with npp from later phytoplankton groups
+        else:   # subsequent phytoplankton groups
+            npp += tracers[trac].npp
 
-np.savez('npzd.npz',concentration=concentration,time=physical["simulation"]["time"])
-np.savez('tracer_indices_npzd.npz',**tracer_indices)
+concentration = np.array(concentration,dtype=float) # convert concentration from list to array
 
+conc_daily, conc_monthly = average(concentration,physical,'concentration')
+np.savez('concentration.npz',daily=conc_daily,monthly=conc_monthly)
+if npp_exists:
+    npp_daily, npp_monthly = average(npp,physical,'npp')
+    np.savez('npp.npz',daily=npp_daily,monthly=npp_monthly)
+
+
+# np.savez('bfm17-1d-2-6.npz',concentration=concentration,npp=npp,time=physical["simulation"]["time"])
+np.savez('tracer_indices_bfm17-1d-2-6.npz',**tracer_indices)
+
+
+# ----------------------------------------------------------------------------------------------------
+# Simulation complete
+# ----------------------------------------------------------------------------------------------------
 print('Simulation complete.')
-
-
-
-
-month1 = {
-    "sclim": np.zeros(physical["water_column"]["num_layers"]),
-    "tclim": np.zeros(physical["water_column"]["num_layers"]),
-    "wclim": np.zeros(physical["water_column"]["num_layers"]),
-    "weddy1": np.zeros(physical["water_column"]["num_layers"]),
-    "weddy2": np.zeros(physical["water_column"]["num_layers"]),
-    "ism": np.zeros(physical["water_column"]["num_layers"]),
-    "wsu": 0,
-    "wsv": 0,
-    "swrad": 0,
-    "wtsurf": 0,
-    "qcorr": 0,
-    "no3s": 0,
-    "nh4s": 0,
-    "po4s": 0,
-    "sio4s": 0,
-    "o2b": 0,
-    "no3b": 0,
-    "po4b": 0,
-    "ponb": 0
-}

@@ -1,0 +1,306 @@
+dakota:
+  environment:
+    tabular_data_file:
+
+  method:
+    type: sampling
+    samples: 100
+    seed: 12345
+    sample_type: lhs
+
+  model:
+    type: single
+
+  interface:
+    analysis_driver: 
+    fork: True
+    asynchronous: True
+    evaluation_concurrency: 8
+  
+  responses:
+    num_objective_functions: 1
+    gradients: False
+    hessians: False
+
+
+parameters:
+# -------------------------------------------------------------------------------------------------
+# POM1D Parameters
+# -------------------------------------------------------------------------------------------------
+  pom1d:
+    relaxation_velocities:
+      nrt_o2:
+        lower:
+        initial: 0.06
+        upper:
+      nrt_po4:
+        lower:
+        initial: 0.06
+        upper:
+      nrt_no3:
+        lower:
+        initial: 0.06
+        upper:
+      nrt_nh4:
+        lower:
+        initial: 0.05
+        upper:
+    
+    background_diffusion:
+      umol:
+        lower:
+        initial: 1.E-06
+        upper:
+      umolt:
+        lower:
+        initial: 1.E-07
+        upper:
+      umols:
+        lower:
+        initial: 1.3E-07
+        upper:
+      umolbgc:
+        lower:
+        initial: 1.E-04
+        upper:
+
+# -------------------------------------------------------------------------------------------------
+# BGC Parameters
+# -------------------------------------------------------------------------------------------------
+  bfm17_new_structure:
+    # -------------------------------------------------------------------------------------------------
+    # Nutrients
+    # -------------------------------------------------------------------------------------------------
+    nh4:
+      nitrification:
+        half_sat_oxygen:
+          lower:
+          initial: 10.
+          upper:
+        nitrification_rate:
+          lower:
+          initial: 0.01
+          upper:
+
+    # -------------------------------------------------------------------------------------------------
+    # Phytoplankton
+    # -------------------------------------------------------------------------------------------------
+    phyto1:
+      cell_quota:
+        n:
+          max:
+            lower:
+            initial: 0.25
+            upper:
+          min:
+            lower:
+            initial: 6.87E-03
+            upper:
+          opt:
+            lower:
+            initial: 1.26E-02
+            upper:
+        p:
+          max:
+            lower:
+            initial: 2.5E-03
+            upper:
+          min:
+            lower:
+            initial: 4.29E-04
+            upper:
+          opt:
+            lower:
+            initial: 7.86E-04
+            upper:
+        chl:
+          max:
+            lower:
+            initial: 0.016
+            upper:
+          min:
+            lower:
+            initial: 0.016
+            upper:
+          opt:
+            lower:
+            initial: 0.016
+            upper:
+      exudation:
+        excreted_fraction:
+          lower: 
+          initial: 0.05
+          upper:
+      growth:
+        light_attenuation:
+          lower:
+          initial: 0.03
+          upper:
+        max_photo_rate:
+          lower:
+          initial: 1.6
+          upper:
+        chl_relax_rate:
+          lower:
+          initial: 0.
+          upper:
+        initial_PI_slope:
+          lower:
+          initial: 1.52E-05
+          upper:
+        eps_PAR:
+          lower:
+          initial: 0.4
+          upper:
+      lysis:
+        extra_lysis_rate:
+          lower:
+          initial: 0.
+          upper:
+        half_sat_extra_lysis:
+          lower:
+          initial: 0.
+          upper:
+        half_sat_stress_lysis:
+          lower:
+          initial: 0.1
+          upper:
+        max_stress_lysis_rate:
+          lower:
+          initial: 0.05
+          upper:
+      respiration:
+        activity_respiration_frac:
+          lower:
+          initial: 0.05
+          upper:
+        basal_respiration_rate:
+          lower:
+          initial: 0.05
+          upper:
+      uptake:
+        n:
+          half_sat_nh4_preference:
+            lower:
+            initial: 1.5
+            upper:
+          luxury_storage:
+            lower:
+            initial: 1.
+            upper:
+          specific_affinity:
+            lower:
+            initial: 0.025
+            upper:
+        p:
+          luxury_storage:
+            lower:
+            initial: 1.
+            upper:
+          specific_affinity:
+            lower:
+            initial: 0.0025
+            upper:
+    
+    # -------------------------------------------------------------------------------------------------
+    # Zooplankton
+    # -------------------------------------------------------------------------------------------------
+    zoo1:
+      cell_quota:
+        n:
+          opt:
+            lower:
+            initial: 1.258E-02
+            upper:
+        p:
+          opt:
+            lower:
+            initial: 7.862E-04
+            upper:
+      excretion:
+        assimilation_efficiency:
+          lower:
+          initial: 0.25
+          upper:
+        ingestion_efficiency:
+          lower:
+          initial: 0.5
+          upper:
+      grazing:
+        grazing_preferences:
+          phyto1:
+            lower:
+            initial: 1.
+            upper:
+          zoo1:
+            lower:
+            initial: 1.E-06
+            upper:
+        feeding_threshold:
+          lower:
+          initial: 50.
+          upper:
+        max_grazing_rate:
+          lower:
+          initial: 2.0
+          upper:
+        half_sat_grazing:
+          lower:
+          initial: 200.
+          upper:
+      mortality:
+        half_sat_oxygen:
+          lower:
+          initial: 0.5
+          upper:
+        mortality_rate:
+          linear:
+            lower:
+            initial: 1.E-06
+            upper:
+          quadratic:
+            lower:
+            initial: 0.
+            upper:
+        mortality_rate_oxy:
+          lower:
+          initial: 0.25
+          upper:
+      respiration:
+        respiration_rate:
+          lower:
+          initial: 0.02
+          upper:
+    
+    # -------------------------------------------------------------------------------------------------
+    # Dissolved Organic Matter
+    # -------------------------------------------------------------------------------------------------
+    dom1:
+      remineralization:
+        remineralization_rate:
+          lower:
+          initial: 0.05
+          upper:
+
+    # -------------------------------------------------------------------------------------------------
+    # Particulate Organic Matter
+    # -------------------------------------------------------------------------------------------------
+    pom1:
+      light_attenuation:
+        lower:
+        initial: 1.E-04
+        upper:
+      remineralization:
+        remineralization_rate:
+          lower:
+          initial: 0.1
+          upper:
+      sinking:
+        sinking_rate:
+          lower:
+          initial: 1.
+          upper:
+        burial_velocity: 
+          lower:
+          initial: 1.
+          upper:
