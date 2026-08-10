@@ -1,81 +1,385 @@
 import os
 import sys
 import numpy as np
+from numba import njit, types
+from numba.types import float64, unicode_type
+from numba.typed import Dict, List
 from functions.seasonal_cycling import *
-from functions.other_functions import concentration_ratio, monod, nutrient_limitation, tracer_elements
+from functions.other_functions import concentration_ratio, monod, nutrient_limitation, tracer_elements, temperature_dependence, switch
 from fractions import Fraction
+np.set_printoptions(precision=20)
 class Bacteria():
     """
     
     """
 
 
-    def __init__(self, abbrev, base_element, iters, num_layers, reactions, **tracer):
+    def __init__(self, abbrev, base_element, physical, reactions, **tracer):
+        
+        # Variales that will be used later ---------------------------------------------------------------
+        num_layers = physical["water_column"]["num_layers"]
+        iters = physical["simulation"]["iters"]
+        composition = physical["initial_conditions"][abbrev]["composition"]     # Initial concentrations
+        if "scale" in physical["initial_conditions"][abbrev]:   scale = physical["initial_conditions"][abbrev]["scale"]     # Scaling factor (if initial concentration is split between multiple bacterioplankton groups)
+        else:   scale = 1.  # No scaling
+
+        # Add important keys ---------------------------------------------------------------
         self.abbrev = abbrev
         self.name = tracer["long_name"]
         self.type = tracer["type"]
 
-        # Nutrient limitation
-        self.nutrient_limitation = tracer["parameters"]["nutrient_limitation"]
-        self.nutrient_limitation_factor = {}
-        self.nutrient_colimitation = 0.
+        # Oxygen inhibition
+        if "oxygen_inhibition" in tracer["parameters"]:
+            # Initialize oxygen inhibition factor to array of 1. (if bacterioplankton is temperature limited this will be updated later otherwise will stay as 1.)
+            if num_layers > 1:  self.oxy_limitation_factor = np.ones(num_layers-1, dtype=np.float64)
+            else:   self.oxy_limitation_factor = np.float64(1.)
+
+            if "oxygen_limited" in tracer["parameters"]["oxygen_inhibition"]:   self.oxygen_limited = tracer["parameters"]["oxygen_inhibition"]["oxygen_limited"]
+            else:   self.oxygen_limited = False
+
+            if self.oxygen_limited:
+                # Default Hill exponent to 1 if not included in parameter list
+                if "exponent" not in tracer["parameters"]["oxygen_inhibition"]:     tracer["parameters"]["oxygen_inhibition"]["exponent"] = np.float64(1.)
+
+                self.oxy_inhib_ids = List.empty_list(unicode_type)
+                self.oxy_inhib_params = List.empty_list(float64[:])
+                
+                for key,val in tracer["parameters"]["oxygen_inhibition"].items():
+                    self.oxy_inhib_ids.append(key)
+                    if not isinstance(val, np.ndarray): val = np.array([val],dtype=np.float64)  # Convert type to array of floats for typed.List
+                    self.oxy_inhib_params.append(val)
+
+        # Organic Matter Partition
+        if "om_partition" in tracer["parameters"]:
+            # Initialize dict type
+            dict_type = types.DictType(types.unicode_type, types.float64)
+            lst = List.empty_list(dict_type)
+            self.om_partition = Dict.empty(key_type=unicode_type,value_type=dict_type)
+
+            # Convert parameter dictionary to numba typedDicts
+            for outer_key in tracer["parameters"]["om_partition"]:
+                d = Dict.empty(key_type=types.unicode_type, value_type = types.float64)
+                inner_dict = tracer["parameters"]["om_partition"][outer_key]
+
+                for inner_key in inner_dict:
+                    d[inner_key] = np.float64(inner_dict[inner_key])
+
+                self.om_partition[outer_key] = d
 
         # Temperature regulation
-        self.temperature_regulation = tracer["parameters"]["temperature_regulation"]
-        self.temp_regulation_factor = 1.
+        if "temperature_regulation" in tracer["parameters"]:    
+            # Initialize temperature regulation factor to array of 1. (if phytoplankton is temperature limited this will be updated later otherwise will stay as 1.)
+            if num_layers > 1:  self.temp_regulation_factor = np.ones(num_layers-1, dtype=np.float64)
+            else:   self.temp_regulation_factor = np.float64(1.)
 
-        # Composition and concentration arrays
-        self.composition = []
+            if "temp_limited" in tracer["parameters"]["temperature_regulation"]:    self.temp_limited = tracer["parameters"]["temperature_regulation"]["temp_limited"]
+            else:   self.temp_limited = False
+
+            if self.temp_limited:
+                # Create float option numbers for use in numba typed.List
+                if "function" in tracer["parameters"]["temperature_regulation"]:
+                    if tracer["parameters"]["temperature_regulation"]["function"] == "arrhenius":   tracer["parameters"]["temperature_regulation"]["function"] = 1
+                    elif tracer["parameters"]["temperature_regulation"]["function"] == "eppley":    tracer["parameters"]["temperature_regulation"]["function"] = 2
+                    elif tracer["parameters"]["temperature_regulation"]["function"] == "q10":       tracer["parameters"]["temperature_regulation"]["function"] = 3
+
+                self.temp_reg_ids = List.empty_list(unicode_type)
+                self.temp_reg_params = List.empty_list(float64[:])
+                
+                for key,val in tracer["parameters"]["temperature_regulation"].items():
+                    self.temp_reg_ids.append(key)
+                    if not isinstance(val, np.ndarray): val = np.array([val],dtype=np.float64)  # Convert type to array of floats for typed.List
+                    self.temp_reg_params.append(val)
+        else: self.temp_limited = False
+
+        # Excretion
+        if "excretion" in tracer["parameters"]:
+            excr_dict_type = types.DictType(types.unicode_type, types.float64)
+            self.excretion_ids = List.empty_list(unicode_type)  # stores produced tracer names (excretion parameters will be saved for each tracer individually)
+            self.excretion_params = List.empty_list(excr_dict_type)
+
+            for outer_key,inner_dict in tracer["parameters"]["excretion"].items():   # parse dictionary (key = tracer, val = inner dictionary)
+                # Create temporary dictionary
+                temp = Dict.empty(key_type=unicode_type, value_type=float64)
+
+                # Add inner values to temporary dicitonary
+                for inner_key,inner_val in inner_dict.items():
+                    # Create numeric codes for excretion option string
+                    if inner_key == "option":
+                        if inner_val == "activity":     temp["option"] = 1.
+                        elif inner_val == "constant":   temp["option"] = 2.
+                        elif inner_val == "relaxation": temp["option"] = 3.
+
+                    # Other inner values are already ints/floats
+                    else:
+                        temp[inner_key] = np.float64(inner_val) # conversion to make sure all values are floats
+
+                # Add outer_key to excretion_ids and temp to excretion_params
+                self.excretion_ids.append(outer_key)
+                self.excretion_params.append(temp)
+
+        # Mortality
+        if "mortality" in tracer["parameters"]:
+            # Create float option numbers for use in numba typed.List
+            if "oxygen_limited" in tracer["parameters"]["mortality"]:
+                # [0] False, [1] True
+                if tracer["parameters"]["mortality"]["oxygen_limited"]:     tracer["parameters"]["mortality"]["oxygen_limited"] = 1
+                else:   tracer["parameters"]["mortality"]["oxygen_limited"] = 0
+            else:   tracer["parameters"]["mortality"]["oxygen_limited"] = 0     # Default to False if not in parameter list
+
+            # Create list of mortality rates
+            mort_rate = []  # [linear,quadratic]
+            if "linear" in tracer["parameters"]["mortality"]["mortality_rate"]: mort_rate.append(np.float64(tracer["parameters"]["mortality"]["mortality_rate"]["linear"]))
+            else:   mort_rate.append(np.float64(0.))
+            if "quadratic" in tracer["parameters"]["mortality"]["mortality_rate"]: mort_rate.append(np.float64(tracer["parameters"]["mortality"]["mortality_rate"]["quadratic"]))
+            else:   mort_rate.append(np.float64(0.))
+
+            tracer["parameters"]["mortality"]["mortality_rate"] = np.array(mort_rate,dtype=np.float64)
+
+            self.mortality_ids = List.empty_list(unicode_type)
+            self.mortality_params = List.empty_list(float64[:])
+            
+            for key,val in tracer["parameters"]["mortality"].items():
+                self.mortality_ids.append(key)
+                if not isinstance(val, np.ndarray): val = np.array([val],dtype=np.float64)  # Convert type to array of floats for typed.List
+                self.mortality_params.append(val)
+
+        # Respiration
+        if "respiration" in tracer["parameters"]:
+            # Translate from fraction string to float64 (if necessary)
+            if "convert_o2" in tracer["parameters"]["respiration"]:
+                if isinstance(tracer["parameters"]["respiration"]["convert_o2"],str):
+                    tracer["parameters"]["respiration"]["convert_o2"] = np.array([Fraction(tracer["parameters"]["respiration"]["convert_o2"])],dtype=np.float64)
+                else:
+                    tracer["parameters"]["respiration"]["convert_o2"] = np.array([tracer["parameters"]["respiration"]["convert_o2"]],dtype=np.float64)
+            if "convert_co2" in tracer["parameters"]["respiration"]:
+                if isinstance(tracer["parameters"]["respiration"]["convert_co2"],str):
+                    tracer["parameters"]["respiration"]["convert_co2"] = np.array([Fraction(tracer["parameters"]["respiration"]["convert_co2"])],dtype=np.float64)
+                else:
+                    tracer["parameters"]["respiration"]["convert_co2"] = np.array([tracer["parameters"]["respiration"]["convert_co2"]],dtype=np.float64)
+            if "convert_hs" in tracer["parameters"]["respiration"]:
+                if isinstance(tracer["parameters"]["respiration"]["convert_hs"],str):
+                    tracer["parameters"]["respiration"]["convert_hs"] = np.array([Fraction(tracer["parameters"]["respiration"]["convert_hs"])],dtype=np.float64)
+                else:
+                    tracer["parameters"]["respiration"]["convert_hs"] = np.array([tracer["parameters"]["respiration"]["convert_hs"]],dtype=np.float64)
+            
+            self.respiration_ids = List.empty_list(unicode_type)
+            self.respiration_params = List.empty_list(float64[:])
+
+            for key,val in tracer["parameters"]["respiration"].items():
+                self.respiration_ids.append(key)
+                if not isinstance(val, np.ndarray): val = np.array([val],dtype=np.float64)  # Convert type to array of floats for typed.List
+                self.respiration_params.append(val)
+
+        # Uptake
+        if "uptake" in tracer["parameters"]:
+            # Store uptake option string
+            self.uptake_option = tracer["parameters"]["uptake"]["option"]
+
+            # Create typed.Dict of uptake parameters and ids (will remain empty if option == "potential")
+            self.uptake_ids = Dict.empty(key_type=types.unicode_type, value_type=types.ListType(unicode_type))
+            self.uptake_params = Dict.empty(key_type=types.unicode_type, value_type=types.ListType(unicode_type))
+            self.max_growth_rate = 0.   # may be updated later
+
+            # Nested typed.Dict for coupled uptake (will remain empty if option == "potential")
+            self.coupled_uptake = Dict.empty(
+                key_type=types.unicode_type, 
+                value_type=types.DictType(types.unicode_type, types.ListType(types.unicode_type))
+            )
+            
+            # Create typed.Dict of uptake potentials (will remain empty if option == "direct")
+            self.uptake_potential_rich = Dict.empty(key_type=types.unicode_type, value_type=float64)
+            self.uptake_potential_poor = Dict.empty(key_type=types.unicode_type, value_type=float64)
+
+            # Boolean to determine substrate correction (used if option == "potential")
+            if "substrate_correction" in tracer["parameters"]["uptake"]:    self.substrate_correction = tracer["parameters"]["uptake"]["substrate_correction"]
+            else:   self.substrate_correction = False
+
+            if self.uptake_option == "potential":
+                for key,val in tracer["parameters"]["uptake"]["potential_rich"].items():    self.uptake_potential_rich[key] = np.float64(val)
+                for key,val in tracer["parameters"]["uptake"]["potential_poor"].items():    self.uptake_potential_poor[key] = np.float64(val)
+                self.max_growth_rate = tracer["parameters"]["uptake"]["max_growth_rate"]
+
+            elif self.uptake_option == "direct":
+                # Parse keys in uptake parameters dictionary
+                for outer_key,inner_dict in tracer["parameters"]["uptake"].items():
+                    # Create temporary dictionary
+                    # temp = Dict.empty(key_type=unicode_type, value_type=float64)
+                    temp = Dict.empty(key_type=unicode_type, value_type=unicode_type)
+
+                    # Skip if not a tracer
+                    if outer_key in {"option", "substrate_correction", "potential_rich", "potential_poor"}:   continue
+
+                    # Add uptake parameters for tracers to the uptake dictionaries
+                    if "strategy" in inner_dict:
+                        if inner_dict["strategy"] == "independent":
+                            temp["strategy"] = inner_dict["strategy"]   # already a str, don't convert
+                            # Convert int/float/bool to str
+                            temp["max_growth_rate"] = str(inner_dict["max_growth_rate"])
+                            temp["basal_metabolic_rate"] = str(inner_dict["basal_metabolic_rate"])
+                            temp["max_growth_efficiency"] = str(inner_dict["max_growth_efficiency"])
+                            temp["half_sat"] = str(inner_dict["half_sat"])
+                            if "convert_uptake" in inner_dict:  
+                                # Translate from fraction string to float64 (if necessary)
+                                if isinstance(inner_dict["coupled_uptake"]["convert_uptake"],str):
+                                    frac = Fraction(inner_dict["coupled_uptake"]["convert_uptake"])
+                                    frac = np.float64(frac)
+                                temp["convert_uptake"] = str(frac)
+
+                        elif inner_dict["strategy"] == "coupled":
+                            temp["strategy"] = inner_dict["strategy"]
+
+                            # Create temporary dictionary of linked uptake tracers
+                            temp_coupled_uptake = Dict.empty(key_type=unicode_type, value_type=types.ListType(unicode_type))
+
+                            # Create list of coupled uptake links
+                            links_list = List.empty_list(unicode_type)
+                            for linked_tracer in inner_dict["link"]:    links_list.append(linked_tracer)
+                            temp_coupled_uptake["links"] = links_list
+
+                            # Empty list for method of linked calculation (max,min,sum,product)
+                            method_list = List.empty_list(unicode_type)
+                            if "method" in inner_dict["coupled_uptake"]:    method_list.append(inner_dict["coupled_uptake"]["method"])  # use provided method
+                            else:   method_list.append("min")   # use min if method not provided
+                            temp_coupled_uptake["method"] = method_list
+
+                            # Translate from fraction string to float64 (if necessary)
+                            if isinstance(inner_dict["coupled_uptake"]["convert_uptake"],str):
+                                frac = Fraction(inner_dict["coupled_uptake"]["convert_uptake"])
+                                frac = np.float64(frac)
+                                # Convert decimal to str for list
+                                temp_coupled_uptake["convert_uptake"] = List(str(frac))
+                            else:
+                                temp_coupled_uptake["convert_uptake"] = List(str(frac))
+
+                            # Add to overall coupled uptake typed.Dict
+                            self.coupled_uptake[outer_key] = temp_coupled_uptake
+
+                        # Create temporary lists for ids and parameters
+                        temp_ids = List.empty_list(unicode_type)
+                        temp_params = List.empty_list(unicode_type)
+                        for temp_key,temp_val in temp.items():
+                            temp_ids.append(temp_key)
+                            temp_params.append(temp_val)
+
+                        # Add ids and parameters to uptake dictionaries
+                        self.uptake_ids[outer_key] = temp_ids
+                        self.uptake_params[outer_key] = temp_params
+
+
+            # It might be simpler to NOT use numba typed dicts for uptake calculations to avoid constant conversions back and forward between string and floats but idk we'll see
+            # If I were to use typed dicts, would need to convert "max_growth_rate", "basal_metabolic_rate", "max_growth_efficiency", and "half_sat" from floats to strings here
+            # and from strings to floats in the uptake function
+
+            # Excretion
+        
+        # Uptake/Release
+        if "uptake_release" in tracer["parameters"]:
+            excr_dict_type = types.DictType(types.unicode_type, types.float64)
+            self.uptake_release_ids = List.empty_list(unicode_type)  # stores produced tracer names (excretion parameters will be saved for each tracer individually)
+            self.uptake_release_params = List.empty_list(excr_dict_type)
+
+            for outer_key,inner_dict in tracer["parameters"]["uptake_release"].items():   # parse dictionary (key = tracer, val = inner dictionary)
+                # Create temporary dictionary
+                temp = Dict.empty(key_type=unicode_type, value_type=float64)
+
+                # Add inner values to temporary dicitonary
+                for inner_key,inner_val in inner_dict.items():
+                    # Create numeric codes for excretion option string
+                    temp[inner_key] = np.float64(inner_val) # conversion to make sure all values are floats
+
+                # Add outer_key to excretion_ids and temp to excretion_params
+                self.uptake_release_ids.append(outer_key)
+                self.uptake_release_params.append(temp)
+
+        # Add concentrations ---------------------------------------------------------------
+        self.composition = List.empty_list(unicode_type)
         conc = []
-        if len(tracer["composition"]) < 1:
-            sys.exit("Bacteria: Element required for " + self.name + ". Check documentation adn edit input file.")
+        if len(composition) < 1:
+            sys.exit("Detritus: Element required for " + self.name + ". Check documentation adn edit input file.")
         else:
-            for key in tracer["composition"]:
+            # Reorder "composition" so "base_element" is at the start of the list
+            for key in list(composition):
+                if key != base_element: composition[key] = composition.pop(key)
+
+            for key in list(composition):
                 available_elements = ['c','n','p','fe']
                 if key in available_elements:
-                    # Add constituent to composition/concentration
-                    self.composition.append(key)
+                    # Add constituent to composition/concentration (if not already in list)
+                    if key in self.composition: pass
+                    else:
+                        self.composition.append(key)
 
-                    # Set initial conditions
-                    if isinstance(tracer["composition"][key], str): # Read initial conditions from file
-                        conc.append( np.fromfile(os.getcwd() + tracer["composition"][key]) )
-                    elif isinstance(tracer["composition"][key], (int,float)): # Create array of initial conditions
-                        if num_layers == 1: # 0d configuration
-                            conc.append(tracer["composition"][key])
-                        else: # 1d configuration
-                            conc.append(tracer["composition"][key] * np.ones(num_layers))
-                    elif isinstance(tracer["composition"][key], (list,np.ndarray)):
-                        conc.append(np.array(tracer["composition"][key]))
-                    elif isinstance(tracer["composition"][key], dict): # Create array of initial conditions based off ratio to base element
-                        index = self.composition.index(base_element)
-                        if num_layers == 1: # 0d configuration
-                            conc.append(tracer["composition"][key][base_element] * conc[index] )
-                        else: # 1d configuration
-                            conc.append(tracer["composition"][key][base_element] * conc[index] * np.ones(num_layers))
+                        # Set initial conditions
+                        if isinstance(composition[key], str): # Read initial conditions from file
+                            conc.append( np.fromfile(os.getcwd() + composition[key]) )
+
+                        elif isinstance(composition[key], (int,float)): # Create array of initial conditions based off initial value
+                            if num_layers == 1: # 0d configuration
+                                conc.append( composition[key] )
+                            else: # 1d configuration
+                                conc.append( composition[key] * np.ones(num_layers,dtype=np.float64) )
+
+                        elif isinstance(composition[key], (list,np.ndarray)): # Already an array of initial conditions
+                            conc.append( np.array(composition[key]),dtype=np.float64 )
+
+                        elif isinstance(composition[key], dict): # Create array of initial conditions based off ratio to base element
+                            factor_element = list(composition[key].keys())[0]   # This is the element that the initial condition is being based off of
+
+                            if factor_element not in self.composition: # If the factor element is not yet in the composition list
+                                self.composition.append(self.composition.pop(self.composition.index(key)))  # Bump current element to end of list
+                                composition[key] = composition.pop(key)     # Bump current element to end of dictionary to pass through later
+
+                            else: # Calculate the concentration of the current element
+                                index = self.composition.index(factor_element)
+                                if num_layers == 1: # 0d configuration
+                                    conc.append( composition[key][factor_element] * conc[index] )
+                                else: # 1d configuration
+                                    conc.append( composition[key][factor_element] * conc[index] * np.ones(num_layers,dtype=np.float64) )
 
                 else:
-                    sys.exit("Bacteria: Element '" + key + "' not recognized. Check documentation and edit input file.")
+                    sys.exit("Detritus: Element '" + key + "' not recognized. Check documentation and edit input file.")
         
-        # hold = np.zeros((len(conc),iters),dtype=np.ndarray)
-        # hold[...,0] = conc
-        # self.conc = hold
-        # self.d_dt = np.zeros_like(conc)
-        # self.conc_ratio = np.zeros_like(conc)
-
         if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
-            self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=float)
+            self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
             for const in range(0,len(self.composition)):
-                self.conc[const,:,0] = conc[const][:-1]
+                self.conc[const,:,0] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
         else:   # Model as single box
-            self.conc = np.zeros((len(self.composition),iters),dtype=float)
+            self.conc = np.zeros((len(self.composition),iters),dtype=np.float64)
             for const in range(0,len(self.composition)):
-                self.conc[const,:,0] = conc[const]
-        self.d_dt = np.zeros_like(self.conc[...,0],dtype=float)
-        self.conc_ratio = np.ones_like(self.conc[...,0],dtype=float)
+                self.conc[const,:,0] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
+        self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
+        self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
+
+        # Add cell quotas ---------------------------------------------------------------
+        # Create list of cell quota ids
+        self.cell_quota_ids = List.empty_list(unicode_type)
+        for element in self.composition:    # Base element not in cell quotas (cell quota of base element would be 1.)
+            if element != base_element: self.cell_quota_ids.append(element)
+        
+        # Create list of maximum cell quotas
+        if "max" in tracer["parameters"]["cell_quota"]: 
+            self.cell_quota_max = List.empty_list(float64)
+            for element in self.cell_quota_ids: # Add quotas in same order as ids
+                self.cell_quota_max.append(tracer["parameters"]["cell_quota"]["max"][element])
+
+        # Create list of minimum cell quotas
+        if "min" in tracer["parameters"]["cell_quota"]: 
+            self.cell_quota_min = List.empty_list(float64)
+            for element in self.cell_quota_ids: # Add quotas in same order as ids
+                self.cell_quota_min.append(tracer["parameters"]["cell_quota"]["min"][element])
+
+        # Create list of optimal cell quotas
+        if "opt" in tracer["parameters"]["cell_quota"]: 
+            self.cell_quota_opt = List.empty_list(float64)
+            for element in self.cell_quota_ids: # Add quotas in same order as ids
+                self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
         
 
-        # Production
-        self.upt = {}   # Uptake
+        # Add production arrays ---------------------------------------------------------------
+        self.upt = Dict.empty(
+                key_type=types.unicode_type, 
+                value_type=types.float64[:]
+            )   # Uptake
 
         # Add relevant reactions
         self.reactions = []
@@ -87,293 +391,591 @@ class Bacteria():
             else:   produced = {"empty": "empty"}
             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
+
+        # Reorder uptake reactions in case of coupled uptake
+        for i in range(len(self.reactions)):
+            if self.reactions[i]["type"] == "uptake":
+                # Get element of nutrient being consumed
+                nutrient_element = list(self.reactions[i]["consumed"].values())[0][0]
+
+                # Bump reaction to end of list if the nutrient is coupled to a different uptake rate
+                if nutrient_element in self.coupled_uptake: self.reactions.append(self.reactions.pop(i))
         
         # Reorder reactions (uptake needs to appear first)
         self.reactions = [item for item in self.reactions if item["type"] == "uptake"] + [item for item in self.reactions if item["type"] != "uptake"]
 
+        # Boolean to determine whether activity and basal respiration will be calculated
+        self.calc_respiration = False
+        for reac in self.reactions:
+            if reac["type"] == "respiration":
+                self.calc_respiration = True
+                break
 
-    def bac(self, iter, base_element, physical, tracers):
+
+    # def bac(self, iter, base_element, physical, tracers):
+    def bac(self, base_element, temperature, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers):
+
+        # Zero out variables
+        for nut in self.upt:                                # Uptake
+            self.upt[nut] = np.zeros_like(conc[0],dtype=np.float64)
         
         # Calculate oxygen limitation factor (if necessary)
-        if "oxygen_inhibition" in self.__dict__:
+        if self.oxygen_limited:
+            # # Optional minimum concentration for aerobic/anerobic operations
+            # if "min_o2" in self.oxy_inhib_params:  o2 = np.maximum(tracers["o2"].conc[...,iter] , self.oxygen_inhibition["min_o2"] * np.ones_like(tracers["o2"].conc[...,iter]))
+            # else:   o2 = tracers["o2"].conc[...,iter]
             # Optional minimum concentration for aerobic/anerobic operations
-            if "min_o2" in self.oxygen_inhibition:  o2 = np.maximum(tracers["o2"].conc[...,iter] , self.oxygen_inhibition["min_o2"] * np.ones_like(tracers["o2"].conc[...,iter]))
-            else:   o2 = tracers["o2"].conc[...,iter]
-            self.oxy_limitation_factor = monod(o2, self.oxygen_inhibition["half_sat"], self.oxygen_inhibition["exponent"])
+            if "min_o2" in self.oxy_inhib_ids:  o2 = np.maximum(conc[tracer_map["o2"][0]] , self.oxy_inhib_params[self.oxy_inhib_ids.index("min_o2")] * np.ones_like(conc[tracer_map["o2"][0]]))
+            else:   o2 = conc[tracer_map["o2"][0]]
+            self.oxy_limitation_factor = monod(o2, self.oxy_inhib_params[self.oxy_inhib_ids.index("half_sat")], self.oxy_inhib_params[self.oxy_inhib_ids.index("exponent")])
 
-        pass
+        # Calculate temp regulation factor (if necessary)
+        if self.temp_limited:
+            self.temp_regulation_factor = temperature_dependence(temperature, self.temp_reg_ids, self.temp_reg_params)
+
+        # Calculate potential uptake (if necessary)
+        if self.uptake_option == "potential":
+            actual_uptake, realized_uptake, base_uptake = self.calculate_realized_uptake(base_element, self.max_growth_rate, conc, conc_ratio, tracer_map, tracers)
+        else:
+            actual_uptake = np.zeros_like(conc[tracer_map[self.abbrev][0]])
+            realized_uptake = np.zeros_like(conc[tracer_map[self.abbrev][0]])
+            base_uptake = self.upt.copy()
+
+        for reac in self.reactions:
+            c, p, ec, ep, ic, ip = tracer_elements(base_element, reac, tracers)
+            if reac["type"] == "excretion":     
+                if self.uptake_option == "direct":  # "actual_uptake" is sum off all uptakes in self.upt if using "direct" option, otherwise use calculated "actual_uptake" from above
+                    for uptake_array in self.upt.values():  actual_uptake += uptake_array
+                self.excretion(base_element, c, p, ec, ep, ic, ip, self.cell_quota_ids, self.cell_quota_opt, self.excretion_ids, self.excretion_params, actual_uptake, conc, conc_ratio, d_dt, tracer_map, tracer_type, self.composition)
+            if reac["type"] == "mortality":     
+                om_composition = tracers[p[0]].composition
+                bac_composition = self.composition
+                self.mortality(c, p, ec, ep, ic, ip, self.mortality_ids, self.mortality_params, self.om_partition, self.temp_regulation_factor, conc, conc_ratio, d_dt, tracer_map, bac_composition, om_composition)
+            if reac["type"] == "respiration":
+                bact_limitation_factor = self.respiration(self.abbrev, base_element, c, p, ec, ep, ic, ip, self.respiration_ids, self.respiration_params, actual_uptake, self.oxy_limitation_factor, self.temp_regulation_factor, conc, d_dt, tracer_map, self.composition)
+            if reac["type"] == "uptake":
+                bac_composition = self.composition
+                om_composition = tracers[c[0]].composition
+                self.uptake(self.abbrev, c, p, ec, ep, ic, ip, self.uptake_ids, self.uptake_params, self.uptake_option, self.upt, actual_uptake, realized_uptake, base_uptake, self.coupled_uptake, self.temp_regulation_factor, conc, conc_ratio, d_dt, tracer_map, bac_composition, om_composition)
+            if reac["type"] == "uptake_release":
+                self.uptake_release(base_element, c, p, ec, ep, ic, ip, self.cell_quota_ids, self.cell_quota_opt, self.uptake_release_ids, self.uptake_release_params, conc, conc_ratio, d_dt, tracer_map, tracer_type, self.composition)
+        
+        # Set bacteria limitation factor to zero if no respiration
+        if not self.calc_respiration:   
+            bact_limitation_factor = 0.
+
+        return bact_limitation_factor
 
 
-    def add_nutrient(self, nutrient):
+    def add_nutrient(self, nutrients):
         """
-        Add nutrients to phytoplankton and append dictionary of uptake rates
+        Add "nutrients" to bacterioplankton and append dictionary of uptake rates. 
+        "Nutrients" are organic matter pools, only one array is used to store uptake of base element from each organic matter pool.
         """
-        self.upt[nutrient] = np.zeros_like(self.conc[0,...],dtype=float)
-        self.nutrient_limitation_factor[nutrient] = np.zeros_like(self.conc[0,...],dtype=float)
+        zeros = List.empty_list(float64[:])
+        zeros.append(np.zeros(self.conc.shape[1],dtype=np.float64))
+        for nut in nutrients:
+            self.upt[nut] = np.zeros_like(self.conc[0,:,0],dtype=np.float64)
 
     
-    def calculate_nutrient_limitation(self, base_element, iter, tracers):
-        """
-        Definition:: Calculates nutrient limitation factor as either a minimum, product, or sum of all nutrients which limit phytoplankton growth
-        """
+    def calculate_realized_uptake(self, base_element, growth_rate, conc, conc_ratio, tracer_map, tracers):
+        # Get concentration of base element in bacterioplankton
+        base_index = self.composition.index(base_element)
+        bac = conc[tracer_map[self.abbrev][base_index]]
 
-        fN = []
-        for key in self.nutrient_limitation:
-            if key != "colimitation":
-                # Get nutrient chemical constituent
-                element = tracers[key].composition[0]
+        # List of organic matter pools for uptake
+        om_pools = list(self.uptake_potential_rich.keys())
 
-                # Get index of nutrient chemcical constituent in phytoplankton composition dictionary
-                element_index = self.composition.index(element)
+        if self.substrate_correction:   # Apply substrate correction
+            # Calculate potential uptake rate
+            potential_uptake = growth_rate * self.temp_regulation_factor * self.nutrient_colimitation_factor * bac
 
-                # Get index of nutrient chemcical constituent in cell quota dictionary
-                quota_index = self.cell_quota.index(element)
-                
-                if self.nutrient_limitation[key]["type"] == "internal":
-                    # Calculate nutrient limitation factor
-                    func = ( self.conc_ratio[element_index] - self.cell_quota["min"][quota_index]) / ( self.cell_quota["opt"][quota_index] - self.cell_quota["min"][quota_index] )
-                    
-                    # Ensures nonzero value
-                    func = np.maximum(1.E-20*np.ones_like(func), func)
+            # Initialize correction matrix
+            correction = np.ones((len(om_pools),len(bac)),dtype=np.float64)
 
-                    # Update dictionary
-                    self.nutrient_limitation_factor[key] = func
+            # Calculate correction of substrate quality depending on nutrient content for each organic matter pool
+            for om in om_pools:
+                # Initialize correction to 1.
+                om_correction = np.ones_like(bac)
 
-                    # Append fN for colimitation calculation
-                    if key in self.nutrient_limitation["colimitation"]["nutrients"]:
-                        fN.append(func)
-                
-                elif self.nutrient_limitation[key]["type"] == "external":
-                    # Determine if Hill exponent exists for monod function
-                    if "exponent" in self.nutrient_limitation[key]:
-                        exponent = self.nutrient_limitation[key]["exponent"]
-                    else:   # Default to 1. (no scaling)
-                        exponent = 1.
+                # Get composition of organic matter pool
+                om_composition = tracers[om].composition
 
-                    # Calculate nutrient limitation factor
-                    func = monod(tracers[key].conc[...,iter], self.nutrient_limitation[key]["half_sat"], exponent)
-                    
-                    # Ensures nonzero value
-                    func = np.maximum(1.E-20*np.ones_like(func), func)
+                # Use optimal bacteria cell quota to calculate correction
+                for const in om_composition:
+                    if const != base_element:   # ignore base element
+                        const_quota = self.cell_quota_opt[const]    # cell quota of element in bacteria
 
-                    # Update dictionary
-                    self.nutrient_limitation_factor[key] = func
+                        om_index = tracers[om].composition.index(const)     # index of element in organic matter pool
+                        om_ratio = conc_ratio[tracer_map[om][om_index]]     # concentration ratio of element in organic matter pool
 
-                    # Append fN for colimitation calculation
-                    if key in self.nutrient_limitation["colimitation"]["nutrients"]:
-                        fN.append(func)
+                        om_correction = np.minimum(om_correction, (om_ratio/const_quota))
 
-                else:
-                    sys.exit("Nutrient limitation type not recognized. Check documentation and edit input file.")
-
-        if "colimitation" in self.nutrient_limitation.keys():   # Multiple nutrients available
-            fN = np.array(fN)
-            if self.nutrient_limitation["colimitation"] == "minimum":
-                self.nutrient_colimitation = np.min(fN, axis=0)
-            elif self.nutrient_limitation["colimitation"] == "product":
-                self.nutrient_colimitation = np.prod(fN, axis=0)
-            elif self.nutrient_limitation["colimitation"] == "sum":
-                self.nutrient_colimitation == np.sum(fN,  axis=0)
-            else:
-                sys.exit("Nutrient colimitation not recognized. Check documentation and edit input file.")
-        else:   # Only one nutrient available
-            self.nutrient_colimitation = fN
-
-        
-    def lysis(self, iter, base_element, parameters, c, p, ec, ep, ic, ip, tracers):
-
-        # Extract dict
-        c = c[0]
-        p = p[0]
-        ec = ec[c]
-        ep = ep[p]
-        ic = ic[c]
-        ip = ip[p]
-
-        # Locate index of base element
-        index = self.composition.index(base_element)
-        bac = np.array(tracers[self.abbrev].conc[index][iter])
-
-        lysis = parameters["lysis_rate"] * self.temp_regulation_factor * ( bac**2 )
-
-        # Convert lysis rate (if necessary)
-        if "convert_lysis" in parameters:
-            if parameters["convert_lysis"] == "cell_quota":
-                quota_index = self.nutrient_limitation["nutrients"].index(c)
-                lysis *= self.nutrient_limitation_factor[quota_index]
-            else:
-                if isinstance(parameters["convert_lysis"],(int,float)) and not isinstance(parameters["convert_lysis"],bool):
-                    lysis *= parameters["convert_lysis"]
-                elif isinstance(parameters["convert_lysis"],str):
-                    lysis *= float(Fraction(parameters["convert_lysis"]))
+                # Add correction to matrix of correction values
+                correction[om_pools.index(om)] = om_correction
             
+        else:   # no substrate correction
+            # Calculate potential uptake rate
+            potential_uptake = growth_rate * self.temp_regulation_factor * bac
+
+            # Set correction to 1.
+            correction = np.ones((len(om_pools),len(bac)),dtype=np.float64)
+
+
+        # Calcualate realized uptake
+        realized_uptake = 1.E-20 * np.ones_like(bac)    # Initialize to 1.E-20 to prevent divide by 0.
         
-        # Update d_dt
-        tracers[c].d_dt -= lysis
+        # base_uptake = {}    # Create uptake dictionary
+        base_uptake = Dict.empty(key_type=types.unicode_type, value_type=types.float64[:])  # Create typed.Dict for uptake of base element in nutrient
 
-        # Apply partition to organic matter group (if necessary)
-        if "partition" in parameters:   tracers[p].d_dt += lysis * parameters["partition"]
-        else:                           tracers[p].d_dt += lysis
+        # Calculate potential uptake of base element for organic matter pools
+        for om in om_pools:
+            # Get composition of organic matter pool
+            om_composition = tracers[om].composition
+
+            # Get index of base element in organic matter pool
+            om_base_index = tracers[om].composition.index(base_element)
+
+            # Calculate substrate uptake of base element in each organic matter pool
+            base_uptake[om] = ( ( self.uptake_potential_rich[om] * correction[om_pools.index(om)] ) + ( self.uptake_potential_poor[om] * ( 1. - correction[om_pools.index(om)] ) ) ) * conc[tracer_map[om][om_base_index]]
+        
+            # Add to total for realized uptake
+            realized_uptake += base_uptake[om]
+
+        # Calculate actual uptake (minimum of potential and realized uptakes)
+        actual_uptake = np.minimum(potential_uptake, realized_uptake)
+        
+        return actual_uptake, realized_uptake, base_uptake
 
 
-    def mortality(self, iter, parameters, c, p, ec, ep, ic, ip, tracers):
+    # @staticmethod
+    # @njit
+    # def mortality(c, p, ec, ep, ic, ip, mortality_ids, mortality_params, om_partition, temp_regulation_factor, conc, conc_ratio, d_dt, tracer_map, bac_composition, om_composition):
+        
+    #     # Extract parameter indices
+    #     mortality_rate = mortality_ids.index("mortality_rate")
+
+    #     # Extract dict
+    #     cons = c[0]
+    #     prod = p[0]
+    #     elem_c = ec[cons]
+    #     elem_p = ep[prod]
+    #     ind_c = ic[cons]
+    #     ind_p = ip[prod]
+
+    #     # Get concentration of base element
+    #     bac = conc[tracer_map[cons][ind_c]]
+
+    #     # Calculate morality rate
+    #     mortality = ( temp_regulation_factor * mortality_params[mortality_rate][0] * bac ) + ( mortality_params[mortality_rate][1] * (bac**2) )
+            
+    #     # Calculate concentration ratios
+    #     ratios = np.zeros((len(bac_composition),len(bac)),dtype=np.float64)
+    #     for const in bac_composition:
+    #         if const in om_composition:
+    #             index_zoo = bac_composition.index(const)
+    #             index_om = om_composition.index(const)
+    #             ratios[index_om] = conc_ratio[tracer_map[cons][index_zoo]]
+
+    #     # Update d_dt
+    #     if prod in om_partition:    # Apply partition (if necessary)
+    #         for const in om_partition[prod]:
+    #             om_const_index = om_composition.index(const)    # Get index of constituent in organic matter pool
+    #             if const in bac_composition:    # Only apply rate if constituent is also in zooplankton
+    #                 zoo_const_index = bac_composition.index(const)  # Get index of constituent in zooplankton
+    #                 d_dt[tracer_map[cons][zoo_const_index]] -= elem_c[zoo_const_index] * conc_ratio[tracer_map[cons][zoo_const_index]] * mortality * om_partition[prod][const]
+    #                 d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * ratios[om_const_index] * mortality * om_partition[prod][const]
+
+    #     else:
+    #         for const in om_partition:
+    #             om_const_index = om_composition.index(const)
+    #             if const in bac_composition:
+    #                 zoo_const_index = bac_composition.index(const)
+    #                 d_dt[tracer_map[cons][zoo_const_index]] -= elem_c[zoo_const_index] * conc_ratio[tracer_map[cons][zoo_const_index]] * mortality
+    #                 d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * ratios[om_const_index] * mortality
+
+
+
+    @staticmethod
+    @njit
+    def excretion(base_element, c, p, ec, ep, ic, ip, cell_quota_ids, cell_quota_opt, excretion_ids, excretion_params, actual_uptake, conc, conc_ratio, d_dt, tracer_map, tracer_type, composition):
         """
-        Definition:: Calculates the non-grazing mortality of planktoninc species
+        Definition:: Calculates excretion of bacterioplankton to nutrient pool.
+                     Excretion can be represented either as a constant rate or as a fraction of bacterioplankton uptake on organic matter.
+        Return:: Excretion rate
         """
+        # Nutrient elements
+        nutrient_elements = Dict.empty(key_type=types.unicode_type,value_type=types.unicode_type)
+        nutrient_elements["no3"] = "n"
+        nutrient_elements["nh4"] = "n"
+        nutrient_elements["po4"] = "p"
 
         # Extract dict
-        c = c[0]
-        p = p[0]
-        ec = ec[c]
-        ep = ep[p]
-        ic = ic[c]
-        ip = ip[p]
-        tc = np.array(tracers[c].conc[ic][iter])
+        cons = c[0]
+        prod = p[0]
+        elem_c = ec[cons]
+        elem_p = ep[prod]
+        ind_c = ic[cons]
+        ind_p = ip[prod]
+        
+        # Get concentration of constituent in bacterioplankton
+        # bac = conc[tracer_map[cons][0]]
+        for element in range(len(elem_c)):
+            if elem_c[element] == 1:
+                idx = element
+                break
+        bac = conc[tracer_map[cons][list(elem_c).index(1)]]
+        excreted_element = composition[list(elem_c).index(1)]
+        base_index = composition.index(base_element)    # Index of base element
 
-        # Calculate mortality rate
-        mortality = ( parameters["mortality_rate"][0] * tc ) + ( parameters["mortality_rate"][1] * (tc**2) )
+        # Extract parameter indices
+        nutrient_excretion = excretion_ids.index(prod)
 
-        # Oxygen limitation
-        if "oxygen_limited" in parameters and parameters["oxygen_limited"]:
-            oxy_limitation_factor = np.minimum(1., nutrient_limitation(tracers["o2"].conc[...,iter], parameters["half_sat_oxygen"]))
-            mortality += (1. - oxy_limitation_factor) * parameters["mortality_rate_oxy"] * tc
+        # Determine type of "produced" nutrient (inorganic nutrient or organic matter pool)
+        if tracer_type[tracer_map[prod][0]] == "inorganic": # Extract cell quota id of nutrient element if inorganic
+            nutrient_index = composition.index(nutrient_elements[prod])     # Index of excreted nutrient
+            quota_index = cell_quota_ids.index(nutrient_elements[prod])
+            external_nut_lim = nutrient_limitation(conc[tracer_map[prod][0]], excretion_params[nutrient_excretion]["half_sat"])
+        # Uses minimum of all quotas if organic matter pool, calculated below
 
-        # # Temperature regulation
-        # if self.temp_limited:
-        #     mortality = mortality #* self.temp_regulation_factor
+        # Excretion
+        if excretion_params[nutrient_excretion]["option"] == 1.:    # based on activity
+            excretion = actual_uptake * (1. - excretion_params[nutrient_excretion]["activity_respiration_frac"]) * (excretion_params[nutrient_excretion]["activity_respiration_frac"] * excretion_params[nutrient_excretion]["excretion_rate"])
 
-        # Calculate concentration ratios
-        # concentration_ratio(iter, ic, tracers[c])
-        # concentration_ratio(iter, ip, tracers[p])
+        elif excretion_params[nutrient_excretion]["option"] == 2.:  # constant excretion rate
+            excretion = excretion_params[nutrient_excretion]["excretion_rate"] * bac
+
+        elif excretion_params[nutrient_excretion]["option"] == 3.:  # based on relaxation time
+            # Calculate excess above optimal cell quota
+            if tracer_type[tracer_map[prod][0]] == "inorganic":
+                excess = conc_ratio[tracer_map[cons][nutrient_index]] - cell_quota_opt[quota_index]
+            else:
+                max_quota = np.zeros_like(bac)  # initialize array
+                for const in composition:   # parse composition list
+                    if const in cell_quota_ids:
+                        const_index = composition.index(const)  # constituent index
+                        quota_index = cell_quota_ids.index(const)   # cell quota index for constituent
+                        hold = 1. - (conc_ratio[tracer_map[cons][const_index]]/cell_quota_opt[quota_index])
+                        max_quota = np.maximum(max_quota, hold)
+
+                excess = np.maximum(np.zeros_like(bac), max_quota)
+
+            # Calculate excretion
+            excretion = excess * excretion_params[nutrient_excretion]["relaxation_timescale"] * bac
+
+        # Apply correction for excess excretion (if necessary)
+        # if base_index == nutrient_index:    # not necessary
+        if base_element == excreted_element:    # not necessary
+            pass
+        else:   # excess correction
+            element_ratio = bac / conc[tracer_map[cons][base_index]]
+            excretion = excretion * np.maximum(0., element_ratio - cell_quota_opt[quota_index])
+
+            # Aply nutrient limitation factor to inorganic nutrient excretion
+            if tracer_type[tracer_map[prod][0]] == "inorganic": excretion *= external_nut_lim
+
 
         # Update d_dt
-        if parameters != None and "partition" in parameters:   # Mortality can be partitioned between dissolved and particulate detrital pools
-            tracers[c].d_dt -= ec * tracers[c].conc_ratio * mortality * parameters["partition"]
-            tracers[p].d_dt += ep * tracers[c].conc_ratio * mortality * parameters["partition"]
+        # d_dt[tracer_map[cons][nutrient_index]] -= excretion
+        for i in range(len(tracer_map[cons])):  d_dt[tracer_map[cons][i]] -= elem_c[i] * excretion
+        for j in range(len(tracer_map[prod])):  d_dt[tracer_map[prod][j]] += elem_p[j] * excretion
+
+        return
+
+
+    @staticmethod
+    @njit
+    def mortality(c, p, ec, ep, ic, ip, mortality_ids, mortality_params, om_partition, temp_regulation_factor, conc, conc_ratio, d_dt, tracer_map, bac_composition, om_composition):
+        # d_0b = specific mortality rate (linear)
+        # d_B_d = density specific mortality rate (quadratic)
+
+        # Extract parameters
+        mortality_rate = mortality_ids.index("mortality_rate")
+
+        # Extract dict
+        cons = c[0]
+        prod = p[0]
+        elem_c = ec[cons]
+        elem_p = ep[prod]
+        ind_c = ic[cons][0]
+        ind_p = ip[prod][0]
+
+        bac = conc[tracer_map[cons][ind_c]]
+
+        # Calculate mortality rate (temperature regulated linear component)
+        mortality = ( mortality_params[mortality_rate][0] * temp_regulation_factor * bac ) + ( mortality_params[mortality_rate][1] * (bac**2) )
+        
+        # Calculate concentration ratios
+        ratios = np.zeros((len(bac_composition),len(bac)),dtype=np.float64)
+        for const in bac_composition:
+            if const in om_composition:
+                index_bac = bac_composition.index(const)
+                index_om = om_composition.index(const)
+                ratios[index_om] = conc_ratio[tracer_map[cons][index_bac]]
+
+        # Update d_dt
+        if prod in om_partition:    # Apply partition (if necessary)
+            for const in om_partition[prod]:
+                om_const_index = om_composition.index(const)    # Get index of constituent in organic matter pool
+                if const in bac_composition:    # Only apply rate if constituent is also in zooplankton
+                    bac_const_index = bac_composition.index(const)  # Get index of constituent in zooplankton
+                    d_dt[tracer_map[cons][bac_const_index]] -= elem_c[bac_const_index] * conc_ratio[tracer_map[cons][bac_const_index]] * mortality * om_partition[prod][const]
+                    d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * ratios[om_const_index] * mortality * om_partition[prod][const]
 
         else:
-            tracers[c].d_dt -= ec * tracers[c].conc_ratio * mortality
-            tracers[p].d_dt += ep * tracers[c].conc_ratio * mortality
+            for const in om_composition:
+                om_const_index = om_composition.index(const)
+                if const in bac_composition:
+                    bac_const_index = bac_composition.index(const)
+                    d_dt[tracer_map[cons][bac_const_index]] -= elem_c[bac_const_index] * conc_ratio[tracer_map[cons][bac_const_index]] * mortality
+                    d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * ratios[om_const_index] * mortality
 
+        return
+    
+    @staticmethod
+    @njit
+    def respiration(abbrev, base_element, c, p, ec, ep, ic, ip, respiration_ids, respiration_params, actual_uptake, oxy_limitation_factor, temp_regulation_factor, conc, d_dt, tracer_map, composition):
 
-    def uptake(self, iter, base_element, parameters, c, p, ec, ep, ic, tracers):
-        
+        # Extract parameter indices
+        activity_respiration_frac = respiration_ids.index("activity_respiration_frac")
+        basal_respiration_rate = respiration_ids.index("basal_respiration_rate")
+        anoxic_respiration_frac = respiration_ids.index("anoxic_respiration_frac")
+        conv_o2 = False
+        if "convert_o2" in respiration_ids:
+            conv_o2 = True
+            convert_o2 = respiration_ids.index("convert_o2")
+        conv_co2 = False
+        if "convert_co2" in respiration_ids:
+            conv_co2 = True
+            convert_co2 = respiration_ids.index("convert_co2")
+        conv_hs = False
+        if "convert_hs" in respiration_ids:
+            conv_hs = True
+            convert_hs = respiration_ids.index("convert_hs")
+
         # Extract dict
-        ec = ec[c]
-        ep = ep[p]
-        ic = ic[c]
-        ip = ip[p]
-
-        # Identify the chemical constituent of the nutrient(s)
-        element = ec[c[0]]
-
-        # Get concentration of constituent in phytoplankton if present
-        if element in self.composition:     element_index = self.composition.index(element)
-
-        if parameters["strategy"] == "coupled":
-            coupled_uptake = parameters["coupled_uptake"]
-            linked_nutrients = coupled_uptake["link"]
-
-            # Extract uptake rates of linked nutrients
-            uptake_rates = []
-            for nut in linked_nutrients:
-                uptake_rates.append(self.uptake_rates[nut])
-
-            # Calculate total linked uptake rate if multiple linked nutrients are used
-            if len(linked_nutrients) > 1:   # use numpy "maximum" to ensure minimum uptake of 0.
-                if coupled_uptake["method"] == "max":       linked_uptake = np.maximum(np.maximum(uptake_rates), np.zeros_like(self.uptake_rates[nut]))
-                elif coupled_uptake["method"] == "min":     linked_uptake = np.maximum(np.minimum(uptake_rates), np.zeros_like(self.uptake_rates[nut]))
-                elif coupled_uptake["method"] == "product": linked_uptake = np.maximum(np.prod(uptake_rates), np.zeros_like(self.uptake_rates[nut]))
-                elif coupled_uptake["method"] == "sum":     linked_uptake = np.maximum(np.sum(uptake_rates), np.zeros_like(self.uptake_rates[nut]))
-
-            if isinstance(parameters["convert_uptake"],(int,float)) and not isinstance(parameters["convert_uptake"],bool):
-                uptake = self.nutrient_limitation_factor[element] * linked_uptake * coupled_uptake["convert_uptake"]
-            elif isinstance(parameters["convert_uptake"],str):
-                uptake = self.nutrient_limitation_factor[element] * linked_uptake * float(Fraction(parameters["convert_uptake"]))
-
-            # Update d_dt
-            tracers[c].d_dt -= np.array(ec) * np.maximum(uptake, np.zeros_like(uptake))
-            if element in self.composition:     self.d_dt[element_index] += np.maximum(uptake, np.zeros_like(uptake))
-
-        elif parameters["strategy"] == "independent":
-            # Get concentration of element in bacterioplankton
-            if element in self.composition:
-                index = self.composition.index(element)
-            else:   # If element doesn't isn't directly resolved, use base element with conversion factor
-                index = self.composition.index(base_element)
-
-            bac = np.array(self.conc[index][iter])
-
-            # Calculate maximum uptake rate
-            max_uptake = (parameters["max_growth_rate"] + parameters["basal_metabolic_rate"]) / parameters["max_growth_efficiency"]
-
-            # Calculate actual uptake
-            uptake = max_uptake * monod(tracers[c].conc[ic][iter], self.nutrient_limitation_factor["dom1"], 1.) * bac
-
-            # Multiply by conversion (if necessary)
-            if "convert_uptake" in parameters:
-                if isinstance(parameters["convert_uptake"],(int,float)) and not isinstance(parameters["convert_uptake"],bool):
-                    uptake *= coupled_uptake["convert_uptake"]
-                elif isinstance(parameters["convert_uptake"],str):
-                    uptake *= float(Fraction(parameters["convert_uptake"]))
-            
-            if self.temperature_regulation["temp_limited"]:
-                uptake *= self.temp_regulation_factor
-
-            # Update d_dt
-            tracers[c].d_dt -= uptake
-            if element in self.composition:     self.d_dt[index] += uptake
-
-
-
-    def respiration(self, iter, base_element, parameters, c, p, tracers):
+        if p:   # "produced" not an empty list
+            if len(p) > 1:  # if "co2" also included as produced element
+                for index in range(len(p)):
+                    if p[index] == "co2":   pass
+                    else:   prod = p[index]
+            else:   prod = p[0]
+            elem_p = ep[prod]
+            ind_p = ip[prod][0]
 
         # Locate index of base element
-        index = self.composition.index(base_element)
+        base_index = composition.index(base_element)
 
-        # Get concentration of base element
-        bac = tracers[self.abbrev].conc[index[iter]]
+        # Get base element concentration
+        bac = conc[tracer_map[abbrev][base_index]]
 
-        # Calculate respiration rate
-        respiration = self.temp_regulation_rator * parameters["respiration_rate"] * bac
-        
-        # Aeorbic --> O2 repired
-        if tracers["o2"].conc[...,iter] > self.oxygen_inhibition["min_o2"]:
-            # tracers["o2"].d_dt -= respiration * parameters["convert_o2"]
-            if "o2" in c:   
-                if isinstance(parameters["convert_o2"],(int,float)) and not isinstance(parameters["convert_o2"],bool):
-                    tracers["o2"].d_dt -= respiration * parameters["convert_o2"]
-                elif isinstance(parameters["convert_o2"],str):
-                    tracers["o2"].d_dt -= respiration * float(Fraction(parameters["convert_o2"]))
-
-        if "co2" in p:  
-            if base_element == "c":     tracers["co2"].d_dt += respiration  
-            else:                       
-                if isinstance(parameters["convert_co2"],(int,float)) and not isinstance(parameters["convert_co2"],bool):
-                    tracers["co2"].d_dt += respiration  * parameters["convert_co2"]   
-                elif isinstance(parameters["convert_co2"],str):   
-                    tracers["co2"].d_dt += respiration  * float(Fraction(parameters["convert_co2"]))
+        # Respiration
+        activity_respiration = ( respiration_params[activity_respiration_frac] + respiration_params[anoxic_respiration_frac] * (1. - oxy_limitation_factor) ) * actual_uptake
+        basal_respiration = respiration_params[basal_respiration_rate] * temp_regulation_factor * bac
+        respiration = activity_respiration + basal_respiration
 
         # Update d_dt
-        self.d_dt[index] -= respiration
-        tracers[p].d_dt += respiration
+        d_dt[tracer_map[abbrev][base_index]] -= respiration
+        if "o2" in c:   
+            if conv_o2:     d_dt[tracer_map["o2"][0]] -= oxy_limitation_factor * respiration * respiration_params[convert_o2]
+            else:           d_dt[tracer_map["o2"][0]] -= oxy_limitation_factor * respiration
+
+        if p:   # "produced" not an empty list
+            for element in range(len(p)):
+                if p[element] == "co2":
+                    if base_element == "c":     d_dt[tracer_map["co2"][0]] += respiration  
+                    else:                       
+                        if conv_co2:    d_dt[tracer_map["co2"][0]] += respiration * respiration_params[convert_co2]
+                        else:           d_dt[tracer_map["co2"][0]] += respiration
+                elif p[element] == "hs":
+                    if conv_hs:         d_dt[tracer_map["hs"][0]] += respiration * (1. - oxy_limitation_factor) * respiration_params[convert_hs]
+                    else:               d_dt[tracer_map["hs"][0]] += respiration * (1. - oxy_limitation_factor)
+                else:   
+                    d_dt[tracer_map[p[element]][ip[p[element]][0]]] += respiration
+
+        # Calculate bacteria limiting factor for denitrification (if necessary)
+        if conv_hs: bact_limitation_factor = (1. - oxy_limitation_factor) * respiration * respiration_params[convert_hs]
+        else:       bact_limitation_factor = (1. - oxy_limitation_factor) * respiration 
+
+        return bact_limitation_factor
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    @staticmethod
+    # @njit
+    def uptake(abbrev, c, p, ec, ep, ic, ip, uptake_ids, uptake_params, uptake_option, upt, actual_uptake, realized_uptake, base_uptake, coupled_uptake_dict, temp_regulation_factor, conc, conc_ratio, d_dt, tracer_map, bac_composition, om_composition):
         
+        # Extract dict
+        cons = c[0] # organic matter
+        prod = p[0] # bacterioplankton
+        elem_c = ec[cons]
+        elem_p = ep[prod]
+        ind_c = ic[cons][0]
+        ind_p = ip[prod][0]
+
+        # Extract concentration ratio of consumed "nutrient"
+        ratios = np.zeros((len(bac_composition),len(conc[tracer_map[abbrev][0]])))
+        for const in bac_composition:
+            if const in om_composition:
+                index_om = om_composition.index(const)
+                index_bac = bac_composition.index(const)
+                ratios[index_bac] = conc_ratio[tracer_map[cons][index_om]]
+
+        if uptake_option == "direct":
+
+            ids = uptake_ids[cons]
+            params = uptake_params[cons]
+        
+            # Identify strategy for uptake rate calculation
+            strategy = ids.index("strategy")
+
+            if params[strategy] == "independent":    # "independent" uptake
+                # Extract parameter ids
+                max_growth_rate_id = ids.index("max_growth_rate")
+                basal_metabolic_rate_id = ids.index("basal_metabolic_rate")
+                max_growth_efficiency_id = ids.index("max_growth_efficiency")
+                half_sat_id = ids.index("half_sat")
+
+                # Parameters stored as strings, convert to floats
+                max_growth_rate = np.float64(params[max_growth_rate_id])
+                basal_metabolic_rate = np.float64(params[basal_metabolic_rate_id])
+                max_growth_efficiency = np.float64(params[max_growth_efficiency_id])
+                half_sat = np.float64(params[half_sat_id])
+
+                convert = False
+                if "convert_uptake" in ids:  
+                    convert = True
+                    convert_uptake = np.float64(params[ids.index("convert_uptake")])
+
+                # Get concentration of base element
+                bac = conc[tracer_map[abbrev][ind_p]]
+                om = conc[tracer_map[cons][ind_c]]
+
+                # Calculate maximum uptake rate
+                # max_uptake = ( params[max_growth_rate] + params[basal_metabolic_rate] ) / params[max_growth_efficiency]
+                max_uptake = ( max_growth_rate + basal_metabolic_rate ) / max_growth_efficiency
+
+                # Calculate actual uptake
+                # uptake = temp_regulation_factor * max_uptake * monod(om, params[half_sat], 1.) * bac
+                uptake = temp_regulation_factor * max_uptake * monod(om, half_sat, 1.) * bac
+
+                if convert: uptake *= convert_uptake
+
+                # Update d_dt
+                for i in range(len(elem_c)):    d_dt[tracer_map[cons][i]] -= elem_c[i] * conc_ratio[tracer_map[cons][i]] * uptake
+                for j in range(len(elem_p)):    d_dt[tracer_map[prod][j]] += elem_p[j] * ratios[j] * uptake
+
+                # Update uptake rate dictionary
+                upt[cons] = uptake
+
+            elif params[strategy] == "coupled":      # "coupled" uptake
+                coupled_uptake = coupled_uptake_dict[cons]
+                linked_nutrients = coupled_uptake["links"]
+                convert = False
+                if "convert_uptake" in coupled_uptake:  convert = True
+
+                # Extract uptake rates of linked nutrients
+                uptake_rates = List.empty_list(float64[:])
+
+                for nut in linked_nutrients:
+                    uptake_rates.append(upt[nut])    # uptake rate of base element in organic matter pool
+
+                # Calculate total linked uptake rate if multiple linked nutrients are used
+                linked_uptake = uptake_rates[0].copy()
+                if linked_nutrients and len(linked_nutrients) > 1:   # use numpy "maximum" to ensure minimum uptake of 0.
+                    if coupled_uptake["method"] == "max":      # "max"
+                        for i in range(1,len(uptake_rates)):
+                            linked_uptake = np.maximum(linked_uptake,uptake_rates[i])
+
+                    elif coupled_uptake["method"] == "min":    # "min"
+                        for i in range(1,len(uptake_rates)):
+                            linked_uptake = np.minimum(linked_uptake, uptake_rates[i])
+                        
+                    elif coupled_uptake["method"] == "sum":    # "sum"
+                        for i in range(1,len(uptake_rates)):
+                            linked_uptake += uptake_rates[i]
+
+                    elif coupled_uptake["method"] == "product":    # "product"
+                        for i in range(1,len(uptake_rates)):
+                            linked_uptake *= uptake_rates[i]
+                    
+                # minimum uptake 0.
+                linked_uptake = np.maximum(linked_uptake, np.zeros_like(uptake_rates[0]))
+
+                if convert:
+                    # convert "convert_uptake" from string to float
+                    convert_uptake = np.float64(coupled_uptake["convert_uptake"][0])
+                    uptake = np.zeros(len(conc[tracer_map[abbrev][0]]),dtype=np.float64)
+
+                    for depth in range(len(conc[tracer_map[abbrev][0]])):
+                        uptake[depth] = linked_uptake[depth] * convert_uptake
+
+                # Update d_dt (apply concentration ratios)
+                for i in range(len(elem_c)):    d_dt[tracer_map[cons][i]] -= elem_c[i] * conc_ratio[tracer_map[cons][i]] * uptake
+                for j in range(len(elem_p)):    d_dt[tracer_map[prod][j]] += elem_p[j] * ratios[j] * uptake
+
+                # Update uptake rate dictionary
+                upt[cons] = uptake
+
+
+        elif uptake_option == "potential":
+            # Calculate uptake rate
+            uptake = actual_uptake * base_uptake[cons] / realized_uptake
+
+            # Update d_dt
+            for i in range(len(elem_c)):    d_dt[tracer_map[cons][i]] -= elem_c[i] * conc_ratio[tracer_map[cons][i]] * uptake
+            for j in range(len(elem_p)):    d_dt[tracer_map[prod][j]] += elem_p[j] * ratios[j] * uptake
+            
+            # Update uptake rate didctionary
+            upt[cons] = uptake
+
+
+    @staticmethod
+    @njit
+    def uptake_release(base_element, c, p, ec, ep, ic, ip, cell_quota_ids, cell_quota_opt, uptake_release_ids, uptake_release_params, conc, conc_ratio, d_dt, tracer_map, tracer_type, composition):
+        """
+        Definition:: Calculate the uptake/release between bacterioplankton and the nutrient pool.
+                     
+        """
+        # Extract dict
+        cons = c[0]
+        prod = p[0]
+        elem_c = ec[cons]
+        elem_p = ep[prod]
+        ind_c = ic[cons]
+        ind_p = ip[prod]
+
+        # Extract nutrient for parameters
+        nutrient = uptake_release_ids.index(prod)
+        # half_sat = uptake_release_ids.index("half_sat")
+        # relaxation_timescale = uptake_release_ids.index("relaxation_timescale")
+        
+        # Get concentration of base element in bacterioplankton
+        base_index = composition.index(base_element)    # Index of base element
+        bac = conc[tracer_map[cons][base_index]]
+
+        # Get cell quotas
+        element_index = list(elem_c).index(1)
+        element = composition[element_index]
+        current_ratio = conc_ratio[tracer_map[cons][element_index]]  # Current cell ratio
+        optimal_quota = cell_quota_opt[cell_quota_ids.index(element)]   # Extract the optimal cell quota of the nutrient being release
+
+        # Calculate external nutrient limitation
+        nut_lim = nutrient_limitation(conc[tracer_map[prod][0]], uptake_release_params[nutrient]["half_sat"])
+        
+        # Calculate uptake/release
+        upt_rel = (current_ratio - optimal_quota) * uptake_release_params[nutrient]["relaxation_timescale"] * bac
+
+        # Calculate switch vectors for direction between bacteria and nutrient
+        pos_switch = switch(upt_rel)
+        neg_switch = switch(-upt_rel)
+
+        # # Update d_dt
+        # d_dt[tracer_map[cons][element_index]] -= upt_rel * (pos_switch - (nut_lim * neg_switch))    # To bacteria
+        # d_dt[tracer_map[prod][0]] += upt_rel * (pos_switch - (nut_lim * neg_switch))                # To nutrient
+
+        # Update d_dt
+        d_dt[tracer_map[cons][element_index]] -= upt_rel * (pos_switch + (nut_lim * neg_switch))    # To bacteria
+        d_dt[tracer_map[prod][0]] += upt_rel * (pos_switch + (nut_lim * neg_switch))                # To nutrient
+
+        return
+    

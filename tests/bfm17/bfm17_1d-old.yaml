@@ -4,8 +4,7 @@ tracers:
   o2:
     long_name: oxygen
     type: inorganic
-    composition:                            # element : initial concentration (from data file)
-      o: /inputs/BFM17_BERM_INIT/init_prof_Oxy_150m_bermuda_killworth.da
+    composition: [o]
     parameters:
       temperature_regulation:
         temp_limited: False
@@ -22,8 +21,7 @@ tracers:
   no3:
     long_name: nitrate
     type: inorganic
-    composition:                            # element : initial concentration (from data file)
-      n: /inputs/BFM17_BERM_INIT/init_prof_N_150m_bermuda_killworth.da
+    composition: [n]
     parameters:
       temperature_regulation:
         temp_limited: True
@@ -37,12 +35,11 @@ tracers:
   nh4:
     long_name: ammonium
     type: inorganic
-    composition:                            # element : initial concentration
-      n: 0.
+    composition: [n]
     parameters:
       temperature_regulation:
         temp_limited: True
-        function: q10                       # options: arrhenius, eppley, or q10
+        function: q10                       # options: [1] arrhenius, [2] eppley, or [3] q10
         # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
         # eppley: needs "coefficient" as additional parameter
         # q10: needs "base_temp" and "coefficient" as additional parameters
@@ -57,8 +54,7 @@ tracers:
   po4:
     long_name: phosphate
     type: inorganic
-    composition:                            # element : initial concentration (from data file)
-      p: /inputs/BFM17_BERM_INIT/init_prof_P_150m_bermuda_killworth.da
+    composition: [p]
     parameters:
       temperature_regulation:
         temp_limited: False
@@ -66,24 +62,24 @@ tracers:
   phyto1:
     long_name: diatoms
     type: phytoplankton
-    composition:                            # element : initial concentration (from data file)
-      c: /inputs/BFM17_BERM_INIT/init_prof_Pc_150m_bermuda_killworth.da
-      n: {c: 0.0126}                        # {base_element : initial conversion factor}
-      p: {c: 7.862E-04}                     # {base_element : initial conversion factor}
-      chl: {c: 0.02}                        # {base_element : initial conversion factor}
+    composition: [c,n,p,chl]
     parameters:
       cell_quota:
-        n: {max: 0.025, min: 6.87E-03, opt: 1.26E-02}
-        p: {max: 2.5E-03, min: 4.29E-04, opt: 7.86E-04}
-        chl: {max: 0.016, min: 0.016, opt: 0.016}
+        # n: {max: 0.025, min: 6.87E-03, opt: 1.26E-02}
+        # p: {max: 2.5E-03, min: 4.29E-04, opt: 7.86E-04}
+        # chl: {max: 0.016, min: 0.016, opt: 0.016}
+
+        max: {n: 0.025, p: 2.5E-03, chl: 0.016}
+        min: {n: 6.87E-03, p: 4.29E-04, chl: 0.016}
+        opt: {n: 1.26E-02, p: 7.86E-04, chl: 0.016}
 
       nutrient_limitation:  
-        colimitation: minimum               # mininimum, product, or sum of all limiting nutrients
+        colimitation: minimum               # [1] mininimum, [2] product, or [3] sum of all limiting nutrients
         include: ["no3","po4"]              # nutrients included for calculation of colimitation factor
         no3:
           type: internal
           function: droop
-          nh4_inihibited: True
+          nh4_inhibited: True
         nh4:
           type: external
           function: monod
@@ -94,12 +90,12 @@ tracers:
 
       sedimentation:
         sinking: False
-        sinking_rate: 0.
+        background_sinking_rate: 0.
         burial_velocity: 0.
 
       temperature_regulation:
         temp_limited: True
-        function: q10                       # options: arrhenius, eppley, or q10
+        function: q10                       # options: [1] arrhenius, [2] eppley, or [3] q10
         # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
         # eppley: needs "coefficient" as additional parameter
         # q10: needs "base_temp" and "coefficient" as additional parameters
@@ -125,6 +121,7 @@ tracers:
         initial_PI_slope: 1.52E-05
         eps_PAR: 0.4
         convert_o2: 1/12                    # [mmol 02 / mg C]
+        optimal_Epar_Ek: 0.
 
       lysis:
         method: cell_quota                  # options: constant or cell_quota
@@ -141,7 +138,7 @@ tracers:
         convert_o2: 1/12                    # [mmol 02 / mg C]
 
       uptake:
-        n:
+        no3:
           basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
           # constant: based on constant uptake rate
           # growth: based on photosynthesis and nutrient limitation
@@ -156,7 +153,22 @@ tracers:
           luxury_storage: 1.
           max_photo_rate: 1.6               # [1/d]
           specific_affinity: 0.025          # [m^3 / (mg C . d)]
-        p:
+        nh4:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          half_sat_nh4_preference: 1.5
+          luxury_storage: 1.
+          max_photo_rate: 1.6               # [1/d]
+          specific_affinity: 0.025          # [m^3 / (mg C . d)]
+        po4:
           basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
           # constant: based on constant uptake rate
           # growth: based on photosynthesis and nutrient limitation
@@ -170,18 +182,30 @@ tracers:
           luxury_storage: 1.
           max_photo_rate: 1.6               # [1/d]
           specific_affinity: 0.0025         # [m^3 / (mg C . d)]
+        # po4:
+        #   basis: nutrient
+        #   strategy: coupled
+        #   coupled_uptake:
+        #     link: no3
+        #     convert_uptake: 1/2
+        #     method: min
+        #   form: affinity                    # options: affinity or constituent
+        #   # affinity: uses specific affinity, based on cell quota w.r.t base element
+        #   # constituent: uses concentration of phytoplankton constituent of nutrient element
+        #   luxury_storage: 1.
+        #   max_photo_rate: 1.6               # [1/d]
+        #   specific_affinity: 0.0025         # [m^3 / (mg C . d)]
+        
 
   zoo1:
     long_name: mesozooplankton
     type: zooplankton
-    composition:                            # element : initial concentration (from data file)
-      c: /inputs/BFM17_BERM_INIT/init_prof_Zc_150m_bermuda_killworth.da
-      n: {c: 0.0126}                        # {base_element : initial conversion factor}
-      p: {c: 7.862E-04}                     # {base_element : initial conversion factor}
+    composition: [c,n,p]
     parameters:
       cell_quota:
-        n: {opt: 1.258E-02}
-        p: {opt: 7.862E-04}
+        # n: {opt: 1.258E-02}
+        # p: {opt: 7.862E-04}
+        opt: {n: 1.258E-02, p: 7.862E-04}
       
       temperature_regulation:
         temp_limited: True
@@ -194,27 +218,45 @@ tracers:
 
       oxygen_inhibition:
         oxygen_limited: True
-        function: monod
         half_sat: 50.                       # [mmol O2 / m^3]
+        exponent: 1.                        # optional: Hill exponent for Monod function (default to 1. if not included)
+      
+      om_partition:
+        dom1: {c: 0.60, n: 0.72, p: 0.832}  # c,n,p [-]
+        pom1: {c: 0.40, n: 0.28, p: 0.168}  # c,n,p [-]
+
+      efficiency:
+        assimilation: 0.5
+        ingestion: 0.25
+
+      egestion:
+        dom1: grazing
+        pom1: grazing
 
       excretion:
-        assimilation_efficiency: 0.25
-        ingestion_efficiency: 0.5
-        function:                           # options: constant or grazing
-        # constant: based on constant excretion rate
-        # grazing: based on ingestion efficiency of total grazing
-          n: grazing
-          p: grazing
-          dom1: grazing
-          pom1: grazing
-        partition:
-          dom1: {c: 0.60, n: 0.72, p: 0.832}  # c,n,p [-]
-          pom1: {c: 0.40, n: 0.28,p: 0.168}   # c,n,p [-]
+        nh4: grazing
+        po4: grazing
+
+      # excretion:
+      #   # assimilation_efficiency: 0.25
+      #   # ingestion_efficiency: 0.5
+      #   # efficiency:
+      #   #   assimilation: 0.25
+      #   #   ingestion: 0.5
+      #   function:                           # options: constant or grazing
+      #   # constant: based on constant excretion rate
+      #   # grazing: based on ingestion efficiency of total grazing
+      #     nh4: grazing
+      #     po4: grazing
+      #     dom1: grazing
+      #     pom1: grazing
+      #   # partition:
+      #   #   dom1: {c: 0.60, n: 0.72, p: 0.832}  # c,n,p [-]
+      #   #   pom1: {c: 0.40, n: 0.28,p: 0.168}   # c,n,p [-]
 
       grazing:
         grazing_preferences: {phyto1: 1., zoo1: 1.E-06}
         function: holling-2
-        ingestion_type: feeding_threshold
         feeding_threshold: 50.0             # [mg C / m^3]
         max_grazing_rate: 2.0               # [1/d]
         half_sat_grazing: 200.0             # [mg C / m^3]
@@ -226,9 +268,9 @@ tracers:
           linear: 1.E-06                    # linear [1/d]
           quadratic: 0.0                    # quadratic [1/d^2]
         mortality_rate_oxy: 0.25            # [1/d]
-        partition:
-          dom1: {c: 0.60, n: 0.72, p: 0.832}  # c,n,p [-]
-          pom1: {c: 0.40, n: 0.28,p: 0.168}   # c,n,p [-]
+        # partition:
+        #   dom1: {c: 0.60, n: 0.72, p: 0.832}  # c,n,p [-]
+        #   pom1: {c: 0.40, n: 0.28,p: 0.168}   # c,n,p [-]
 
       respiration:
         respiration_rate: 0.02              # [1/d]
@@ -238,10 +280,7 @@ tracers:
     long_name: dissolved organic matter
     type: detritus
     form: dissolved
-    composition:                            # element : initial concentration (from data file)
-      c: /inputs/BFM17_BERM_INIT/init_prof_DOC_150m_bermuda_killworth.da
-      n: {c: 6.3E-03}                       # {base_element : initial conversion factor}
-      p: {c: 3.931E-04}                     # {base_element : initial conversion factor}
+    composition: [c,n,p]
     parameters:
       light_attenuation: 0.0                # [m^2 / mg C]
 
@@ -251,17 +290,14 @@ tracers:
 
       sedimentation:
         sinking: False
-        sinking_rate: 0.                    # [m/d]
+        background_sinking_rate: 0.                    # [m/d]
         burial_velocity: 0.                 # [m/d]
 
   pom1:
     long_name: particulate organic matter
     type: detritus
     form: particulate
-    composition:                            # element : initial concentration (from data file)
-      c: /inputs/BFM17_BERM_INIT/init_prof_POC_150m_bermuda_killworth.da
-      n: {c: 0.0126}                        # {base_element : initial conversion factor}
-      p: {c: 7.862E-04}                     # {base_element : initial conversion factor}
+    composition: [c,n,p]
     parameters:
       light_attenuation: 1.0E-04            # [m^2 / mg C]
 
@@ -271,7 +307,7 @@ tracers:
         
       sedimentation:
         sinking: True
-        sinking_rate: 1.                    # [m/d]
+        background_sinking_rate: 1.                    # [m/d]
         burial_velocity: 1.                 # [m/d]
 
 # -------------------------------------------------------------------------------------------------
@@ -293,13 +329,25 @@ reactions:
     produced:
       po4: [p]
 
-  - type: excretion
+  # - type: excretion
+  #   consumed: 
+  #     zoo1: [c,n,p]
+  #   produced:
+  #     dom1: [c,n,p]
+
+  # - type: excretion
+  #   consumed: 
+  #     zoo1: [c,n,p]
+  #   produced:
+  #     pom1: [c,n,p]
+
+  - type: egestion
     consumed: 
       zoo1: [c,n,p]
     produced:
       dom1: [c,n,p]
 
-  - type: excretion
+  - type: egestion
     consumed: 
       zoo1: [c,n,p]
     produced:
@@ -412,9 +460,23 @@ reactions:
       o2: [o]
     produced:
 
+  # - type: uptake
+  #   consumed:
+  #     no3: [n]
+  #     nh4: [n]
+  #   produced:
+  #     phyto1: [n]
+  #     dom1: [n]
+
   - type: uptake
     consumed:
       no3: [n]
+    produced:
+      phyto1: [n]
+      dom1: [n]
+
+  - type: uptake
+    consumed:
       nh4: [n]
     produced:
       phyto1: [n]

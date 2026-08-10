@@ -1,4 +1,5 @@
 import numpy as np
+np.set_printoptions(precision=20)
 
 def calc_day_of_year(time_seconds):
     """ function that calculates the day of year """

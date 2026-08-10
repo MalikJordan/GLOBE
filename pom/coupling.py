@@ -1,10 +1,13 @@
 import numpy as np
+from numba import njit, types
+from numba.types import float64, unicode_type
+from numba.typed import Dict, List
 from pom.calculations import temperature_and_salinity_profiles
 from functions.bgc_rate_eqns import bgc_rate_eqns
 import os
-# from pom.check_rates import o2rates, no3rates, nh4rates, po4rates, phytocrates, phytonrates, phytoprates, phytolrates, zoocrates, zoonrates, zooprates, domcrates, domnrates, domprates, pomcrates, pomnrates, pomprates
-# from pom.check_conc import o2, no3, nh4, po4, phyto1, zoo1, dom1, pom1
 from pom.compare_values import compare_values
+from tests.bfm17 import check_conc, check_rates
+np.set_printoptions(precision=20)
 
 phytoc0 = [0.13600693026060057,
 0.13788003350628575,
@@ -412,216 +415,313 @@ bfm_rates = [[
 
 globe_rates = np.zeros((100,18))
 
-def pom_bgc_1d(iter, base_element, physical, pom1d, tracers):
+# def pom_bgc_1d(iter, base_element, light_attenuation_water, temperature, salinity, density, inorganic_suspended_matter, shortwave_radiation,
+#                 w_eddy_velocity, w_gen, wind_speed_zonal, wind_speed_meridional, dif_trac,
+#                 dt2, num_layers, vertical_grid, vertical_spacing, vertical_spacing_staggered, vertical_spacing_reciprocal, column_depth, 
+#                 nrt_o2, nrt_po4, nrt_no3, nrt_nh4, o2b, no3b, ponb_grad, po4b,
+#                 smoth, umolbgc, nbcbgc, ntp, water_specific_heat_times_density, 
+#                 concentration, sinking, tracer_map, tracer_type, tracers):
+    
+#     # Extract current concentration and initialize rate of change array
+#     conc = concentration[...,iter]
+#     d_dt = np.zeros_like(conc,dtype=np.float64)
 
-    physical = bgc_physical(physical, pom1d)
-    bgc_rate_eqns(iter, base_element, physical, pom1d, tracers)
-    # print('i= ',iter)
-    # # print(tracers["phyto1"].conc[0,0,iter] - phytoc0[iter])
-    # # print(tracers["phyto1"].d_dt[0,0] - dphytoc0_dt[iter])
+def pom_bgc_1d(iter, base_element, light_attenuation_water, temperature, salinity, density, inorganic_suspended_matter, shortwave_radiation,
+                w_eddy_velocity, w_gen, wind_speed_zonal, wind_speed_meridional, dif_trac,
+                dt2, num_layers, vertical_grid, vertical_spacing, vertical_spacing_staggered, vertical_spacing_reciprocal, column_depth, 
+                nrt_o2, nrt_po4, nrt_no3, nrt_nh4, o2b, no3b, ponb_grad, po4b,
+                smoth, umolbgc, nbcbgc, ntp, water_specific_heat_times_density, 
+                conc_bwd, conc_cur, sinking, tracer_map, tracer_type, tracers):
+    
+    # Initialize rate of change array
+    d_dt = np.zeros_like(conc_cur,dtype=np.float64)
 
-    # globe_rates[iter,0] = tracers["o2"].d_dt[0,0]
-    # globe_rates[iter,1] = tracers["po4"].d_dt[0,0]
-    # globe_rates[iter,2] = tracers["no3"].d_dt[0,0]
-    # globe_rates[iter,3] = tracers["nh4"].d_dt[0,0]
-    # globe_rates[iter,4] = tracers["hs"].d_dt[0,0]
-    # globe_rates[iter,5] = tracers["phyto1"].d_dt[0,0]
-    # globe_rates[iter,6] = tracers["phyto1"].d_dt[1,0]
-    # globe_rates[iter,7] = tracers["phyto1"].d_dt[2,0]
-    # globe_rates[iter,8] = tracers["phyto1"].d_dt[3,0]
-    # globe_rates[iter,9] = tracers["zoo1"].d_dt[0,0]
-    # globe_rates[iter,10] = tracers["zoo1"].d_dt[1,0]
-    # globe_rates[iter,11] = tracers["zoo1"].d_dt[2,0]
-    # globe_rates[iter,12] = tracers["dom1"].d_dt[0,0]
-    # globe_rates[iter,13] = tracers["dom1"].d_dt[1,0]
-    # globe_rates[iter,14] = tracers["dom1"].d_dt[2,0]
-    # globe_rates[iter,15] = tracers["pom1"].d_dt[0,0]
-    # globe_rates[iter,16] = tracers["pom1"].d_dt[1,0]
-    # globe_rates[iter,17] = tracers["pom1"].d_dt[2,0]
+    # # Reset sinking matrix to initial value
+    # if iter == 0:   reset_sinking = sinking.copy()
+    # else:   sinking = reset_sinking.copy()
 
-    # print(globe_rates[iter,:] - bfm_rates[iter])
-    o2_surf = tracers["o2"].conc[0,0,iter]
-    no3_surf = tracers["no3"].conc[0,0,iter]
-    nh4_surf= tracers["nh4"].conc[0,0,iter]
-    po4_surf = tracers["po4"].conc[0,0,iter]
-    phyc_surf = tracers["phyto1"].conc[0,0,iter]
-    phyn_surf = tracers["phyto1"].conc[1,0,iter]
-    phyp_surf = tracers["phyto1"].conc[2,0,iter]
-    phyl_surf = tracers["phyto1"].conc[3,0,iter]
-    zc_surf = tracers["zoo1"].conc[0,0,iter]
-    zn_surf = tracers["zoo1"].conc[1,0,iter]
-    zp_surf = tracers["zoo1"].conc[2,0,iter]
-    dc_surf = tracers["dom1"].conc[0,0,iter]
-    dn_surf = tracers["dom1"].conc[1,0,iter]
-    dp_surf = tracers["dom1"].conc[2,0,iter]
-    pc_surf = tracers["pom1"].conc[0,0,iter]
-    pn_surf = tracers["pom1"].conc[1,0,iter]
-    pp_surf = tracers["pom1"].conc[2,0,iter]
-    o2_bot = tracers["o2"].conc[0,-1,iter]
-    no3_bot = tracers["no3"].conc[0,-1,iter]
-    nh4_bot = tracers["nh4"].conc[0,-1,iter]
-    po4_bot = tracers["po4"].conc[0,-1,iter]
-    phyc_bot = tracers["phyto1"].conc[0,-1,iter]
-    phyn_bot = tracers["phyto1"].conc[1,-1,iter]
-    phyp_bot = tracers["phyto1"].conc[2,-1,iter]
-    phyl_bot = tracers["phyto1"].conc[3,-1,iter]
-    zc_bot = tracers["zoo1"].conc[0,-1,iter]
-    zn_bot = tracers["zoo1"].conc[1,-1,iter]
-    zp_bot = tracers["zoo1"].conc[2,-1,iter]
-    dc_bot = tracers["dom1"].conc[0,-1,iter]
-    dn_bot = tracers["dom1"].conc[1,-1,iter]
-    dp_bot = tracers["dom1"].conc[2,-1,iter]
-    pc_bot = tracers["pom1"].conc[0,-1,iter]
-    pn_bot = tracers["pom1"].conc[1,-1,iter]
-    pp_bot = tracers["pom1"].conc[2,-1,iter]
+    # if iter < 5:
+    #     conc_name = f"conc_iter{iter:01d}.npy"
+    #     load_conc = np.load(os.getcwd() + "/tests/bfm56/check_conc/" + conc_name, allow_pickle=True)
+    #     # delta_conc = conc - load_conc
+    #     delta_conc = conc_cur - load_conc
 
-    if iter < 5:
-        d_dt_diff, conc_diff = compare_values(iter, tracers)
-    # if iter == 9:
-    #     x=1
-    vertical_diffusivity(iter, physical, pom1d, tracers)
+    #     x = 1
+
+    # Physical variables for bgc rate equations
+    temp, sal, dens, ism, z, dz, surface_PAR, weddy, wgen, wind = bgc_physical(temperature, salinity, density, inorganic_suspended_matter, vertical_spacing, column_depth, shortwave_radiation, water_specific_heat_times_density, w_eddy_velocity, w_gen, wind_speed_zonal, wind_speed_meridional)
+
+    # Calculate rate of change
+    # d_dt = bgc_rate_eqns(iter, base_element, conc, d_dt, light_attenuation_water, temp, sal, dens, ism, z, dz, surface_PAR, weddy, wgen, wind, tracer_map, tracer_type, tracers, sinking)
+    d_dt = bgc_rate_eqns(iter, base_element, conc_cur, d_dt, light_attenuation_water, temp, sal, dens, ism, z, dz, surface_PAR, weddy, wgen, wind, tracer_map, tracer_type, tracers, sinking)
+    
+    if "o2" in tracers: d_o2surf = tracers["o2"].surf_flux
+    else:   d_o2surf = np.float64(0.)
+
+    # if iter < 5:
+    #     rates_name = f"rates_iter{iter:01d}.npy"
+    #     # phys_name = f"phys_iter{iter:01d}.npz"
+
+    #     load_rates = np.load(os.getcwd() + "/tests/bfm56/check_rates/" + rates_name, allow_pickle=True)
+    #     # load_phys = np.load(os.getcwd() + "/tests/bfm17/check_phys/" + phys_name, allow_pickle=True)
+
+    #     delta_rates = d_dt - load_rates
+    # #     delta_temp = temp - load_phys["temp"]
+    # #     delta_sal = sal - load_phys["sal"]
+    # #     delta_dens = dens - load_phys["dens"]
+    # #     delta_ism = ism - load_phys["ism"]
+    # #     delta_z = z - load_phys["z"]
+    # #     delta_dz = dz - load_phys["dz"]
+    # #     delta_surface_PAR = surface_PAR - load_phys["surface_PAR"]
+    # #     delta_weddy = weddy - load_phys["weddy"]
+    # #     delta_wgen = wgen - load_phys["wgen"]
+    # #     delta_wind = wind - load_phys["wind"]
+
+    #     x = 1
+
+    # if iter == 119:
+    #     conc_name = f"conc_iter{iter:03d}.npy"
+    #     rates_name = f"rates_iter{iter:03d}.npy"
+    #     phys_name = f"phys_iter{iter:03d}.npz"
+
+    #     load_conc = np.load(os.getcwd() + "/tests/bfm17/check_conc/" + conc_name, allow_pickle=True)
+    #     load_rates = np.load(os.getcwd() + "/tests/bfm17/check_rates/" + rates_name, allow_pickle=True)
+    #     load_phys = np.load(os.getcwd() + "/tests/bfm17/check_phys/" + phys_name, allow_pickle=True)
+
+    #     delta_conc = conc - load_conc
+    #     delta_rates = d_dt - load_rates
+    #     delta_temp = temp - load_phys["temp"]
+    #     delta_sal = sal - load_phys["sal"]
+    #     delta_dens = dens - load_phys["dens"]
+    #     delta_ism = ism - load_phys["ism"]
+    #     delta_z = z - load_phys["z"]
+    #     delta_dz = dz - load_phys["dz"]
+    #     delta_surface_PAR = surface_PAR - load_phys["surface_PAR"]
+    #     delta_weddy = weddy - load_phys["weddy"]
+    #     delta_wgen = wgen - load_phys["wgen"]
+    #     delta_wind = wind - load_phys["wind"]
+
+    #     x = 1
+
+    # if iter == 3719:
+    #     conc_name = f"conc_iter{iter:04d}.npy"
+    #     rates_name = f"rates_iter{iter:04d}.npy"
+    #     phys_name = f"phys_iter{iter:04d}.npz"
+
+    #     load_conc = np.load(os.getcwd() + "/tests/bfm17/check_conc/" + conc_name, allow_pickle=True)
+    #     load_rates = np.load(os.getcwd() + "/tests/bfm17/check_rates/" + rates_name, allow_pickle=True)
+    #     load_phys = np.load(os.getcwd() + "/tests/bfm17/check_phys/" + phys_name, allow_pickle=True)
+
+    #     delta_conc = conc - load_conc
+    #     delta_rates = d_dt - load_rates
+    #     delta_temp = temp - load_phys["temp"]
+    #     delta_sal = sal - load_phys["sal"]
+    #     delta_dens = dens - load_phys["dens"]
+    #     delta_ism = ism - load_phys["ism"]
+    #     delta_z = z - load_phys["z"]
+    #     delta_dz = dz - load_phys["dz"]
+    #     delta_surface_PAR = surface_PAR - load_phys["surface_PAR"]
+    #     delta_weddy = weddy - load_phys["weddy"]
+    #     delta_wgen = wgen - load_phys["wgen"]
+    #     delta_wind = wind - load_phys["wind"]
+
+    #     x = 1
 
 
-def bgc_physical(physical, pom1d):
+    # concentration = vertical_diffusivity(iter, concentration, d_dt, dt2, num_layers, column_depth, smoth, sinking, weddy, wgen, tracer_map, tracer_type,
+    #                      nrt_o2, nrt_po4, nrt_no3, nrt_nh4, d_o2surf, o2b, no3b, ponb_grad, po4b,
+    #                      vertical_grid, vertical_spacing, vertical_spacing_staggered, vertical_spacing_reciprocal, umolbgc, nbcbgc, ntp, shortwave_radiation, dif_trac)
 
-    # Initialize dictionary
-    physical["bgc_phys_vars"] = {}
+    conc_bwd, conc_cur = vertical_diffusivity(iter, conc_bwd, conc_cur, d_dt, dt2, num_layers, column_depth, smoth, sinking, weddy, wgen, tracer_map, tracer_type,
+                            nrt_o2, nrt_po4, nrt_no3, nrt_nh4, d_o2surf, o2b, no3b, ponb_grad, po4b,
+                            vertical_grid, vertical_spacing, vertical_spacing_staggered, vertical_spacing_reciprocal, umolbgc, nbcbgc, ntp, shortwave_radiation, dif_trac)
 
-    # 1D arrays for bgc calculations
-    physical["bgc_phys_vars"]["temperature"] = physical["temperature"]["tb"][:-1]
-    physical["bgc_phys_vars"]["salinity"] = physical["salinity"]["sb"][:-1]
-    physical["bgc_phys_vars"]["density"] = (physical["density"][:-1] * 1.E+03) + 1.E+03
-    physical["bgc_phys_vars"]["ism"] = physical["ism"]
-    physical["bgc_phys_vars"]["z"] = physical["vertical_grid"]["dz"][:-1] * physical["water_column"]["column_depth"]
-    physical["bgc_phys_vars"]["dz"] = physical["vertical_grid"]["dz"][:-1]
-    physical["bgc_phys_vars"]["surface_PAR"] = -physical["swrad"] * pom1d["general"]["water_specific_heat_times_density"]
-    physical["bgc_phys_vars"]["weddy"] = physical["weddy"]
-    physical["bgc_phys_vars"]["wgen"] = physical["wgen"]
-
-    wind = np.sqrt(physical["stresses"]["wsu"]**2 + physical["stresses"]["wsv"]**2) * 1.E+03
-    physical["bgc_phys_vars"]["wind"] = np.sqrt(wind/(1.25 * 0.0014))
-
-    return physical
+    return conc_bwd, conc_cur
 
 
-def vertical_advection(physical, bgc_state_var, sinking_velocity):
+@njit
+def bgc_physical(temperature, salinity, density, inorganic_suspended_matter, vertical_spacing, column_depth, swrad, water_specific_heat_times_density, w_eddy_velocity, w_gen, wsu, wsv):
+
+    # phys_ids = List.empty_list(unicode_type)
+    # phys_params = List.empty_list(float64[:])
+
+    temp = temperature[:-1]
+    sal = salinity[:-1]
+    dens = (density[:-1] * 1.E+03) + 1.E+03
+    ism = inorganic_suspended_matter[:]
+    z = vertical_spacing[:-1] * column_depth
+    dz = vertical_spacing[:-1]
+    surface_PAR = -swrad * water_specific_heat_times_density
+    weddy = w_eddy_velocity[:]
+    wgen = w_gen[:]
+
+    rms_wind = np.sqrt(wsu**2 + wsv**2) * 1.E+03
+    wind = np.sqrt(rms_wind/(1.25 * 0.0014))
+
+    return temp, sal, dens, ism, z, dz, surface_PAR, weddy, wgen, wind
+
+
+@njit
+def vertical_advection(b_cur, b_bwd, b_fwd, sinking_velocity, num_layers, dzr):
     """"
     Description: Handles the sinking of BFM state variablles. Sinking is treated as downward vertical advection
                  computed with upstream finite differences.
     NOTE: Downward velocities are negative
     """
     # sinking velocity input from vdiff_SOS
-    bgc_state_var["b"][-1] = bgc_state_var["b"][-2]
-    bgc_state_var["bb"][-1] = bgc_state_var["bb"][-2]
+    b_cur[-1] = b_cur[-2]
+    b_bwd[-1] = b_bwd[-2]
     
-    bgc_state_var["bf"][0] = physical["vertical_grid"]["dzr"][0] * bgc_state_var["b"][0] * sinking_velocity[1]
-    for i in range(1,physical["water_column"]["num_layers"]-1):
-        bgc_state_var["bf"][i] = physical["vertical_grid"]["dzr"][i] * (bgc_state_var["b"][i] * sinking_velocity[i + 1] - bgc_state_var["b"][i - 1] * sinking_velocity[i])
+    b_fwd[0] = dzr[0] * b_cur[0] * sinking_velocity[1]
+    for i in range(1,num_layers-1):
+        b_fwd[i] = dzr[i] * (b_cur[i] * sinking_velocity[i + 1] - b_cur[i - 1] * sinking_velocity[i])
 
-    return bgc_state_var
+    return b_fwd
 
 
-def vertical_diffusivity(iter, physical, pom1d, tracers):
+@njit
+# def vertical_diffusivity(iter, concentration, d_dt, dt2, num_layers, column_depth, smoth, sinking, weddy, wgen, tracer_map, tracer_type,
+#                          nrt_o2, nrt_po4, nrt_no3, nrt_nh4, d_o2surf, o2b, no3b, ponb_grad, po4b,
+#                          z, dz, dzz, dzr, umol, nbc, ntp, swrad, kh):
+def vertical_diffusivity(iter, conc_bwd, conc_cur, d_dt, dt2, num_layers, column_depth, smoth, sinking, weddy, wgen, tracer_map, tracer_type,
+                         nrt_o2, nrt_po4, nrt_no3, nrt_nh4, d_o2surf, o2b, no3b, ponb_grad, po4b,
+                         z, dz, dzz, dzr, umol, nbc, ntp, swrad, kh):
     """
     Description: Calculates the vertical diffusivity of BFM biochemical components and
-                 integrats BFM state variables with Source Splitting (SoS) method
+                 integrates BFM state variables with Source Splitting (SoS) method
     """
+    # Reverse the tracer map
+    reverse_map = reverse_tracer_map(tracer_map)
 
     # The input general cir. vertical vel. is suppose to be in m/s
     W_ON = 1.0
 
     # The input eddy vertical vel. is provided in m/d
-    Weddy_ON = 0.1/physical["simulation"]["sec_per_day"]  # to m/s
+    Weddy_ON = 0.1/86400.  # to m/s
 
     # Relaxation velocities
-    trelax_o2 = pom1d["relaxation_velocities"]["nrt_o2"] / physical["simulation"]["sec_per_day"]
-    trelax_po4 = pom1d["relaxation_velocities"]["nrt_po4"] / physical["simulation"]["sec_per_day"]
-    trelax_no3 = pom1d["relaxation_velocities"]["nrt_no3"] / physical["simulation"]["sec_per_day"]
-    trelax_nh4 = pom1d["relaxation_velocities"]["nrt_nh4"]
+    trelax_o2 = nrt_o2 / 86400.
+    trelax_po4 = nrt_po4 / 86400.
+    trelax_no3 = nrt_no3 / 86400.
+    trelax_nh4 = nrt_nh4
 
     # Loop over bgc state variables
-    for key in tracers:
-        if key == "phyto1":
-            x=1
-        for const in tracers[key].composition:
-            # Get tracer for time stepping
-            index = tracers[key].composition.index(const)
-            
-            # Zeroing of previous tracer
-            bgc_state_var = {
-                "b": np.zeros(physical["water_column"]["num_layers"]),  # Current
-                "bf": np.zeros(physical["water_column"]["num_layers"]), # Forward
-                "bb": np.zeros(physical["water_column"]["num_layers"]), # Backward
-                "surf": 0.,         # Surface value
-                "surf_flux": 0.,    # Surface flux
-                "bot_flux": 0.      # Bottom flux
-            }
+    # for i in range(0, len(concentration)):   # i = tracer constituent
+    for i in range(0, len(conc_cur)):   # i = tracer constituent
+        # Zeroing of previous tracer
+        b_cur = np.zeros(num_layers, dtype=np.float64)
+        b_bwd = np.zeros(num_layers, dtype=np.float64)
+        b_fwd = np.zeros(num_layers, dtype=np.float64)
+        b_surf = 0.
+        b_sflx = 0.
+        b_bflx = 0.
 
-            # Load BFM state variable
-            if iter == 0:   # Initialize backward time level on first iteration
-                bgc_state_var["b"][:-1] = tracers[key].conc[index,:,iter]
-                bgc_state_var["bb"][:-1] = tracers[key].conc[index,:,iter]
-            else:   # Current and backward time levels previously calculated
-                bgc_state_var["b"][:-1] = tracers[key].conc[index,:,iter]
-                bgc_state_var["bb"][:-1] = tracers[key].conc[index,:,iter-1]
-            
-            bgc_state_var["b"][-1] = bgc_state_var["b"][-2]
-            bgc_state_var["bb"][-1] = bgc_state_var["bb"][-2]
+        # Load BFM state variable
+        # if iter == 0:   # Initialize backward time level on first iteration
+        #     b_cur[:-1] = concentration[i,:,iter]
+        #     b_bwd[:-1] = concentration[i,:,iter]
+        # else:   # Current and backward time levels previously calculated
+        #     b_cur[:-1] = concentration[i,:,iter]
+        #     b_bwd[:-1] = concentration[i,:,iter-1]
+        b_cur[:-1] = conc_cur[i]
+        b_bwd[:-1] = conc_bwd[i]
 
-            # Calculate tracer sinking velocity
-            sinking_velocity = W_ON*physical["bgc_phys_vars"]["wgen"] + Weddy_ON*physical["bgc_phys_vars"]["weddy"]
-            
-            if key == 'o2':
-                bgc_state_var["surf_flux"] = -(tracers[key].surf_flux[0,0] / physical["simulation"]["sec_per_day"])
-                bgc_state_var["bot_flux"] = (tracers[key].conc[index,-1,iter] - physical["nutrients"]["o2b"]) * trelax_o2
-            elif key == 'no3':
-                bgc_state_var["surf_flux"] = 0.
-                bgc_state_var["bot_flux"] = (tracers[key].conc[index,-1,iter] - physical["nutrients"]["no3b"]) * trelax_no3
-            elif key == 'nh4':
-                bgc_state_var["surf_flux"] = 0.
-                bgc_state_var["bot_flux"] = physical["nutrients"]["ponb_grad"] * trelax_nh4
-            elif key == 'po4':
-                bgc_state_var["surf_flux"] = 0.
-                bgc_state_var["bot_flux"] = (tracers[key].conc[index,-1,iter] - physical["nutrients"]["po4b"]) * trelax_po4
-            # elif key == 'co2':
-            #     bgc_state_var["surf_flux"] = 0.
-            #     bgc_state_var["bot_flux"] = (tracers[key].conc[index,-1,iter] - physical["nutrients"]["no3b"]) * trelax_no3
-            # elif key == 'sio4':
-            #     bgc_state_var["surf_flux"] = 0.
-            #     bgc_state_var["bot_flux"] = (tracers[key].conc[index,-1,iter] - physical["nutrients"]["no3b"]) * trelax_no3
+        b_cur[-1] = b_cur[-2]
+        b_bwd[-1] = b_bwd[-2]
 
-            if hasattr(tracers[key],"sinking_velocity"):
-                # Include additional sinking velocity for sinking tracers
-                sinking_velocity[:-1] -= tracers[key].sinking_velocity / physical["simulation"]["sec_per_day"]
-                
-            if tracers[key].type == "phytoplankton":  
-                # Final sink value for phytoplankton
-                sinking_velocity[-1] = sinking_velocity[-2]
+        # Calculate tracer sinking velocity
+        sinking_velocity = W_ON*wgen + Weddy_ON*weddy
 
-            if tracers[key].type == "detritus":
-                # Final sink value for particulate detritus
-                if tracers[key].form == "particulate":  sinking_velocity[-1] = sinking_velocity[-2]
+        # if reverse_map[i] == 'o2':
+        #     b_sflx = -(d_o2surf / 86400.)
+        #     b_bflx = (concentration[i,-1,iter] - o2b) * trelax_o2
+        # elif reverse_map[i] == 'no3':
+        #     b_sflx = 0.
+        #     b_bflx = (concentration[i,-1,iter] - no3b) * trelax_no3
+        # elif reverse_map[i] == 'nh4':
+        #     b_sflx = 0.
+        #     b_bflx = ponb_grad * trelax_nh4
+        # elif reverse_map[i] == 'po4':
+        #     b_sflx = 0.
+        #     b_bflx = (concentration[i,-1,iter] - po4b) * trelax_po4
+        # elif reverse_map[i] == 'co2':
+        #     b_sflx = 0.
+        # elif reverse_map[i] == 'sio4':
+        #     b_sflx = 0.
+        if reverse_map[i] == 'o2':
+            b_sflx = -(d_o2surf / 86400.)
+            b_bflx = (conc_cur[i,-1] - o2b) * trelax_o2
+        elif reverse_map[i] == 'no3':
+            b_sflx = 0.
+            b_bflx = (conc_cur[i,-1] - no3b) * trelax_no3
+        elif reverse_map[i] == 'nh4':
+            b_sflx = 0.
+            b_bflx = ponb_grad * trelax_nh4
+        elif reverse_map[i] == 'po4':
+            b_sflx = 0.
+            b_bflx = (conc_cur[i,-1] - po4b) * trelax_po4
+        elif reverse_map[i] == 'co2':
+            b_sflx = 0.
+        elif reverse_map[i] == 'sio4':
+            b_sflx = 0.
+        
+        sinking_velocity[:-1] -= sinking[i] / 86400.
+        if tracer_type[i] == "phytoplankton":  
+            # Final sink value for phytoplankton
+            sinking_velocity[-1] = sinking_velocity[-2]
 
-            # Sinking: upstream vertical advection
-            bgc_state_var = vertical_advection(physical, bgc_state_var, sinking_velocity)
-            
-            # Source splitting (SoS) leapfrog integration
-            for i in range(0,physical["water_column"]["num_layers"]-1):
-                bgc_state_var["bf"][i] = bgc_state_var["bb"][i] + physical["simulation"]["dt2"]*((bgc_state_var["bf"][i]/physical["water_column"]["column_depth"]) + tracers[key].d_dt[index,i])
-            
-            # Compute vertical diffusion and terminate integration (implicit leapfrogging)
-            bgc_state_var = temperature_and_salinity_profiles(physical, pom1d, bgc_state_var, 'BGC')
-            
-            if key == 'o2':
-                x=1
-            
-            # Clipping (if needed)
-            for i in range(0,physical["water_column"]["num_layers"]-1):
-                bgc_state_var["bf"][i] = max(1.E-20,bgc_state_var["bf"][i])
-            
-            # Mix the time step and restore time sequence
-            tracers[key].conc[index,:,iter] = bgc_state_var["b"][:-1] + 0.5 * pom1d["general"]["smoth"] * (bgc_state_var["bf"][:-1] + bgc_state_var["bb"][:-1] - 2.*bgc_state_var["b"][:-1])
-            tracers[key].conc[index,:,iter+1] = bgc_state_var["bf"][:-1]
+        if tracer_type[i] == "particulate":
+            # Final sink value for particulate detritus
+            sinking_velocity[-1] = sinking_velocity[-2]
 
-    return 
+        # Sinking: upstream vertical advection
+        b_fwd = vertical_advection(b_cur, b_bwd, b_fwd, sinking_velocity, num_layers, dzr)
+        
+        # Source splitting (SoS) leapfrog integration
+        for j in range(0,num_layers-1):
+            b_fwd[j] = b_bwd[j] + dt2*( (b_fwd[j]/column_depth) + d_dt[i,j] ) #+ tracers[key].d_dt[index,i])
+        
+        # Compute vertical diffusion and terminate integration (implicit leapfrogging)
+        b_fwd, b_surf, b_sflx, b_bflx = temperature_and_salinity_profiles('BGC', dt2, num_layers, column_depth, z, dz, dzz, umol, nbc, ntp, swrad, kh, b_fwd, b_surf, b_sflx, b_bflx)
+        
+        # Clipping (if needed)
+        for j in range(0,num_layers-1):
+            b_fwd[j] = max(1.E-20,b_fwd[j])
+        
+        # Mix the time step and restore time sequence
+        # concentration[i,:,iter] = b_cur[:-1] + 0.5 * smoth * (b_fwd[:-1] + b_bwd[:-1] - 2.*b_cur[:-1])
+        # concentration[i,:,iter+1] = b_fwd[:-1]
 
+        conc_bwd[i,:] = b_cur[:-1] + 0.5 * smoth * (b_fwd[:-1] + b_bwd[:-1] - 2.*b_cur[:-1])
+        conc_cur[i,:] = b_fwd[:-1]
+
+    # return concentration
+    return conc_bwd, conc_cur
+
+
+@njit
+def get_tracer_from_index(index, tracer_map):
+    """
+    Definition: Identifies the tracer key associated with index
+    :return: tracer key
+    """
+    for key,value in tracer_map.items():
+        if index in value:
+            tracer = key
+
+    return tracer
+
+
+@njit
+def reverse_tracer_map(tracer_map):
+    """
+    Definition: Reverses tracer map for quicker index lookup
+    :return: reversed tracer map
+    """
+    reverse_map = Dict.empty(key_type=types.int64, value_type=types.unicode_type)
+
+    for tracer,value in tracer_map.items():
+        for index in value:
+            reverse_map[index] = tracer
+
+    return reverse_map

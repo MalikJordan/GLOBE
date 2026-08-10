@@ -1,5 +1,6 @@
 import numpy as np
 from functions.other_functions import light_attenuation, light_limitation, max_growth_rate, irradiance, nutrient_limitation, temperature_dependence
+np.set_printoptions(precision=20)
 
 
 def egestion(parameters, grazing_rates):

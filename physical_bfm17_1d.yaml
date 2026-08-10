@@ -1,0 +1,75 @@
+simulation:
+  dt: 360.      # time step [s]
+  days: 365           # days in simulation [d]
+  configuration: 1d   # Options: 0d or 1d
+
+water_column:
+  column_depth: 150.  # depth [m]
+  upper_depth: 5.     # depth where lateral advection starts [m]
+  num_layers: 151     # number of layers in water column
+  surf_log: 2         # surface logarithmic layers distribution
+  bot_log: 150        # bottom logarithmic layers distribution
+
+environment:
+  forcing: pom1d      # Options: pom1d or seasonal
+  # pom1d: forces system using climatological data with one-dimensional POM1D ocean circulation
+  # seasonal: forces system using sinusoidal forcing between summer and winter extremes
+  base_temp: 10.0  
+  PAR_frac: 0.4
+  light_attenuation_water: 0.0435        # [1/m]
+  latitude: 45.0
+  seasonal_cycling:
+    summer_mld: 10.0
+    winter_mld: 40.0
+    summer_salt: 36.5
+    winter_salt: 37.
+    summer_sun: 300.0
+    winter_sun: 20.0
+    summer_temp: 30.
+    winter_temp: 10.
+    summer_wind: 2.
+    winter_wind: 6.
+
+initial_conditions:
+  o2:
+    composition:                            # element : initial concentration (from data file)
+      o: /inputs/BFM17_BERM_INIT/init_prof_Oxy_150m_bermuda_killworth.da
+
+  no3:
+    composition:                            # element : initial concentration (from data file)
+      n: /inputs/BFM17_BERM_INIT/init_prof_N_150m_bermuda_killworth.da
+
+  nh4:
+    composition:                            # element : initial concentration
+      n: 0.
+
+  po4:
+    composition:                            # element : initial concentration (from data file)
+      p: /inputs/BFM17_BERM_INIT/init_prof_P_150m_bermuda_killworth.da
+
+  phyto1:
+    composition:                            # element : initial concentration (from data file)
+      c: /inputs/BFM17_BERM_INIT/init_prof_Pc_150m_bermuda_killworth.da
+      n: {c: 0.0126}                        # {base_element : initial conversion factor}
+      p: {c: 7.862E-04}                     # {base_element : initial conversion factor}
+      chl: {c: 0.02}                        # {base_element : initial conversion factor}
+  
+  zoo1:
+    composition:                            # element : initial concentration (from data file)
+      c: /inputs/BFM17_BERM_INIT/init_prof_Zc_150m_bermuda_killworth.da
+      n: {c: 0.0126}                        # {base_element : initial conversion factor}
+      p: {c: 7.862E-04}                     # {base_element : initial conversion factor}
+  
+  dom1:
+    composition:                            # element : initial concentration (from data file)
+      c: /inputs/BFM17_BERM_INIT/init_prof_DOC_150m_bermuda_killworth.da
+      n: {c: 6.3E-03}                       # {base_element : initial conversion factor}
+      p: {c: 3.931E-04}                     # {base_element : initial conversion factor}
+    parameters:
+
+  pom1:
+    composition:                            # element : initial concentration (from data file)
+      c: /inputs/BFM17_BERM_INIT/init_prof_POC_150m_bermuda_killworth.da
+      n: {c: 0.0126}                        # {base_element : initial conversion factor}
+      p: {c: 7.862E-04}                     # {base_element : initial conversion factor}
+  

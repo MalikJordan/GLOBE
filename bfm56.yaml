@@ -1,0 +1,1964 @@
+base_element: c
+
+tracers:
+  o2:
+    long_name: oxygen
+    type: inorganic
+    composition: [o]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+      surface_flux: True
+
+      reaeration:
+        d: 0.31
+        k1: 1953.4
+        k2: 128.0
+        k3: 3.9918
+        k4: 0.050091
+        schmidt: 660.0
+
+  po4:
+    long_name: phosphate
+    type: inorganic
+    composition: [p]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+
+  no3:
+    long_name: nitrate
+    type: inorganic
+    composition: [n]
+    parameters:
+      temperature_regulation:
+        temp_limited: True
+        function: q10                       # options: arrhenius, eppley, or q10
+        # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
+        # eppley: needs "coefficient" as additional parameter
+        # q10: needs "base_temp" and "coefficient" as additional parameters
+        coefficient: 2.
+        base_temp: 20.
+
+      denitrification:
+        anoxic_mineralization_rate: 1.
+        denitrification_rate: 0.35
+        # nit_anoxic_coeff: 1.25
+        # oxic_anoxic_coeff: 0.5
+        
+  nh4:
+    long_name: ammonium
+    type: inorganic
+    composition: [n]
+    parameters:
+      temperature_regulation:
+        temp_limited: True
+        function: q10                       # options: [1] arrhenius, [2] eppley, or [3] q10
+        # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
+        # eppley: needs "coefficient" as additional parameter
+        # q10: needs "base_temp" and "coefficient" as additional parameters
+        coefficient: 2.
+        base_temp: 20.
+
+      nitrification:
+        half_sat_oxygen: 10.0               # [mmol O2 / m^3]
+        nitrification_rate: 0.01            # [1/d]
+        convert_o2: 2.0
+
+  n2:
+    long_name: nitrogen sink
+    type: inorganic
+    composition: [n]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+
+  sio4:
+    long_name: silicate
+    type: inorganic
+    composition: [si]
+    parameters:
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 1.49
+        base_temp: 20.
+
+  hs:
+    long_name: reduction equivalents
+    type: inorganic
+    composition: [s]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+
+      reoxidation:
+        half_sat_oxygen: 10.0               # [mmol O2 / m^3]
+        reoxidation_rate: 0.05              # [1/d]
+        convert_o2: 2.                      # stoichiometric conversion [mmol O2 / mmol HS-]
+
+  bac1:
+    long_name: bacterioplankton
+    type: bacteria
+    composition: [c,n,p]
+    parameters:
+      cell_quota:
+        min: {n: 1.67E-02, p: 1.85E-03}
+        opt: {n: 1.67E-02, p: 1.85E-03}
+
+      oxygen_inhibition:
+        oxygen_limited: True
+        half_sat: 30.                       # [mmol O2 / m^3]
+        exponent: 3.                        # optional: Hill exponent for Monod function (default to 1. if not included)
+      
+      temperature_regulation:
+        temp_limited: True
+        function: q10
+        coefficient: 2.95
+        base_temp: 20.
+
+      om_partition:
+        dom1: {c: 0.60, n: 0.72, p: 0.832}  # c,n,p [-]
+        pom1: {c: 0.40, n: 0.28, p: 0.168}  # c,n,p [-]
+
+      excretion:                            # options: "activity", "relaxation", or constant
+        # if "activity": uses uptake rate to calculate nutrient excretion
+        #                requires "activity_respiration_frac" and "excretion_rate" as additional parameters
+        # if "relaxation": uses relaxation time scale to calculate excess nutrient excretion above cell quota
+        #                  requires "relaxation_timescale" as an additional parameter
+        #                  requires "half_sat" if exretion to inorganic nutrient
+        # if "constant": uses constant excretion rate
+        #                requires "excretion_rate" as an additional parameter
+        # nh4: 
+        #   option: relaxation
+        #   relaxation_time: 1.
+        #   half_sat: 5.
+        # po4: 
+        #   option: relaxation
+        #   relaxation_time: 1.
+        #   half_sat: 0.5
+        dom2:
+          option: relaxation
+          relaxation_timescale: 1.
+        dom3:
+          option: activity
+          activity_respiration_frac: 0.6
+          excretion_rate: 0.
+
+      mortality:
+        mortality_rate:
+          linear: 0.1
+          quadratic: 0.
+
+      respiration:
+        activity_respiration_frac: 0.6
+        anoxic_respiration_frac: 0.2
+        basal_respiration_rate: 0.01
+        convert_o2: 1/12
+        convert_hs: 1/24
+
+      uptake:
+        potential_rich: {dom1: 0.3, dom2: 0., dom3: 0., pom1: 0.01}
+        potential_poor: {dom1: 0., dom2: 0., dom3: 0., pom1: 0.}
+        max_growth_rate: 8.38
+        substrate_correction: False
+        option: potential                  # options: direct or potential
+        # direct: directly calculates uptake of nutrient
+        #         requires dictionary for each nutrient which includes "strategy"
+        #         if "strategy" == "coupled" --> requires "coupled_uptake" dictionary which includes "method" and "link", may include "convert_uptake"
+        #         if "strategy" == "independent" --> requires "max_growth_rate", "basal_metabolic_rate", "max_growth_efficiency", and "half_sat", may include "convert_uptake"
+        # potential: determines potential & realized uptake then calculates nutrient uptake based on those values
+        #            requires "max_growth_rate", "potential_rich", "potential_poor", and "substrate_correction"
+
+      uptake_release:
+        nh4:
+          half_sat: 5.
+          relaxation_timescale: 1.
+        po4:
+          half_sat: 1.
+          relaxation_timescale: 1.
+
+  phyto1:
+    long_name: diatoms
+    type: phytoplankton
+    composition: [c,n,p,chl,si]
+    parameters:
+      cell_quota:
+        max: {n: 1.26E-02, p: 1.572e-03, chl: 0.035, si: 0.01}
+        min: {n: 6.87E-03, p: 4.29E-04, chl: 0.035, si: 0.}
+        opt: {n: 1.26E-02, p: 7.86E-04, chl: 0.035, si: 0.01}
+
+      nutrient_limitation:  
+        colimitation: minimum               # [1] mininimum, [2] product, or [3] sum of all limiting nutrients
+        include: ["no3","po4"]              # nutrients included for calculation of colimitation factor
+        no3:
+          type: internal
+          function: droop
+          nh4_inhibited: True
+        nh4:
+          type: external
+          function: monod
+          half_sat: 1.
+        po4:
+          type: internal
+          function: droop
+        sio4:
+          type: external
+          function: monod
+          half_sat: 1.
+
+      sedimentation:
+        sinking: True
+        background_sinking_rate: 0.
+        max_sinking_rate: 5.
+        burial_velocity: 0.
+        sinking_threshold: 0.7
+
+      temperature_regulation:
+        temp_limited: True
+        function: q10                       # options: [1] arrhenius, [2] eppley, or [3] q10
+        # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
+        # eppley: needs "coefficient" as additional parameter
+        # q10: needs "base_temp" and "coefficient" as additional parameters
+        coefficient: 2.
+        base_temp: 20.
+
+      exudation:
+        method: photosynthesis              # options: uptake, photosynthesis
+        # "photosynthesis": exudation rate calculated using excreted fraction of photosynthesis
+        # "uptake": exudation rate calculated using constant excreted fraction of nutrient uptake
+        excreted_fraction: 0.01             # [-]
+
+      growth:
+        light_limitation: platt             # options: monod, geider, platt, or smith
+        light_location: integrated          # options: top, middle, or integrated
+        # top: light calculated at top of the cell
+        # middle: light calculated in middle of cell
+        # integrated: light integrated through cell
+        light_attenuation: 0.03
+        max_photo_rate: 2.5
+        chl_quota: 0.035                    # [mg Chl / mg C]
+        chl_relax_rate: 0.25                # [(mg C . m^2) / (mg Chl μE)]
+        initial_PI_slope: 1.1E-05
+        eps_PAR: 0.4
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+        optimal_Epar_Ek: 3.
+        silicate_limitation: True
+
+      lysis:
+        method: cell_quota                  # options: constant or cell_quota
+        # constant: based on constant lysis rate
+        # cell_quota: based on elemental ratios within zooplankton cell, requires "apportioning factor" as additional parameter
+        extra_lysis_rate: 0.
+        half_sat_stress_lysis: 0.1
+        half_sat_extra_lysis: 0.0
+        max_stress_lysis_rate: 0.01         # [1/d]
+        apportioning_factor:  # list of elements of which to apply apportioning factor to, elements not included will not have dissolved/particulate apportioning factor applied
+          dom1: [c,n,p]
+          pom1: [c,n,p]
+
+      respiration:
+        activity_respiration_frac: 0.1      # [-]
+        basal_respiration_rate: 0.05        # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+
+      uptake:
+        no3:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          half_sat_nh4_preference: 1.
+          luxury_storage: 2.
+          max_photo_rate: 2.5               # [1/d]
+          specific_affinity: 0.025          # [m^3 / (mg C . d)]
+        nh4:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          half_sat_nh4_preference: 1.
+          luxury_storage: 2.
+          max_photo_rate: 2.5               # [1/d]
+          specific_affinity: 0.025          # [m^3 / (mg C . d)]
+        po4:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          luxury_storage: 2.
+          max_photo_rate: 2.5               # [1/d]
+          specific_affinity: 0.0025         # [m^3 / (mg C . d)]
+        # po4:
+        #   basis: nutrient
+        #   strategy: coupled
+        #   coupled_uptake:
+        #     link: no3
+        #     convert_uptake: 1/2
+        #     method: min
+        #   form: affinity                    # options: affinity or constituent
+        #   # affinity: uses specific affinity, based on cell quota w.r.t base element
+        #   # constituent: uses concentration of phytoplankton constituent of nutrient element
+        #   luxury_storage: 1.
+        #   max_photo_rate: 1.6               # [1/d]
+        #   specific_affinity: 0.0025         # [m^3 / (mg C . d)]
+        sio4:
+          basis: growth
+          strategy: independent
+          form: affinity
+          max_photo_rate: 2.5
+
+  phyto2:
+    long_name: nanoflagellates
+    type: phytoplankton
+    composition: [c,n,p,chl]
+    parameters:
+      cell_quota:
+        max: {n: 1.26E-02, p: 7.86E-04, chl: 0.016}
+        min: {n: 6.87E-03, p: 4.29E-04, chl: 0.016}
+        opt: {n: 1.26E-02, p: 7.86E-04, chl: 0.016}
+
+      nutrient_limitation:  
+        colimitation: minimum               # [1] mininimum, [2] product, or [3] sum of all limiting nutrients
+        include: ["no3","po4"]              # nutrients included for calculation of colimitation factor
+        no3:
+          type: internal
+          function: droop
+          nh4_inhibited: True
+        nh4:
+          type: external
+          function: monod
+          half_sat: 1.5
+        po4:
+          type: internal
+          function: droop
+
+      sedimentation:
+        sinking: True
+        background_sinking_rate: 0.
+        max_sinking_rate: 0.5
+        burial_velocity: 0.
+        sinking_threshold: 0.75
+
+      temperature_regulation:
+        temp_limited: True
+        function: q10                       # options: [1] arrhenius, [2] eppley, or [3] q10
+        # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
+        # eppley: needs "coefficient" as additional parameter
+        # q10: needs "base_temp" and "coefficient" as additional parameters
+        coefficient: 2.
+        base_temp: 20.
+
+      exudation:
+        method: photosynthesis              # options: uptake, photosynthesis
+        # "photosynthesis": exudation rate calculated using excreted fraction of photosynthesis
+        # "uptake": exudation rate calculated using constant excreted fraction of nutrient uptake
+        excreted_fraction: 0.05             # [-]
+
+      growth:
+        light_limitation: platt             # options: monod, geider, platt, or smith
+        light_location: integrated          # options: top, middle, or integrated
+        # top: light calculated at top of the cell
+        # middle: light calculated in middle of cell
+        # integrated: light integrated through cell
+        light_attenuation: 0.03
+        max_photo_rate: 1.6
+        chl_quota: 0.016                    # [mg Chl / mg C]
+        chl_relax_rate: 0.                  # [(mg C . m^2) / (mg Chl μE)]
+        initial_PI_slope: 1.52E-05
+        eps_PAR: 0.4
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+        optimal_Epar_Ek: 0.
+        silicate_limitation: False
+
+      lysis:
+        method: cell_quota                  # options: constant or cell_quota
+        # constant: based on constant lysis rate
+        # cell_quota: based on elemental ratios within zooplankton cell
+        extra_lysis_rate: 0.
+        half_sat_stress_lysis: 0.1
+        half_sat_extra_lysis: 0.0
+        max_stress_lysis_rate: 0.05         # [1/d]
+        apportioning_factor:  # list of elements of which to apply apportioning factor to, elements not included will not have dissolved/particulate apportioning factor applied
+          dom1: [c,n,p]
+          pom1: [c,n,p]
+
+      respiration:
+        activity_respiration_frac: 0.05     # [-]
+        basal_respiration_rate: 0.05        # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+
+      uptake:
+        no3:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          half_sat_nh4_preference: 1.5
+          luxury_storage: 1.
+          max_photo_rate: 1.6               # [1/d]
+          specific_affinity: 0.025          # [m^3 / (mg C . d)]
+        nh4:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          half_sat_nh4_preference: 1.5
+          luxury_storage: 1.
+          max_photo_rate: 1.6               # [1/d]
+          specific_affinity: 0.025          # [m^3 / (mg C . d)]
+        po4:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          luxury_storage: 1.
+          max_photo_rate: 1.6               # [1/d]
+          specific_affinity: 0.0025         # [m^3 / (mg C . d)]
+        # po4:
+        #   basis: nutrient
+        #   strategy: coupled
+        #   coupled_uptake:
+        #     link: no3
+        #     convert_uptake: 1/2
+        #     method: min
+        #   form: affinity                    # options: affinity or constituent
+        #   # affinity: uses specific affinity, based on cell quota w.r.t base element
+        #   # constituent: uses concentration of phytoplankton constituent of nutrient element
+        #   luxury_storage: 1.
+        #   max_photo_rate: 1.6               # [1/d]
+        #   specific_affinity: 0.0025         # [m^3 / (mg C . d)]
+
+  phyto3:
+    long_name: picophytoplankton
+    type: phytoplankton
+    composition: [c,n,p,chl]
+    parameters:
+      cell_quota:
+        max: {n: 1.26E-02, p: 1.572E-03, chl: 0.02}
+        min: {n: 6.87E-03, p: 4.29E-04, chl: 0.02}
+        opt: {n: 1.26E-02, p: 7.86E-04, chl: 0.02}
+
+      nutrient_limitation:  
+        colimitation: minimum               # [1] mininimum, [2] product, or [3] sum of all limiting nutrients
+        include: ["no3","po4"]              # nutrients included for calculation of colimitation factor
+        no3:
+          type: internal
+          function: droop
+          nh4_inhibited: True
+        nh4:
+          type: external
+          function: monod
+          half_sat: 1.
+        po4:
+          type: internal
+          function: droop
+
+      sedimentation:
+        sinking: True
+        background_sinking_rate: 0.
+        max_sinking_rate: 0.5
+        burial_velocity: 0.
+        sinking_threshold: 0.75
+
+      temperature_regulation:
+        temp_limited: True
+        function: q10                       # options: [1] arrhenius, [2] eppley, or [3] q10
+        # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
+        # eppley: needs "coefficient" as additional parameter
+        # q10: needs "base_temp" and "coefficient" as additional parameters
+        coefficient: 2.
+        base_temp: 20.
+
+      exudation:
+        method: photosynthesis              # options: uptake, photosynthesis
+        # "photosynthesis": exudation rate calculated using excreted fraction of photosynthesis
+        # "uptake": exudation rate calculated using constant excreted fraction of nutrient uptake
+        excreted_fraction: 0.1              # [-]
+
+      growth:
+        light_limitation: platt             # options: monod, geider, platt, or smith
+        light_location: integrated          # options: top, middle, or integrated
+        # top: light calculated at top of the cell
+        # middle: light calculated in middle of cell
+        # integrated: light integrated through cell
+        light_attenuation: 0.03
+        max_photo_rate: 1.02
+        chl_quota: 0.02                     # [mg Chl / mg C]
+        chl_relax_rate: 0.25                # [(mg C . m^2) / (mg Chl μE)]
+        initial_PI_slope: 0.7E-05
+        eps_PAR: 0.4
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+        optimal_Epar_Ek: 3.
+        silicate_limitation: False
+
+      lysis:
+        method: cell_quota                  # options: constant or cell_quota
+        # constant: based on constant lysis rate
+        # cell_quota: based on elemental ratios within zooplankton cell
+        extra_lysis_rate: 0.
+        half_sat_stress_lysis: 0.1
+        half_sat_extra_lysis: 0.0
+        max_stress_lysis_rate: 0.01         # [1/d]
+        apportioning_factor:  # list of elements of which to apply apportioning factor to, elements not included will not have dissolved/particulate apportioning factor applied
+          dom1: [c,n,p]
+          pom1: [c,n,p]
+
+      respiration:
+        activity_respiration_frac: 0.2      # [-]
+        basal_respiration_rate: 0.05        # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+
+      uptake:
+        no3:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          half_sat_nh4_preference: 0.1
+          luxury_storage: 2.
+          max_photo_rate: 1.02              # [1/d]
+          specific_affinity: 0.025          # [m^3 / (mg C . d)]
+        nh4:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          half_sat_nh4_preference: 0.1
+          luxury_storage: 2.
+          max_photo_rate: 1.02              # [1/d]
+          specific_affinity: 0.025          # [m^3 / (mg C . d)]
+        po4:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          luxury_storage: 2.
+          max_photo_rate: 1.02              # [1/d]
+          specific_affinity: 0.0025         # [m^3 / (mg C . d)]
+        # po4:
+        #   basis: nutrient
+        #   strategy: coupled
+        #   coupled_uptake:
+        #     link: no3
+        #     convert_uptake: 1/2
+        #     method: min
+        #   form: affinity                    # options: affinity or constituent
+        #   # affinity: uses specific affinity, based on cell quota w.r.t base element
+        #   # constituent: uses concentration of phytoplankton constituent of nutrient element
+        #   luxury_storage: 1.
+        #   max_photo_rate: 1.6               # [1/d]
+        #   specific_affinity: 0.0025         # [m^3 / (mg C . d)]
+
+  phyto4:
+    long_name: large phytoplankton
+    type: phytoplankton
+    composition: [c,n,p,chl]
+    parameters:
+      cell_quota:
+        max: {n: 1.26E-02, p: 1.572E-03, chl: 0.035}
+        min: {n: 6.87E-03, p: 4.29E-04, chl: 0.035}
+        opt: {n: 1.26E-02, p: 7.86E-04, chl: 0.035}
+
+      nutrient_limitation:  
+        colimitation: minimum               # [1] mininimum, [2] product, or [3] sum of all limiting nutrients
+        include: ["no3","po4"]              # nutrients included for calculation of colimitation factor
+        no3:
+          type: internal
+          function: droop
+          nh4_inhibited: True
+        nh4:
+          type: external
+          function: monod
+          half_sat: 1.
+        po4:
+          type: internal
+          function: droop
+
+      sedimentation:
+        sinking: True
+        background_sinking_rate: 0.
+        max_sinking_rate: 5.
+        burial_velocity: 0.
+        sinking_threshold: 0.75
+
+      temperature_regulation:
+        temp_limited: True
+        function: q10                       # options: [1] arrhenius, [2] eppley, or [3] q10
+        # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
+        # eppley: needs "coefficient" as additional parameter
+        # q10: needs "base_temp" and "coefficient" as additional parameters
+        coefficient: 2.
+        base_temp: 20.
+
+      exudation:
+        method: photosynthesis              # options: uptake, photosynthesis
+        # "photosynthesis": exudation rate calculated using excreted fraction of photosynthesis
+        # "uptake": exudation rate calculated using constant excreted fraction of nutrient uptake
+        excreted_fraction: 0.15             # [-]
+
+      growth:
+        light_limitation: platt             # options: monod, geider, platt, or smith
+        light_location: integrated          # options: top, middle, or integrated
+        # top: light calculated at top of the cell
+        # middle: light calculated in middle of cell
+        # integrated: light integrated through cell
+        light_attenuation: 0.03
+        max_photo_rate: 0.83
+        chl_quota: 0.035                    # [mg Chl / mg C]
+        chl_relax_rate: 0.25                # [(mg C . m^2) / (mg Chl μE)]
+        initial_PI_slope: 6.8E-06
+        eps_PAR: 0.4
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+        optimal_Epar_Ek: 3.
+        silicate_limitation: False
+
+      lysis:
+        method: cell_quota                  # options: constant or cell_quota
+        # constant: based on constant lysis rate
+        # cell_quota: based on elemental ratios within zooplankton cell
+        extra_lysis_rate: 0.5
+        half_sat_stress_lysis: 0.5
+        half_sat_extra_lysis: 100.
+        max_stress_lysis_rate: 0.2          # [1/d]
+        apportioning_factor:  # list of elements of which to apply apportioning factor to, elements not included will not have dissolved/particulate apportioning factor applied
+          dom1: [c,n,p]
+          pom1: [c,n,p]
+
+      respiration:
+        activity_respiration_frac: 0.1      # [-]
+        basal_respiration_rate: 0.1         # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+
+      uptake:
+        no3:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          half_sat_nh4_preference: 1.
+          luxury_storage: 2.
+          max_photo_rate: 0.83               # [1/d]
+          specific_affinity: 0.025          # [m^3 / (mg C . d)]
+        nh4:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          half_sat_nh4_preference: 1.
+          luxury_storage: 2.
+          max_photo_rate: 0.83              # [1/d]
+          specific_affinity: 0.025          # [m^3 / (mg C . d)]
+        po4:
+          basis: nutrient                   # (if strategy is "independent") options: constant, growth, or nutrient
+          # constant: based on constant uptake rate
+          # growth: based on photosynthesis and nutrient limitation
+          # nutrient: based on nutrient availabilty
+          strategy: independent             # options: independent or coupled
+          # independent: calculates uptake rate based on the nutrient
+          # coupled: uses conversion factor to calculate uptake rated based on uptake of a different nutrient
+          form: affinity                    # options: affinity or constituent
+          # affinity: uses specific affinity, based on cell quota w.r.t base element
+          # constituent: uses concentration of phytoplankton constituent of nutrient element
+          luxury_storage: 2.
+          max_photo_rate: 0.83              # [1/d]
+          specific_affinity: 0.0025         # [m^3 / (mg C . d)]
+        # po4:
+        #   basis: nutrient
+        #   strategy: coupled
+        #   coupled_uptake:
+        #     link: no3
+        #     convert_uptake: 1/2
+        #     method: min
+        #   form: affinity                    # options: affinity or constituent
+        #   # affinity: uses specific affinity, based on cell quota w.r.t base element
+        #   # constituent: uses concentration of phytoplankton constituent of nutrient element
+        #   luxury_storage: 1.
+        #   max_photo_rate: 1.6               # [1/d]
+        #   specific_affinity: 0.0025         # [m^3 / (mg C . d)]      
+        
+  mesozoo1:
+    long_name: carnivorous mesozooplankton
+    type: zooplankton
+    composition: [c,n,p]
+    parameters:
+      cell_quota:
+        opt: {n: 1.258E-02, p: 7.862E-04}
+      
+      temperature_regulation:
+        temp_limited: True
+        function: q10                       # options: arrhenius, eppley, or q10
+        # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
+        # eppley: needs "coefficient" as additional parameter
+        # q10: needs "base_temp" and "coefficient" as additional parameters
+        coefficient: 2.0
+        base_temp: 20.
+
+      oxygen_inhibition:
+        oxygen_limited: True
+        half_sat: 30.                       # [mmol O2 / m^3]
+        exponent: 3.                        # optional: Hill exponent for Monod function (default to 1. if not included)
+      
+      # om_partition:
+      #   dom1: {c: 0.60, n: 0.72, p: 0.832}  # c,n,p [-]
+      #   pom1: {c: 0.40, n: 0.28, p: 0.168}  # c,n,p [-]
+
+      efficiency:
+        assimilation: 0.6
+        ingestion: 0.3
+
+      egestion:
+        unassimilated: []
+        # formulation: particulate            # options: "particulate" and "split"
+        # "particulate" --> ingested food is fully assimilated
+        # "split"       --> ingested food sis not fully assimilated, scale egestion of base_element by (1 - assimilation_efficiency)
+        # dom1: grazing
+        # pom1: grazing
+
+      # excretion:  # requires "destination" and "function"
+      #   destination:
+      #     n: nh4
+      #     p: po4
+      #   function:
+      #   # "activity"      --> calculates excretion based on total ingestion and respiratory costs
+      #   # numerical value --> constant excretion rate
+      #     n: activity
+      #     p: activity
+
+      grazing:
+        grazing_preferences: {mesozoo1: 1., mesozoo2: 1.}
+        function: holling-2
+        # feeding_threshold: 50.0             # [mg C / m^3]
+        max_grazing_rate: 2.0               # [1/d]
+        search_volume: 2.5E-03              # [m^3 / (predator . d)]
+        feeding_model: clearance_rate       # options: "half_saturation" and "clearance_rate"
+        # if feeding_model: "half_saturation" --> requires "half_sat_grazing" as additional parameter
+        # if feeding_model: "clearance_rate"  --> requires "search_volume" as additional parameter
+
+      metabolic_release:
+        basal_metabolic_rate: 0.01
+        destination:
+          c: pom1
+          n: nh4
+          p: po4
+        function:
+        # "activity"      --> calculates excretion based on total ingestion and respiratory costs
+        # "excess_only"   --> only applies excess excretion from variable limitation correction term
+          c: excess_only
+          n: activity
+          p: activity
+
+      mortality:
+        mortality_rate: 
+          linear: 0.                        # linear [1/d]
+          quadratic: 0.02                   # quadratic [1/d^2]
+          oxygen: 0.01                      # [1/d]
+        temp_limitation:
+          linear: False
+          quadratic: False
+          oxygen: True
+
+      respiration:
+        respiration_rate: 0.01              # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+
+  mesozoo2:
+    long_name: omnivorous mesozooplankton
+    type: zooplankton
+    composition: [c,n,p]
+    parameters:
+      cell_quota:
+        opt: {n: 1.258E-02, p: 7.862E-04}
+      
+      temperature_regulation:
+        temp_limited: True
+        function: q10                       # options: arrhenius, eppley, or q10
+        # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
+        # eppley: needs "coefficient" as additional parameter
+        # q10: needs "base_temp" and "coefficient" as additional parameters
+        coefficient: 2.0
+        base_temp: 20.
+
+      oxygen_inhibition:
+        oxygen_limited: True
+        half_sat: 30.                       # [mmol O2 / m^3]
+        exponent: 3.                        # optional: Hill exponent for Monod function (default to 1. if not included)
+      
+      # om_partition:
+      #   dom1: {c: 0.60, n: 0.72, p: 0.832}  # c,n,p [-]
+      #   pom1: {c: 0.40, n: 0.28, p: 0.168}  # c,n,p [-]
+
+      efficiency:
+        assimilation: 0.6
+        ingestion: 0.35
+
+      egestion:
+        unassimilated: []
+        # formulation: particulate            # options: "particulate" and "split"
+        # "particulate" --> ingested food is fully assimilated
+        # "split"       --> ingested food sis not fully assimilated, scale egestion of base_element by (1 - assimilation_efficiency)
+        # dom1: grazing
+        # pom1: grazing
+
+      # excretion:
+      #   nh4: grazing
+      #   po4: grazing
+
+      grazing:
+        grazing_preferences: {phyto1: 1., phyto2: 0.1, phyto4: 0.7, mesozoo2: 1., microzoo1: 1.}
+        function: holling-2
+        # feeding_threshold: 50.0             # [mg C / m^3]
+        max_grazing_rate: 2.0               # [1/d]
+        search_volume: 2.5E-02              # [m^3 / (predator . d)]
+        feeding_model: clearance_rate       # options: "half_saturation" and "clearance_rate"
+        # if feeding_model: "half_saturation" --> requires "half_sat_grazing" as additional parameter
+        # if feeding_model: "clearance_rate"  --> requires "search_volume" as additional parameter
+
+      metabolic_release:
+        basal_metabolic_rate: 0.02
+        destination:
+          c: pom1
+          n: nh4
+          p: po4
+        function:
+        # "activity"      --> calculates excretion based on total ingestion and respiratory costs
+        # "excess_only"   --> only applies excess excretion from variable limitation correction term
+          c: excess_only
+          n: activity
+          p: activity
+
+      # mortality:
+      #   oxygen_limited: True
+      #   temp_limited: True
+      #   half_sat_oxygen: 30.                # [mmol O2 / m^3]
+      #   mortality_rate: 
+      #     linear: 0.                        # linear [1/d]
+      #     quadratic: 0.02                   # quadratic [1/d^2]
+      #   mortality_rate_oxy: 0.01            # [1/d]
+
+      mortality:
+        mortality_rate: 
+          linear: 0.                        # linear [1/d]
+          quadratic: 0.02                   # quadratic [1/d^2]
+          oxygen: 0.01                      # [1/d]
+        temp_limitation:
+          linear: False
+          quadratic: False
+          oxygen: True
+
+      respiration:
+        respiration_rate: 0.02              # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+
+  microzoo1:
+    long_name: microzooplankton
+    type: zooplankton
+    composition: [c,n,p]
+    parameters:
+      cell_quota:
+        opt: {n: 1.258E-02, p: 7.862E-04}
+        # opt: {n: 1.28E-02, p: 1.85E-03}
+      
+      temperature_regulation:
+        temp_limited: True
+        function: q10                       # options: arrhenius, eppley, or q10
+        # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
+        # eppley: needs "coefficient" as additional parameter
+        # q10: needs "base_temp" and "coefficient" as additional parameters
+        coefficient: 2.0
+        base_temp: 20.
+
+      oxygen_inhibition:
+        oxygen_limited: True
+        half_sat: 0.5                       # [mmol O2 / m^3]
+        exponent: 1.                        # optional: Hill exponent for Monod function (default to 1. if not included)
+      
+      om_partition:
+        dom1: {c: 0.60, n: 0.72, p: 0.832}  # c,n,p [-]
+        pom1: {c: 0.40, n: 0.28, p: 0.168}  # c,n,p [-]
+
+      efficiency:
+        assimilation: 0.5
+        ingestion: 0.25
+
+      egestion:
+        unassimilated: [c]
+        # formulation: split                  # options: "particulate" and "split"
+        # "particulate" --> ingested food is fully assimilated
+        # "split"       --> ingested food sis not fully assimilated, scale egestion of base_element by (1 - assimilation_efficiency)
+        # dom1: grazing
+        # pom1: grazing
+
+      # excretion:                            # options: "grazing" or constant excretion rate
+      #   # if "grazing": uses grazing rate with and cell quota to calculate nutrient excretion
+      #   # if constant: enter numerical value which represents constant excretion rate
+      #   nh4: grazing
+      #   po4: grazing
+
+      excretion:  # requires "destination" and "function"
+        destination:
+          n: nh4
+          p: po4
+        function:
+        # "activity"      --> calculates excretion based on total ingestion and respiratory costs
+        # numerical value --> constant excretion rate
+          n: activity
+          p: activity
+
+
+      grazing:
+        grazing_preferences: {bac1: 0.1, phyto1: 0.5, phyto2: 1., phyto3: 0.5, microzoo2: 0.8}
+        function: holling-2
+        feeding_threshold: 50.0             # [mg C / m^3]
+        max_grazing_rate: 2.0               # [1/d]
+        half_sat_grazing: 200.0             # [mg C / m^3]
+        feeding_model: half_saturation      # options: "half_saturation" and "clearance_rate"
+        # if feeding_model: "half_saturation" --> requires "half_sat_grazing" as additional parameter
+        # if feeding_model: "clearance_rate"  --> requires "search_volume" as additional parameter
+
+      # mortality:
+      #   oxygen_limited: True
+      #   temp_limited: False
+      #   half_sat_oxygen: 0.5                # [mmol O2 / m^3]
+      #   mortality_rate: 
+      #     linear: 1.E-06                    # linear [1/d]
+      #     quadratic: 0.0                    # quadratic [1/d^2]
+      #   mortality_rate_oxy: 0.25            # [1/d]
+
+      mortality:
+        mortality_rate: 
+          linear: 1.E-06                    # linear [1/d]
+          quadratic: 0.                     # quadratic [1/d^2]
+          oxygen: 0.25                      # [1/d]
+        temp_limitation:
+          linear: False
+          quadratic: False
+          oxygen: False
+
+      respiration:
+        respiration_rate: 0.02              # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+
+  microzoo2:
+    long_name: heterotrophic flagellates
+    type: zooplankton
+    composition: [c,n,p]
+    parameters:
+      cell_quota:
+        opt: {n: 1.258E-02, p: 7.862E-04}
+        # opt: {n: 1.28E-02, p: 1.85E-03}
+      
+      temperature_regulation:
+        temp_limited: True
+        function: q10                       # options: arrhenius, eppley, or q10
+        # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
+        # eppley: needs "coefficient" as additional parameter
+        # q10: needs "base_temp" and "coefficient" as additional parameters
+        coefficient: 2.0
+        base_temp: 20.
+
+      oxygen_inhibition:  # optional, if included requires "oxygen_limited" boolean
+        oxygen_limited: True                # if "True", requires "half_sat" as additional parameter and optional "exponent", no additional parameters needed if False
+        half_sat: 0.5                       # [mmol O2 / m^3]
+        exponent: 1.                        # optional: Hill exponent for Monod function (default to 1. if not included)
+      
+      om_partition:
+        dom1: {c: 0.60, n: 0.72, p: 0.832}  # c,n,p [-]
+        pom1: {c: 0.40, n: 0.28, p: 0.168}  # c,n,p [-]
+
+      efficiency:
+        assimilation: 0.3
+        ingestion: 0.35
+
+      egestion:
+        unassimilated: [c]
+        # formulation: split                  # options: "particulate" and "split"
+        # "particulate" --> ingested food is fully assimilated
+        # "split"       --> ingested food sis not fully assimilated, scale egestion of base_element by (1 - assimilation_efficiency)
+        # dom1: grazing
+        # pom1: grazing
+
+      # excretion:
+      #   nh4: grazing
+      #   po4: grazing
+
+      excretion:  # requires "destination" and "function"
+        destination:
+          n: nh4
+          p: po4
+        function:
+        # "activity"      --> calculates excretion based on total ingestion and respiratory costs
+        # numerical value --> constant excretion rate
+          n: activity
+          p: activity
+
+
+      grazing:
+        grazing_preferences: {bac1: 1., phyto2: 0.1, phyto3: 1., microzoo2: 0.2}
+        function: holling-2
+        feeding_threshold: 50.0             # [mg C / m^3]
+        max_grazing_rate: 5.0               # [1/d]
+        half_sat_grazing: 200.0             # [mg C / m^3]
+        feeding_model: half_saturation      # options: "half_saturation" and "clearance_rate"
+        # if feeding_model: "half_saturation" --> requires "half_sat_grazing" as additional parameter
+        # if feeding_model: "clearance_rate"  --> requires "search_volume" as additional parameter
+
+      # mortality:
+      #   oxygen_limited: True
+      #   temp_limited: False
+      #   half_sat_oxygen: 0.5                # [mmol O2 / m^3]
+      #   mortality_rate: 
+      #     linear: 1.E-06                    # linear [1/d]
+      #     quadratic: 0.0                    # quadratic [1/d^2]
+      #   mortality_rate_oxy: 0.25            # [1/d]
+
+      mortality:
+        mortality_rate: 
+          linear: 1.E-06                    # linear [1/d]
+          quadratic: 0.                     # quadratic [1/d^2]
+          oxygen: 0.25                      # [1/d]
+        temp_limitation:
+          linear: False
+          quadratic: False
+          oxygen: False
+
+      respiration:
+        respiration_rate: 0.02              # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+
+  dom1:
+    long_name: labile dissolved organic matter
+    type: detritus
+    form: dissolved
+    composition: [c,n,p]
+    parameters:
+      light_attenuation: 0.0                # [m^2 / mg C]
+
+      remineralization:
+        remineralization_rate: 0.05         # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+
+      sedimentation:
+        sinking: False
+        background_sinking_rate: 0.                    # [m/d]
+        burial_velocity: 0.                 # [m/d]
+
+  dom2:
+    long_name: semi-labile dissolved organic matter
+    type: detritus
+    form: dissolved
+    composition: [c]
+    parameters:
+      light_attenuation: 0.0                # [m^2 / mg C]
+
+      remineralization:
+        remineralization_rate: 0.05         # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+
+      sedimentation:
+        sinking: False
+        background_sinking_rate: 0.                    # [m/d]
+        burial_velocity: 0.                 # [m/d]
+
+  dom3:
+    long_name: semi-refractory dissolved organic matter
+    type: detritus
+    form: dissolved
+    composition: [c]
+    parameters:
+      light_attenuation: 0.0                # [m^2 / mg C]
+
+      remineralization:
+        remineralization_rate: 0.05         # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+
+      sedimentation:
+        sinking: False
+        background_sinking_rate: 0.                    # [m/d]
+        burial_velocity: 0.                 # [m/d]
+
+  pom1:
+    long_name: particulate organic matter
+    type: detritus
+    form: particulate
+    composition: [c,n,p,si]
+    parameters:
+      light_attenuation: 1.0E-04            # [m^2 / mg C]
+
+      dissolution:
+        dissolution_rate: {si: 0.02}
+
+      remineralization:
+        remineralization_rate: 0.1          # [1/d]
+        convert_o2: 1/12                    # [mmol 02 / mg C]
+        
+      sedimentation:
+        sinking: True
+        background_sinking_rate: 1.                    # [m/d]
+        burial_velocity: 1.                 # [m/d]
+
+      temperature_regulation:
+        temp_limited: True
+        function: q10                       # options: arrhenius, eppley, or q10
+        # arrhenius: needs "activation_energy" and "coefficient" as additional parameters
+        # eppley: needs "coefficient" as additional parameter
+        # q10: needs "base_temp" and "coefficient" as additional parameters
+        coefficient: 1.49
+        base_temp: 20.
+
+  co2:
+    long_name: carbon dioxide
+    type: inorganic
+    composition: [c]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+      surface_flux: True
+
+      air_sea_flux:
+        atmospheric_pco2: 370.0
+        d: 0.31
+        c1: 2073.1
+        c2: 125.62
+        c3: 3.6276
+        c4: 0.043219
+        schmidt: 660.0
+        pH: 8.12
+        # the following parameters are optional, default values will be used if not provided in input file
+        OCMIP_accuracy: 1.E-10              # default: 1.E-10
+        OCMIP_max_iters: 100.               # default: 100
+        OCMIP_max_delta_pH: 0.3             # default: 0.5
+
+  ta:
+    long_name: total alkalinity
+    type: inorganic
+    composition: [eq]
+    parameters:
+      calc_alkalinity: False
+
+# -------------------------------------------------------------------------------------------------
+reactions:
+  # inorganic rates -------------------------------------------------------------------------------------------------
+  - type: co2_flux
+    consumed:
+    produced:
+      co2: [c]
+
+  - type: denitrification
+    consumed:
+      no3: [n]
+      hs: [s]
+    produced: 
+      n2: [n]
+
+  - type: nitrification
+    consumed:
+      nh4: [n]
+      o2: [o]
+    produced: 
+      no3: [n]
+
+  - type: reaeration
+    consumed:
+    produced:
+      o2: [o]
+
+  - type: reoxidation
+    consumed:
+      hs: [s]
+      o2: [o]
+    produced:
+  
+  # bac1 rates -------------------------------------------------------------------------------------------------
+  # - type: excretion
+  #   consumed:
+  #     bac1: [n]
+  #   produced:
+  #     nh4: [n]
+
+  # - type: excretion
+  #   consumed:
+  #     bac1: [p]
+  #   produced:
+  #     po4: [p]
+
+  - type: excretion
+    consumed:
+      bac1: [c]
+    produced:
+      dom2: [c]
+
+  - type: excretion
+    consumed:
+      bac1: [c]
+    produced:
+      dom3: [c]
+
+  - type: mortality
+    consumed:
+      bac1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+
+  - type: mortality
+    consumed:
+      bac1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: respiration
+    consumed:
+      bac1: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+      hs: [s]
+
+  - type: uptake
+    consumed:
+      dom1: [c,n,p]
+    produced:
+      bac1: [c,n,p]
+  
+  - type: uptake
+    consumed:
+      dom2: [c]
+    produced:
+      bac1: [c]
+  
+  - type: uptake
+    consumed:
+      dom3: [c]
+    produced:
+      bac1: [c]
+  
+  - type: uptake
+    consumed:
+      pom1: [c,n,p]
+    produced:
+      bac1: [c,n,p]
+
+  - type: uptake_release
+    consumed:
+      bac1: [n]
+    produced:
+      nh4: [n]
+
+  - type: uptake_release
+    consumed:
+      bac1: [p]
+    produced:
+      po4: [p]
+
+  # phyto1 rates -------------------------------------------------------------------------------------------------
+  - type: chlorophyll_synthesis
+    consumed:
+    produced:
+      phyto1: [chl]
+
+  - type: exudation
+    consumed:
+      phyto1: [c]
+    produced:
+      dom1: [c]
+
+  # - type: exudation
+  #   consumed:
+  #     phyto1: [c]
+  #   produced:
+  #     dom2: [c]
+
+  - type: gross_primary_production
+    consumed:
+      co2: [c]
+    produced:
+      phyto1: [c]
+      o2: [o]
+
+  - type: lysis
+    consumed:
+      phyto1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+
+  - type: lysis
+    consumed:
+      phyto1: [c,n,p,si]
+    produced:
+      pom1: [c,n,p,si]
+
+  - type: photosynthesis
+    consumed:
+      phyto1: [c]
+    produced:
+
+  - type: respiration
+    consumed:
+      phyto1: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+
+  - type: sedimentation
+    consumed:
+      phyto1: [c,n,p,chl,si]
+    produced:
+
+  - type: uptake
+    consumed:
+      no3: [n]
+    produced:
+      phyto1: [n]
+      dom1: [n]
+
+  - type: uptake
+    consumed:
+      nh4: [n]
+    produced:
+      phyto1: [n]
+      dom1: [n]
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto1: [p]
+      dom1: [p]
+
+  - type: uptake
+    consumed:
+      sio4: [si]
+    produced:
+      phyto1: [si]
+
+  # phyto2 rates -------------------------------------------------------------------------------------------------
+  - type: chlorophyll_synthesis
+    consumed:
+    produced:
+      phyto2: [chl]
+
+  - type: exudation
+    consumed:
+      phyto2: [c]
+    produced:
+      dom1: [c]
+
+  # - type: exudation
+  #   consumed:
+  #     phyto2: [c]
+  #   produced:
+  #     dom2: [c]
+
+  - type: gross_primary_production
+    consumed:
+      co2: [c]
+    produced:
+      phyto2: [c]
+      o2: [o]
+
+  - type: lysis
+    consumed:
+      phyto2: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+
+  - type: lysis
+    consumed:
+      phyto2: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: photosynthesis
+    consumed:
+      phyto2: [c]
+    produced:
+
+  - type: respiration
+    consumed:
+      phyto2: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+
+  - type: sedimentation
+    consumed:
+      phyto2: [c,n,p,chl]
+    produced:
+
+  - type: uptake
+    consumed:
+      no3: [n]
+    produced:
+      phyto2: [n]
+      dom1: [n]
+
+  - type: uptake
+    consumed:
+      nh4: [n]
+    produced:
+      phyto2: [n]
+      dom1: [n]
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto2: [p]
+      dom1: [p]
+
+  # phyto3 rates -------------------------------------------------------------------------------------------------
+  - type: chlorophyll_synthesis
+    consumed:
+    produced:
+      phyto3: [chl]
+
+  - type: exudation
+    consumed:
+      phyto3: [c]
+    produced:
+      dom1: [c]
+
+  # - type: exudation
+  #   consumed:
+  #     phyto3: [c]
+  #   produced:
+  #     dom2: [c]
+
+  - type: gross_primary_production
+    consumed:
+      co2: [c]
+    produced:
+      phyto3: [c]
+      o2: [o]
+
+  - type: lysis
+    consumed:
+      phyto3: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+
+  - type: lysis
+    consumed:
+      phyto3: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: photosynthesis
+    consumed:
+      phyto3: [c]
+    produced:
+
+  - type: respiration
+    consumed:
+      phyto3: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+
+  - type: sedimentation
+    consumed:
+      phyto3: [c,n,p,chl]
+    produced:
+
+  - type: uptake
+    consumed:
+      no3: [n]
+    produced:
+      phyto3: [n]
+      dom1: [n]
+
+  - type: uptake
+    consumed:
+      nh4: [n]
+    produced:
+      phyto3: [n]
+      dom1: [n]
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto3: [p]
+      dom1: [p]
+
+  # phyto4 rates -------------------------------------------------------------------------------------------------
+  - type: chlorophyll_synthesis
+    consumed:
+    produced:
+      phyto4: [chl]
+
+  - type: exudation
+    consumed:
+      phyto4: [c]
+    produced:
+      dom1: [c]
+
+  # - type: exudation
+  #   consumed:
+  #     phyto4: [c]
+  #   produced:
+  #     dom2: [c]
+
+  - type: gross_primary_production
+    consumed:
+      co2: [c]
+    produced:
+      phyto4: [c]
+      o2: [o]
+
+  - type: lysis
+    consumed:
+      phyto4: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+
+  - type: lysis
+    consumed:
+      phyto4: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: photosynthesis
+    consumed:
+      phyto4: [c]
+    produced:
+
+  - type: respiration
+    consumed:
+      phyto4: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+
+  - type: sedimentation
+    consumed:
+      phyto4: [c,n,p,chl]
+    produced:
+
+  - type: uptake
+    consumed:
+      no3: [n]
+    produced:
+      phyto4: [n]
+      dom1: [n]
+
+  - type: uptake
+    consumed:
+      nh4: [n]
+    produced:
+      phyto4: [n]
+      dom1: [n]
+
+  - type: uptake
+    consumed:
+      po4: [p]
+    produced:
+      phyto4: [p]
+      dom1: [p]
+
+  # mesozoo1 rates -------------------------------------------------------------------------------------------------
+  # - type: excretion
+  #   consumed:
+  #     mesozoo1: [n]
+  #   produced:
+  #     nh4: [n]
+
+  # - type: excretion
+  #   consumed:
+  #     mesozoo1: [p]
+  #   produced:
+  #     po4: [p]
+
+  # - type: egestion
+  #   consumed: 
+  #     mesozoo1: [c,n,p]
+  #   produced:
+  #     dom1: [c,n,p]
+
+  - type: egestion
+    consumed: 
+      mesozoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: grazing
+    consumed:
+      mesozoo2: [c,n,p]
+    produced:
+      mesozoo1: [c,n,p]
+
+  - type: metabolic_release
+    consumed:
+      mesozoo1: [c]
+    produced:
+      pom1: [c]
+
+  - type: metabolic_release
+    consumed:
+      mesozoo1: [n]
+    produced:
+      nh4: [n]
+
+  - type: metabolic_release
+    consumed:
+      mesozoo1: [p]
+    produced:
+      po4: [p]
+
+  # - type: mortality
+  #   consumed:
+  #     mesozoo1: [c,n,p]
+  #   produced:
+  #     dom1: [c,n,p]
+
+  - type: mortality
+    consumed:
+      mesozoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: respiration
+    consumed:
+      mesozoo1: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+
+  # mesozoo2 rates -------------------------------------------------------------------------------------------------
+  # - type: excretion
+  #   consumed:
+  #     mesozoo2: [n]
+  #   produced:
+  #     nh4: [n]
+
+  # - type: excretion
+  #   consumed:
+  #     mesozoo2: [p]
+  #   produced:
+  #     po4: [p]
+
+  # - type: egestion
+  #   consumed: 
+  #     mesozoo2: [c,n,p]
+  #   produced:
+  #     dom1: [c,n,p]
+
+  - type: egestion
+    consumed: 
+      mesozoo2: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: grazing
+    consumed:
+      phyto1: [c,n,p,chl,si]
+    produced:
+      mesozoo2: [c,n,p]
+      pom1: [si]
+
+  - type: grazing
+    consumed:
+      phyto2: [c,n,p,chl]
+    produced:
+      mesozoo2: [c,n,p]
+
+  - type: grazing
+    consumed:
+      phyto4: [c,n,p,chl]
+    produced:
+      mesozoo2: [c,n,p]
+
+  - type: grazing
+    consumed:
+      microzoo1: [c,n,p]
+    produced:
+      mesozoo2: [c,n,p]
+
+  - type: metabolic_release
+    consumed:
+      mesozoo2: [c]
+    produced:
+      pom1: [c]
+
+  - type: metabolic_release
+    consumed:
+      mesozoo2: [n]
+    produced:
+      nh4: [n]
+
+  - type: metabolic_release
+    consumed:
+      mesozoo2: [p]
+    produced:
+      po4: [p]
+
+  # - type: mortality
+  #   consumed:
+  #     mesozoo2: [c,n,p]
+  #   produced:
+  #     dom1: [c,n,p]
+
+  - type: mortality
+    consumed:
+      mesozoo2: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: respiration
+    consumed:
+      mesozoo2: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+
+  # microzoo1 rates -------------------------------------------------------------------------------------------------
+  - type: excretion
+    consumed:
+      microzoo1: [n]
+    produced:
+      nh4: [n]
+
+  - type: excretion
+    consumed:
+      microzoo1: [p]
+    produced:
+      po4: [p]
+
+  - type: egestion
+    consumed: 
+      microzoo1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+
+  - type: egestion
+    consumed: 
+      microzoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: grazing
+    consumed:
+      bac1: [c,n,p]
+    produced:
+      microzoo1: [c,n,p]
+
+  - type: grazing
+    consumed:
+      phyto1: [c,n,p,chl,si]
+    produced:
+      microzoo1: [c,n,p]
+      pom1: [si]
+
+  - type: grazing
+    consumed:
+      phyto2: [c,n,p,chl]
+    produced:
+      microzoo1: [c,n,p]
+
+  - type: grazing
+    consumed:
+      phyto3: [c,n,p,chl]
+    produced:
+      microzoo1: [c,n,p]
+
+  - type: grazing
+    consumed:
+      microzoo2: [c,n,p]
+    produced:
+      microzoo1: [c,n,p]
+
+  - type: mortality
+    consumed:
+      microzoo1: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+
+  - type: mortality
+    consumed:
+      microzoo1: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: respiration
+    consumed:
+      microzoo1: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+
+  # microzoo2 rates -------------------------------------------------------------------------------------------------
+  - type: excretion
+    consumed:
+      microzoo2: [n]
+    produced:
+      nh4: [n]
+
+  - type: excretion
+    consumed:
+      microzoo2: [p]
+    produced:
+      po4: [p]
+
+  - type: egestion
+    consumed: 
+      microzoo2: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+
+  - type: egestion
+    consumed: 
+      microzoo2: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: grazing
+    consumed:
+      bac1: [c,n,p]
+    produced:
+      microzoo2: [c,n,p]
+
+  - type: grazing
+    consumed:
+      phyto2: [c,n,p,chl]
+    produced:
+      microzoo2: [c,n,p]
+
+  - type: grazing
+    consumed:
+      phyto3: [c,n,p,chl]
+    produced:
+      microzoo2: [c,n,p]
+
+  - type: mortality
+    consumed:
+      microzoo2: [c,n,p]
+    produced:
+      dom1: [c,n,p]
+
+  - type: mortality
+    consumed:
+      microzoo2: [c,n,p]
+    produced:
+      pom1: [c,n,p]
+
+  - type: respiration
+    consumed:
+      microzoo2: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+
+  # dom1 rates -------------------------------------------------------------------------------------------------
+  - type: remineralization
+    consumed:
+      dom1: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+
+  - type: remineralization
+    consumed:
+      dom1: [n]
+    produced:
+      nh4: [n]
+
+  - type: remineralization
+    consumed:
+      dom1: [p]
+    produced:
+      po4: [p]
+
+  # all dom2 and dom3 rates are listed under other tracers -------------------------------------------------------------------------------------------------
+    
+  # pom1 rates -------------------------------------------------------------------------------------------------
+  - type: dissolution
+    consumed:
+      pom1: [si]
+    produced:
+      sio4: [si]
+
+  - type: remineralization
+    consumed:
+      pom1: [c]
+      o2: [o]
+    produced:
+      co2: [c]
+    
+  - type: remineralization
+    consumed:
+      pom1: [n]
+    produced:
+      nh4: [n]
+      
+  - type: remineralization
+    consumed:
+      pom1: [p]
+    produced:
+      po4: [p]
+  

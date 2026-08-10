@@ -1,4 +1,5 @@
 import numpy as np
+np.set_printoptions(precision=20)
 
 def average(concentration, physical, type):
 
