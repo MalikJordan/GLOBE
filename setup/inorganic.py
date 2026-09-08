@@ -5,7 +5,7 @@ from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
 from functions.seasonal_cycling import *
-from functions.other_functions import concentration_ratio, nutrient_limitation, temperature_dependence, tracer_elements, switch, calculate_acidity, calculate_Hplus, find_roots_of_f_TA
+from functions.other_functions import concentration_ratio, nutrient_limitation, temperature_dependence, tracer_elements, switch, calculate_acidity, calculate_Hplus, find_roots_of_f_TA, monod
 from fractions import Fraction
 np.set_printoptions(precision=20)
 class Inorganic():
@@ -55,6 +55,34 @@ class Inorganic():
                 self.denitrification_ids.append(key)
                 if not isinstance(val, np.ndarray): val = np.array([val],dtype=np.float64)  # Convert type to array of floats for typed.List
                 self.denitrification_params.append(val)
+
+        # Loss (Generic)
+        if "loss" in tracer["parameters"]:
+            loss_dict_type = types.DictType(types.unicode_type, types.float64)
+            self.loss_ids = List.empty_list(unicode_type)   # stores produced tracer names (loss parameters will be saved for each tracer individually)
+            self.loss_params = List.empty_list(loss_dict_type)
+
+            for outer_key,inner_dict in tracer["parameters"]["loss"].items():
+                # Create temporary dictionary
+                temp = Dict.empty(key_type=unicode_type, value_type=float64)
+
+                # Add "exponent" to inner_dict (if necessary)
+                if inner_dict["function"] == "half_saturation" and "exponent" not in inner_dict:    inner_dict["exponent"] = 1.
+
+                # Add inner values to temporary dictionary
+                for inner_key,inner_val in inner_dict.items():
+                    # Create numeric codes for loss option string
+                    if inner_key == "function":
+                        if inner_val == "constant":             temp["function"] = 1.
+                        elif inner_val == "half_saturation":    temp["function"] = 2.
+
+                    # Other inner values are already ints/floats
+                    else:
+                        temp[inner_key] = np.float64(inner_val) # conversion to make sure all values are floats
+
+                # Add outer_key to loss_ids and temp to loss_params
+                self.loss_ids.append(outer_key)
+                self.loss_params.append(temp)
 
         # Nitrification
         if "nitrification" in tracer["parameters"]:
@@ -189,6 +217,9 @@ class Inorganic():
 
             # Delete "loss" reactions if this tracer is produced
             if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
+
+            # Delete "uptake" reactions if this tracer is consumed
+            if ( reac["type"] == "uptake" ) and ( abbrev in consumed.keys() ): self.reactions.pop()
    
     
     def inorg(self, configuration, bact_limitation_factor, conc, d_dt, tracer_map, z, dz, temperature, salinity, density, wind):
@@ -260,6 +291,47 @@ class Inorganic():
             # convert = denitrification_params[oxic_anoxic_coeff] * denitrification_params[nit_anoxic_coeff] * y
             convert = 0.5 * 1.25 * y    # * 0.5 for oxic-anoxic stoichiometric conversion, * 1.25 for nit-anoxic stoichiometric conversion
             d_dt[tracer_map["hs"][0]] -= convert * denitrification
+
+
+    @staticmethod
+    @njit
+    def loss(c, p, ec, ep, ic, ip, loss_ids, loss_params, conc, conc_ratio, d_dt, tracer_map, cons_composition, prod_composition):
+    
+        # Source tracer of loss rate
+        cons = c[0]         # Tracer
+        elem_c = ec[cons]   # Affected constituents
+        ind_c = ic[cons][0] # Base element index
+    
+        # Destination tracer of loss rate
+        prod = p[0]         # Tracer
+        elem_p = ep[prod]   # Affected constituents
+        ind_p = ip[prod][0] # Base element index
+    
+        # Identifiy loss parameters for consumed tracer
+        ids = loss_ids.index(prod)
+        params = loss_params[ids]
+    
+        if params["function"] == 1.: # constant
+            # Calculate loss rate
+            loss = params["loss_rate"] * conc[tracer_map[cons][ind_c]]
+    
+        elif params["function"] == 2.: # half saturation
+            # Calculate loss rate
+            loss = params["loss_rate"] * monod(conc[tracer_map[cons][ind_c]], params["half_sat_loss"], params["exponent"]) * conc[tracer_map[cons][ind_c]]
+    
+        # Extract concentration ratios
+        ratios = np.zeros((len(prod_composition),len(conc[tracer_map[prod][0]])),dtype=np.float64)
+        for const in cons_composition:
+            if const in prod_composition:
+                index_cons = cons_composition.index(const)
+                index_prod = prod_composition.index(const)
+                ratios[index_prod] = conc_ratio[tracer_map[cons][index_cons]]
+    
+        # Update d_dt
+        for i in range(0,len(elem_c)):
+            d_dt[tracer_map[cons][i]] -= elem_c[i] * conc_ratio[tracer_map[cons][i]] * loss
+        for j in range(0,len(elem_p)):
+            d_dt[tracer_map[prod][j]] += elem_p[j] * ratios[j] * loss
 
     
     @staticmethod

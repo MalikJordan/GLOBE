@@ -335,7 +335,11 @@ tracers:
           basis: growth
           strategy: independent
           form: affinity
+          half_sat_uptake: 1.
+          numerator: cell_quota
+          denominator: zero
           # max_photo_rate: 2.5
+          exclude_respiratory_cost: True
 
   phyto2:
     long_name: nanoflagellates

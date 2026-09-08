@@ -446,6 +446,9 @@ class Zooplankton():
 
             # Delete "loss" reactions if this tracer is produced
             if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
+
+            # Delete "grazing" reactions if this tracer is consumed
+            if ( reac["type"] == "grazing" ) and ( abbrev in consumed.keys() ): self.reactions.pop()
         
         # Reorder reactions (grazing needs to appear first)
         self.reactions = [item for item in self.reactions if item["type"] == "respiration"] + [item for item in self.reactions if item["type"] != "respiration"]

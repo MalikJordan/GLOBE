@@ -1406,3 +1406,4 @@ month_counter = 9
 month_counter = 10
 month_counter = 11
 month_counter = 12
+month_counter = 1
