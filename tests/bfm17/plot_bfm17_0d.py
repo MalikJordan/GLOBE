@@ -60,11 +60,75 @@ pomp = tracer_indices["pom1"][2]
 
 # xlabel = ['J','A','J','O','J','A','J','O','J']
 # xticks = [0,90,180,270,360,450,540,630,720]
-xlabel = ['J','A','J','O','J']
-xticks = [0,90,180,270,360]
+xlabel = ['J','M','M','J','S','N']
+xticks = [15,75,135,195,255,315]
 days = np.linspace(0,359,360)
-
 # Create Plots --------------------------------------------------------------------
+fig,axs = plt.subplots(2,4,figsize=(15,8), sharex=True)
+axs[0,0].plot(days,globe_daily[o2,0],label='GLOBE')
+axs[0,0].plot(days,o2_bfm17,linestyle=(0, (5, 10)),color='black',label='BFM17')
+axs[0,0].set_title("(a) Oxygen")
+axs[0,0].set_xlim([0,360])
+axs[0,0].set_ylabel("mmol O ${m^{-3}}$")
+
+axs[0,1].plot(days,globe_daily[no3,0],label='GLOBE')
+axs[0,1].plot(days,no3_bfm17,linestyle=(0, (5, 10)),color='black',label='BFM17')
+axs[0,1].set_title("(b) Nitrate")
+axs[0,1].set_xlim([0,360])
+axs[0,1].set_ylabel("mmol N ${m^{-3}}$")
+
+axs[0,2].plot(days,globe_daily[nh4,0],label='GLOBE')
+axs[0,2].plot(days,nh4_bfm17,linestyle=(0, (5, 10)),color='black',label='BFM17')
+axs[0,2].set_title("(c) Ammonium")
+axs[0,2].set_xlim([0,360])
+axs[0,2].set_ylabel("mmol N ${m^{-3}}$")
+
+axs[0,3].plot(days,globe_daily[po4,0],label='GLOBE')
+axs[0,3].plot(days,po4_bfm17,linestyle=(0, (5, 10)),color='black',label='BFM17')
+axs[0,3].set_title("(d) Phosphate")
+axs[0,3].set_xlim([0,360])
+axs[0,3].set_ylabel("mmol P ${m^{-3}}$")
+
+axs[1,0].plot(days,globe_daily[pc,0],label='GLOBE')
+axs[1,0].plot(days,pc_bfm17,linestyle=(0, (5, 10)),color='black',label='BFM17')
+axs[1,0].set_title("(e) Phytoplankton")
+axs[1,0].set_xlabel("Time [month]")
+axs[1,0].set_xticks(xticks,xlabel)
+axs[1,0].set_xlim([0,360])
+axs[1,0].set_ylabel("mg C ${m^{-3}}$")
+
+axs[1,1].plot(days,globe_daily[zc,0],label='GLOBE')
+axs[1,1].plot(days,zc_bfm17,linestyle=(0, (5, 10)),color='black',label='BFM17')
+axs[1,1].set_title("(f) Zooplankton")
+axs[1,1].set_xlabel("Time [month]")
+axs[1,1].set_xticks(xticks,xlabel)
+axs[1,1].set_xlim([0,360])
+axs[1,1].set_ylabel("mg C ${m^{-3}}$")
+
+axs[1,2].plot(days,globe_daily[domc,0],label='GLOBE')
+axs[1,2].plot(days,domc_bfm17,linestyle=(0, (5, 10)),color='black',label='BFM17')
+axs[1,2].set_title("(g) Dissolved Organic Carbon")
+axs[1,2].set_xlabel("Time [month]")
+axs[1,2].set_xticks(xticks,xlabel)
+axs[1,2].set_xlim([0,360])
+axs[1,2].set_ylabel("mg C ${m^{-3}}$")
+
+axs[1,3].plot(days,globe_daily[pomc,0],label='GLOBE')
+axs[1,3].plot(days,pomc_bfm17,linestyle=(0, (5, 10)),color='black',label='BFM17')
+axs[1,3].set_title("(h) Particulate Organic Carbon")
+axs[1,3].set_xlabel("Time [month]")
+axs[1,3].set_xticks(xticks,xlabel)
+axs[1,3].set_xlim([0,360])
+axs[1,3].set_ylabel("mg C ${m^{-3}}$")
+
+handles, labels = axs[0,0].get_legend_handles_labels()
+fig.legend(handles,labels, loc='lower center', ncol=2)
+
+# fig.suptitle("Nutrients")
+fig.tight_layout(h_pad=2.5,w_pad=2.5,rect=[0,0.025,1,1])
+loc = os.path.join(folder + "/figures","bfm17.jpg")
+plt.savefig(loc)
+
 # Nutrients
 fig, axs = plt.subplots(2,2,figsize=(10,10),sharex=True)
 

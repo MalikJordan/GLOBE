@@ -27,7 +27,7 @@ def nrmse(check,comp):
 # Extract model results
 # ----------------------------------------------------------------------------------------------------
 # GLOBE
-path = os.getcwd() + '/concentration_bfm56-5yr.npz'
+path = os.getcwd() + '/concentration_bfm56-5yr-0907.npz'
 globe_bfm = np.load(path, allow_pickle=True)
 
 globe_daily = globe_bfm["daily"]

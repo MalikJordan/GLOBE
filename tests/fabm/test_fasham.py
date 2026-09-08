@@ -103,13 +103,13 @@ from functions.seasonal_cycling import get_temperature, get_salinity, get_sunlig
 
 
 
-# output_file = os.getcwd() + '/tests/fabm/fasham_data/output_constant.nc'
-output_file = os.getcwd() + '/tests/fabm/fasham_data/output_seasonal.nc'
+output_file = os.getcwd() + '/tests/fabm/fasham_data/output_constant.nc'
+# output_file = os.getcwd() + '/tests/fabm/fasham_data/output_seasonal.nc'
 ds = xr.open_dataset(output_file)
 
 # env_data_file = os.getcwd() + '/tests/fabm/fasham_data/env_nns_annual.dat'
-# env_data_file = os.getcwd() + '/tests/fabm/fasham_data/env_constant.dat'
-env_data_file = os.getcwd() + '/tests/fabm/fasham_data/env_seasonal.dat'
+env_data_file = os.getcwd() + '/tests/fabm/fasham_data/env_constant.dat'
+# env_data_file = os.getcwd() + '/tests/fabm/fasham_data/env_seasonal.dat'
 data = pd.read_csv(
     env_data_file,
     sep=r"\s+",
@@ -145,8 +145,8 @@ for i in range(0,87600):
 fasham_daily = fasham_daily[...,:360]
 x = 1
 
-# conc_path = os.getcwd() + '/concentration_fasham_0d_constant.npz'
-conc_path = os.getcwd() + '/concentration_fasham_0d_seasonal.npz'
+conc_path = os.getcwd() + '/concentration_fasham_0d_constant.npz'
+# conc_path = os.getcwd() + '/concentration_fasham_0d_seasonal.npz'
 tracer_path = os.getcwd() + '/tracer_indices_fasham_0d.npz'
 
 model = np.load(conc_path, allow_pickle=True)
@@ -167,60 +167,59 @@ don = tracer_indices["don"][0]
 pon = tracer_indices["pon"][0]
 
 
-xlabel = ['J','A','J','O','J']
-xticks = [0,90,180,270,360]
+xlabel = ['J','M','M','J','S','N']
+xticks = [15,75,135,195,255,315]
 days = np.linspace(0,359,360)
 
-fig, axs = plt.subplots(2,4,figsize=(20,10), sharex=True)
+fig, axs = plt.subplots(2,4,figsize=(15,8), sharex=True)
 
 axs[0,0].plot(days,globe_daily[no3,0],'-b',label='GLOBE')
 axs[0,0].plot(days,fasham_daily[no3],'-.k',label='Fasham (1990) - FABM')
 axs[0,0].set_title("(a) Nitrate")
 axs[0,0].set_xlim([0,360])
-axs[0,0].set_xlabel("Days")
 axs[0,0].set_ylabel("mmol $N$ ${m^{-3}}$")
 
 axs[0,1].plot(days,globe_daily[bac,0],'-b',label='GLOBE')
 axs[0,1].plot(days,fasham_daily[bac],'-.k',label='Fasham (1990) - FABM')
 axs[0,1].set_title("(b) Bacteria")
 axs[0,1].set_xlim([0,360])
-axs[0,1].set_xlabel("Days")
 axs[0,1].set_ylabel("mmol $N$ ${m^{-3}}$")
 
 axs[0,2].plot(days,globe_daily[phy,0],'-b',label='GLOBE')
 axs[0,2].plot(days,fasham_daily[phy],'-.k',label='Fasham (1990) - FABM')
 axs[0,2].set_title("(c) Phytoplankton")
 axs[0,2].set_xlim([0,360])
-axs[0,2].set_xlabel("Days")
 axs[0,2].set_ylabel("mmol $N$ ${m^{-3}}$")
 
 axs[0,3].plot(days,globe_daily[zoo,0],'-b',label='GLOBE')
 axs[0,3].plot(days,fasham_daily[zoo],'-.k',label='Fasham (1990) - FABM')
 axs[0,3].set_title("(d) Zooplankton")
 axs[0,3].set_xlim([0,360])
-axs[0,3].set_xlabel("Days")
 axs[0,3].set_ylabel("mmol $N$ ${m^{-3}}$")
 
 axs[1,0].plot(days,globe_daily[nh4,0],'-b',label='GLOBE')
 axs[1,0].plot(days,fasham_daily[nh4],'-.k',label='Fasham (1990) - FABM')
 axs[1,0].set_title("(e) Ammonium")
 axs[1,0].set_xlim([0,360])
-axs[1,0].set_xlabel("Days")
+axs[1,0].set_xlabel("Time [month]")
 axs[1,0].set_ylabel("mmol $N$ ${m^{-3}}$")
+axs[1,0].set_xticks(xticks,xlabel)
 
 axs[1,1].plot(days,globe_daily[don,0],'-b',label='GLOBE')
 axs[1,1].plot(days,fasham_daily[don],'-.k',label='Fasham (1990) - FABM')
 axs[1,1].set_title("(f) Dissolved Organic Nitrogen")
 axs[1,1].set_xlim([0,360])
-axs[1,1].set_xlabel("Days")
+axs[1,1].set_xlabel("Time [month]")
 axs[1,1].set_ylabel("mmol $N$ ${m^{-3}}$")
+axs[1,1].set_xticks(xticks,xlabel)
 
 axs[1,2].plot(days,globe_daily[pon,0],'-b',label='GLOBE')
 axs[1,2].plot(days,fasham_daily[pon],'-.k',label='Fasham (1990) - FABM')
 axs[1,2].set_title("(g) Detritus")
 axs[1,2].set_xlim([0,360])
-axs[1,2].set_xlabel("Days")
+axs[1,2].set_xlabel("Time [month]")
 axs[1,2].set_ylabel("mmol $N$ ${m^{-3}}$")
+axs[1,2].set_xticks(xticks,xlabel)
 
 handles,labels = axs[0,0].get_legend_handles_labels()
 axs[1,3].axis('off')
@@ -228,7 +227,8 @@ axs[1,3].legend(handles,labels,loc='center',frameon=True)
 
 folder = os.getcwd() + '/tests/fabm'
 fig.tight_layout()
-save_loc = os.path.join(folder + '/figures','fasham0d_seasonal.jpg')
+save_loc = os.path.join(folder + '/figures','fasham0d_constant.jpg')
+# save_loc = os.path.join(folder + '/figures','fasham0d_seasonal.jpg')
 plt.savefig(save_loc)
 
 

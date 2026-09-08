@@ -107,50 +107,47 @@ x = np.arange(0, NUM_STEPS, 1)
 # ----------------------------------------------------------------------------------------------------
 # fig, ax = plt.subplots()
 
-months = [0,30,60,90,120,150,180]
-marks = ['J','F','M','A','M','J','J']
-marks_blank = ['','','','','','','']
+xlabel = ['J','M','M','J','S','N']
+xticks = [15,75,135,195,255,315]
 
-fig, axs = plt.subplots(2,2,figsize=(10,10), sharex=True)
+fig, axs = plt.subplots(2,2,figsize=(8,8), sharex=True)
 
-# axs[0,0].plot(x,tracers["no3"].conc[0,:-1],label='GLOBE')
 axs[0,0].plot(x,no3,label='GLOBE')
 axs[0,0].plot(x,N,linestyle=(0, (5, 10)),color='black',label='NPZD')
 axs[0,0].set_title("(a) Nitrate")
-# axs[0,0].set_xticks(months,marks_blank)
 axs[0,0].set_xlim([0,360])
 axs[0,0].set_ylabel("mmol N ${m^{-3}}$")
 
-# axs[0,1].plot(x,tracers["pom1"].conc[0,:-1],label='GLOBE')
 axs[0,1].plot(x,pom,label='GLOBE')
 axs[0,1].plot(x,D,linestyle=(0, (5, 10)),color='black',label='NPZD')
 axs[0,1].set_title("(b) Particulate Organic Nitrogen")
-# axs[0,1].set_xticks(months,marks_blank)
 axs[0,1].set_xlim([0,360])
+axs[0,1].set_ylabel("mmol N ${m^{-3}}$")
 
-# axs[1,0].plot(x,tracers["phyto1"].conc[0,:-1],label='GLOBE')
 axs[1,0].plot(x,phyto,label='GLOBE')
 axs[1,0].plot(x,P,linestyle=(0, (5, 10)),color='black',label='NPZD')
 axs[1,0].set_title("(c) Phytoplankton")
-axs[1,0].set_xlabel("Time [days]")
-# axs[1,0].set_xticks(months,marks)
+axs[1,0].set_xlabel("Time [month]")
 axs[1,0].set_xlim([0,360])
+axs[1,0].set_xlabel("Time [month]")
+axs[1,0].set_xticks(xticks,xlabel)
 axs[1,0].set_ylabel("mmol N ${m^{-3}}$")
 
-# axs[1,1].plot(x,tracers["zoo1"].conc[0,:-1],label='GLOBE')
 axs[1,1].plot(x,zoo,label='GLOBE')
 axs[1,1].plot(x,Z,linestyle=(0, (5, 10)),color='black',label='NPZD')
 axs[1,1].set_title("(d) Zooplankton")
-axs[1,1].set_xlabel("Time [days]")
-# axs[1,1].set_xticks(months,marks)
+axs[1,1].set_xlabel("Time [month]")
 axs[1,1].set_xlim([0,360])
+axs[1,1].set_xlabel("Time [month]")
+axs[1,1].set_xticks(xticks,xlabel)
+axs[1,0].set_ylabel("mmol N ${m^{-3}}$")
 
 handles, labels = axs[0,0].get_legend_handles_labels()
 fig.legend(handles,labels, loc='lower center', ncol=2)
 
 fig.tight_layout(h_pad=2.5,w_pad=2.5,rect=[0,0.025,1,1])
 
-npzd = os.path.join(folder + "/figures", "npzd_0907.jpg")
+npzd = os.path.join(folder + "/figures", "npzd.jpg")
 plt.savefig(npzd)
 
 error = np.zeros((4,len(N)))
