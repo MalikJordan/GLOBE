@@ -1,0 +1,41 @@
+simulation:
+  dt: 86400.      # time step [s]
+  days: 365           # days in simulation [d]
+  configuration: 0d   # Options: 0d or 1d
+
+water_column:
+  column_depth: 10.    # depth [m]
+  num_layers: 1      # number of layers in water column
+
+environment:
+  forcing: constant   # Options: constant, pom1d or seasonal
+  # constant: forces system using constant values
+  # pom1d: forces system using climatological data with one-dimensional POM1D ocean circulation
+  # seasonal: forces system using sinusoidal forcing between summer and winter extremes
+  base_temp: 20.0  
+  PAR_frac: 1.
+  light_attenuation_water: 0.0435        # [1/m]
+  latitude: 45.
+  forcing_data:
+    temperature: 15.
+    salinity: 35.
+    sunlight: 100.
+    wind: 4.
+    mld: 20.
+
+initial_conditions:
+  no3:
+    composition:
+      n: 4.0
+
+  phyto:
+    composition:
+      n: 2.5
+
+  zoo:
+    composition:
+      n: 1.5
+
+  pom:
+    composition:
+      n: 0.0

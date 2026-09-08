@@ -145,16 +145,27 @@ class Detritus():
                 else:
                     sys.exit("Detritus: Element '" + key + "' not recognized. Check documentation and edit input file.")
 
+        # if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
+        #     self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
+        #     for const in range(0,len(self.composition)):
+        #         self.conc[const,:,0] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
+        # else:   # Model as single box
+        #     self.conc = np.zeros((len(self.composition),num_layers,iters),dtype=np.float64)
+        #     for const in range(0,len(self.composition)):
+        #         self.conc[const,:,0] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
+        # self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
+        # self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
+
         if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
-            self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
+            self.initial_conc = np.zeros((len(self.composition),num_layers-1),dtype=np.float64)
             for const in range(0,len(self.composition)):
-                self.conc[const,:,0] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
+                self.initial_conc[const,:] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
         else:   # Model as single box
-            self.conc = np.zeros((len(self.composition),iters),dtype=np.float64)
+            self.initial_conc = np.zeros((len(self.composition),num_layers),dtype=np.float64)
             for const in range(0,len(self.composition)):
-                self.conc[const,:,0] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
-        self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
-        self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
+                self.initial_conc[const,:] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
+        # self.d_dt = np.zeros_like(self.initial_conc[...],dtype=np.float64)
+        # self.conc_ratio = np.ones_like(self.initial_conc[...],dtype=np.float64)
         
 
         # Add reactions ---------------------------------------------------------------
@@ -167,6 +178,12 @@ class Detritus():
             else:   produced = {"empty": "empty"}
             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
+
+            # Delete "loss" reactions if this tracer is produced
+            if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
+
+            # Delete "remineralization" reactions if this tracer is produced
+            if ( reac["type"] == "remineralization" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
         
 
     def detritus(self, base_element, temperature, conc, d_dt, tracer_map, tracers):

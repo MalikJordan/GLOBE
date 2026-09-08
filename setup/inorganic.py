@@ -73,6 +73,12 @@ class Inorganic():
         
         # Rearation
         if "reaeration" in tracer["parameters"]:
+            # Create numeric code for form of oxygen saturation conversion from mL/L to mmol/m^3
+            if "saturation_conversion" in tracer["parameters"]["reaeration"]:
+                if tracer["parameters"]["reaeration"]["saturation_conversion"] == "ideal_gas":  tracer["parameters"]["reaeration"]["saturation_conversion"] = 1.
+                elif tracer["parameters"]["reaeration"]["saturation_conversion"] == "stp":      tracer["parameters"]["reaeration"]["saturation_conversion"] = 2.
+            else:   tracer["parameters"]["reaeration"]["saturation_conversion"] = 1.    # default to ideal gas conversion
+
             self.reaeration_ids = List.empty_list(types.unicode_type)
             self.reaeration_params = []
 
@@ -148,16 +154,27 @@ class Inorganic():
             elif isinstance(composition[key], (list,np.ndarray)):   # Already an array of initial conditions
                 conc.append(np.array(composition[key]))
 
+        # if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
+        #     self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
+        #     for const in range(0,len(self.composition)):
+        #         self.conc[const,:,0] = conc[const][:-1]
+        # else:   # Model as single box
+        #     self.conc = np.zeros((len(self.composition),num_layers,iters),dtype=np.float64)
+        #     for const in range(0,len(self.composition)):
+        #         self.conc[const,:,0] = conc[const]
+        # self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
+        # self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
+
         if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
-            self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
+            self.initial_conc = np.zeros((len(self.composition),num_layers-1),dtype=np.float64)
             for const in range(0,len(self.composition)):
-                self.conc[const,:,0] = conc[const][:-1]
+                self.initial_conc[const,:] = conc[const][:-1]
         else:   # Model as single box
-            self.conc = np.zeros((len(self.composition),iters),dtype=np.float64)
+            self.initial_conc = np.zeros((len(self.composition),num_layers),dtype=np.float64)
             for const in range(0,len(self.composition)):
-                self.conc[const,:,0] = conc[const]
-        self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
-        self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
+                self.initial_conc[const,:] = conc[const]
+        # self.d_dt = np.zeros_like(self.initial_conc[...],dtype=np.float64)
+        # self.conc_ratio = np.ones_like(self.initial_conc[...],dtype=np.float64)
         
         # Add reactions ---------------------------------------------------------------
         self.reactions = []
@@ -169,9 +186,12 @@ class Inorganic():
             else:   produced = {"empty": "empty"}
             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
+
+            # Delete "loss" reactions if this tracer is produced
+            if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
    
     
-    def inorg(self, bact_limitation_factor, conc, d_dt, tracer_map, z, dz, temperature, salinity, density, wind):
+    def inorg(self, configuration, bact_limitation_factor, conc, d_dt, tracer_map, z, dz, temperature, salinity, density, wind):
         
         if self.temp_limited:
             self.temp_regulation_factor = temperature_dependence(temperature, self.temp_reg_ids, self.temp_reg_params) # calculate temperature regulation factor for nitrification
@@ -191,8 +211,9 @@ class Inorganic():
                 else:   oxy_limitation_factor = 1.
                 self.nitrification(self.nitrification_ids, self.nitrification_params, self.temp_regulation_factor, oxy_limitation_factor, conc[tracer_map["nh4"][0]], d_dt, tracer_map)
             
-            if reac["type"] == "reaeration":    self.surf_flux = self.reaeration(self.reaeration_ids, self.reaeration_params, z, temperature, salinity, wind, conc[tracer_map["o2"][0]], d_dt, tracer_map)
-            
+            if reac["type"] == "reaeration":    
+                if configuration == "1d":   self.surf_flux = self.reaeration(self.reaeration_ids, self.reaeration_params, z, temperature, salinity, wind, conc[tracer_map["o2"][0]], d_dt, tracer_map)
+                elif configuration == "0d": self.surf_flux = self.reaeration(self.reaeration_ids, self.reaeration_params, dz, temperature, salinity, wind, conc[tracer_map["o2"][0]], d_dt, tracer_map)
             if reac["type"] == "reoxidation" and self.abbrev == "hs":   
                 if "o2" in tracer_map: 
                     half_sat = self.reoxidation_ids.index("half_sat_oxygen")
@@ -279,13 +300,16 @@ class Inorganic():
         k3 = reaeration_ids.index("k3")
         k4 = reaeration_ids.index("k4")
         schmidt = reaeration_ids.index("schmidt")
+        saturation_conversion = reaeration_ids.index("saturation_conversion")
     
         # Calculate absolute temperature divided by 100
         abt = (temperature + 273.15) / 100.
 
-        # Calculate theoretical oxygen saturatino for temp + salt and conver into proper units of [mmol O2 / m3]
-        oxy_sat = np.exp(-173.4292 + (249.6339/abt) + (143.3483*np.log(abt))-(21.8492*abt) + salinity*(-0.033096 + 0.014259*abt - 0.0017*(abt**2)))/(24.4665E-3)
-
+        # Calculate theoretical oxygen saturation for temp + salt and conver into proper units of [mmol O2 / m3]
+        if reaeration_params[saturation_conversion] == 1.:      # ideal gas (p_videal = (8.3145 * 298.15 / 101325.0) = 24.4665e-3)
+            oxy_sat = np.exp(-173.4292 + (249.6339/abt) + (143.3483*np.log(abt))-(21.8492*abt) + salinity*(-0.033096 + 0.014259*abt - 0.0017*(abt**2)))/(24.4665E-3)
+        elif reaeration_params[saturation_conversion] == 2.:    # stp, (1 ml/l = 10^3/22.391 = 44.661 uMol/L) 
+            oxy_sat = np.exp(-173.4292 + (249.6339/abt) + (143.3483*np.log(abt))-(21.8492*abt) + salinity*(-0.033096 + 0.014259*abt - 0.0017*(abt**2)))*44.661
         # Use this one with BFM17 0D
         # oxy_sat = np.exp(-173.4292 + (249.6339/abt) + (143.3483*np.log(abt))-(21.8492*abt) + salinity*(-0.033096 + 0.014259*abt - 0.0017*(abt**2)))*44.661
 
@@ -413,7 +437,8 @@ class Inorganic():
 
         # Create co2 flux array
         co2_flux = np.zeros_like(conc[tracer_map["co2"][0]])
-        co2_flux[0] = air_sea_flux
+        # co2_flux[0] = air_sea_flux
+        co2_flux[0] = air_sea_flux[0]
 
         # Update d_dt
         d_dt[tracer_map["co2"][0]] += co2_flux

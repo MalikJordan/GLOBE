@@ -135,6 +135,26 @@ class Bacteria():
 
             tracer["parameters"]["mortality"]["mortality_rate"] = np.array(mort_rate,dtype=np.float64)
 
+            # Create list for temperature limitation
+            temp_lim = []   # [linear,quadratic,oxygen]
+            if "temp_limitation" in tracer["parameters"]["mortality"]:
+                # [0] False, [1] True
+                if "linear" in tracer["parameters"]["mortality"]["temp_limitation"]:    
+                    if tracer["parameters"]["mortality"]["temp_limitation"]["linear"] == True:  temp_lim.append(1)
+                    else:   temp_lim.append(0)
+                else:   temp_lim.append(0)  # Default to False
+                if "quadratic" in tracer["parameters"]["mortality"]["temp_limitation"]:    
+                    if tracer["parameters"]["mortality"]["temp_limitation"]["quadratic"] == True:  temp_lim.append(1)
+                    else:   temp_lim.append(0)
+                else:   temp_lim.append(0)  # Default to False
+                if "oxygen" in tracer["parameters"]["mortality"]["temp_limitation"]:    
+                    if tracer["parameters"]["mortality"]["temp_limitation"]["oxygen"] == True:  temp_lim.append(1)
+                    else:   temp_lim.append(0)
+                else:   temp_lim.append(0)  # Default to False
+            else:   temp_lim = [0,0,0]  # Set all to False
+
+            tracer["parameters"]["mortality"]["temp_limitation"] = np.array(temp_lim,dtype=np.float64)
+
             self.mortality_ids = List.empty_list(unicode_type)
             self.mortality_params = List.empty_list(float64[:])
             
@@ -178,7 +198,11 @@ class Bacteria():
             # Create typed.Dict of uptake parameters and ids (will remain empty if option == "potential")
             self.uptake_ids = Dict.empty(key_type=types.unicode_type, value_type=types.ListType(unicode_type))
             self.uptake_params = Dict.empty(key_type=types.unicode_type, value_type=types.ListType(unicode_type))
+
+            # Create typed.Dict of substrates (will remain empty if option != "balanced_substrate")
+            self.substrates = Dict.empty(key_type=types.unicode_type, value_type=types.DictType(unicode_type,float64))
             self.max_growth_rate = 0.   # may be updated later
+            self.half_sat_uptake = 0.   # may be updated later
 
             # Nested typed.Dict for coupled uptake (will remain empty if option == "potential")
             self.coupled_uptake = Dict.empty(
@@ -193,6 +217,24 @@ class Bacteria():
             # Boolean to determine substrate correction (used if option == "potential")
             if "substrate_correction" in tracer["parameters"]["uptake"]:    self.substrate_correction = tracer["parameters"]["uptake"]["substrate_correction"]
             else:   self.substrate_correction = False
+
+            if self.uptake_option == "balanced_substrate":
+
+                self.max_growth_rate = tracer["parameters"]["uptake"]["max_growth_rate"]
+                # self.half_sat_uptake = tracer["parameters"]["uptake"]["half_sat_uptake"]
+
+                # for name,values in tracer["parameters"]["uptake"]["substrates"].items():
+                #     temp = Dict.empty(key_type=types.unicode_type, value_type=types.float64)
+
+                #     for inner_key,inner_val in values.items():
+                #         # Create numeric key for numerator
+                #         if inner_key == "numerator":
+                #             if inner_val == "self":         inner_val = 1.  # numerator is the consumed tracer
+                #             elif inner_val == "substrate":  inner_val = 2.  # numerator is the substrate
+
+                #     # Add temporary dictionary to substrates dictionary
+                #     self.substrates[name] = temp
+
 
             if self.uptake_option == "potential":
                 for key,val in tracer["parameters"]["uptake"]["potential_rich"].items():    self.uptake_potential_rich[key] = np.float64(val)
@@ -272,6 +314,15 @@ class Bacteria():
 
             # Excretion
         
+        # Substrates
+        if self.uptake_option == "balanced_substrate":
+            self.substrate_ids = []
+            self.substrate_params = []
+
+            for element,substrate_info in tracer["parameters"]["substrates"].items():
+                self.substrate_ids.append(element)
+                self.substrate_params.append(substrate_info)
+        
         # Uptake/Release
         if "uptake_release" in tracer["parameters"]:
             excr_dict_type = types.DictType(types.unicode_type, types.float64)
@@ -339,41 +390,77 @@ class Bacteria():
                 else:
                     sys.exit("Detritus: Element '" + key + "' not recognized. Check documentation and edit input file.")
         
+        # if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
+        #     self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
+        #     for const in range(0,len(self.composition)):
+        #         self.conc[const,:,0] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
+        # else:   # Model as single box
+        #     self.conc = np.zeros((len(self.composition),num_layers,iters),dtype=np.float64)
+        #     for const in range(0,len(self.composition)):
+        #         self.conc[const,:,0] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
+        # self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
+        # self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
+
         if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
-            self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
+            self.initial_conc = np.zeros((len(self.composition),num_layers-1),dtype=np.float64)
             for const in range(0,len(self.composition)):
-                self.conc[const,:,0] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
+                self.initial_conc[const,:] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
         else:   # Model as single box
-            self.conc = np.zeros((len(self.composition),iters),dtype=np.float64)
+            self.initial_conc = np.zeros((len(self.composition),num_layers),dtype=np.float64)
             for const in range(0,len(self.composition)):
-                self.conc[const,:,0] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
-        self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
-        self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
+                self.initial_conc[const,:] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
+        # self.d_dt = np.zeros_like(self.initial_conc[...],dtype=np.float64)
+        # self.conc_ratio = np.ones_like(self.initial_conc[...],dtype=np.float64)
 
         # Add cell quotas ---------------------------------------------------------------
         # Create list of cell quota ids
         self.cell_quota_ids = List.empty_list(unicode_type)
-        for element in self.composition:    # Base element not in cell quotas (cell quota of base element would be 1.)
-            if element != base_element: self.cell_quota_ids.append(element)
+        for element in self.composition:    self.cell_quota_ids.append(element)
         
-        # Create list of maximum cell quotas
-        if "max" in tracer["parameters"]["cell_quota"]: 
+        # for element in self.composition:    # Base element not in cell quotas (cell quota of base element would be 1.)
+        #     if element != base_element: self.cell_quota_ids.append(element)
+        
+        # # Create list of maximum cell quotas
+        # if "max" in tracer["parameters"]["cell_quota"]: 
+        #     self.cell_quota_max = List.empty_list(float64)
+        #     for element in self.cell_quota_ids: # Add quotas in same order as ids
+        #         self.cell_quota_max.append(tracer["parameters"]["cell_quota"]["max"][element])
+
+        # # Create list of minimum cell quotas
+        # if "min" in tracer["parameters"]["cell_quota"]: 
+        #     self.cell_quota_min = List.empty_list(float64)
+        #     for element in self.cell_quota_ids: # Add quotas in same order as ids
+        #         self.cell_quota_min.append(tracer["parameters"]["cell_quota"]["min"][element])
+
+        # # Create list of optimal cell quotas
+        # if "opt" in tracer["parameters"]["cell_quota"]: 
+        #     self.cell_quota_opt = List.empty_list(float64)
+        #     for element in self.cell_quota_ids: # Add quotas in same order as ids
+        #         self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
+        
+        if "cell_quota" in tracer["parameters"]:
+            # Create list of maximum cell quotas
+            if "max" in tracer["parameters"]["cell_quota"]: 
+                self.cell_quota_max = List.empty_list(float64)
+                for element in self.cell_quota_ids: # Add quotas in same order as ids
+                    self.cell_quota_max.append(tracer["parameters"]["cell_quota"]["max"][element])
+
+            # Create list of minimum cell quotas
+            if "min" in tracer["parameters"]["cell_quota"]: 
+                self.cell_quota_min = List.empty_list(float64)
+                for element in self.cell_quota_ids: # Add quotas in same order as ids
+                    self.cell_quota_min.append(tracer["parameters"]["cell_quota"]["min"][element])
+
+            # Create list of optimal cell quotas
+            if "opt" in tracer["parameters"]["cell_quota"]: 
+                self.cell_quota_opt = List.empty_list(float64)
+                for element in self.cell_quota_ids: # Add quotas in same order as ids
+                    self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
+        else:
             self.cell_quota_max = List.empty_list(float64)
-            for element in self.cell_quota_ids: # Add quotas in same order as ids
-                self.cell_quota_max.append(tracer["parameters"]["cell_quota"]["max"][element])
-
-        # Create list of minimum cell quotas
-        if "min" in tracer["parameters"]["cell_quota"]: 
             self.cell_quota_min = List.empty_list(float64)
-            for element in self.cell_quota_ids: # Add quotas in same order as ids
-                self.cell_quota_min.append(tracer["parameters"]["cell_quota"]["min"][element])
-
-        # Create list of optimal cell quotas
-        if "opt" in tracer["parameters"]["cell_quota"]: 
             self.cell_quota_opt = List.empty_list(float64)
-            for element in self.cell_quota_ids: # Add quotas in same order as ids
-                self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
-        
+
 
         # Add production arrays ---------------------------------------------------------------
         self.upt = Dict.empty(
@@ -391,6 +478,9 @@ class Bacteria():
             else:   produced = {"empty": "empty"}
             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
+
+            # Delete "loss" reactions if this tracer is produced
+            if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
 
         # Reorder uptake reactions in case of coupled uptake
         for i in range(len(self.reactions)):
@@ -454,9 +544,12 @@ class Bacteria():
             if reac["type"] == "respiration":
                 bact_limitation_factor = self.respiration(self.abbrev, base_element, c, p, ec, ep, ic, ip, self.respiration_ids, self.respiration_params, actual_uptake, self.oxy_limitation_factor, self.temp_regulation_factor, conc, d_dt, tracer_map, self.composition)
             if reac["type"] == "uptake":
-                bac_composition = self.composition
-                om_composition = tracers[c[0]].composition
-                self.uptake(self.abbrev, c, p, ec, ep, ic, ip, self.uptake_ids, self.uptake_params, self.uptake_option, self.upt, actual_uptake, realized_uptake, base_uptake, self.coupled_uptake, self.temp_regulation_factor, conc, conc_ratio, d_dt, tracer_map, bac_composition, om_composition)
+                if self.uptake_option == "balanced_substrate":
+                    self.calculate_balanced_substrate_uptake(c, ec, p, ep, self.upt, conc, d_dt, tracer_map, tracers)
+                else:
+                    bac_composition = self.composition
+                    om_composition = tracers[c[0]].composition
+                    self.uptake(self.abbrev, c, p, ec, ep, ic, ip, self.uptake_ids, self.uptake_params, self.uptake_option, self.upt, actual_uptake, realized_uptake, base_uptake, self.coupled_uptake, self.temp_regulation_factor, conc, conc_ratio, d_dt, tracer_map, bac_composition, om_composition)
             if reac["type"] == "uptake_release":
                 self.uptake_release(base_element, c, p, ec, ep, ic, ip, self.cell_quota_ids, self.cell_quota_opt, self.uptake_release_ids, self.uptake_release_params, conc, conc_ratio, d_dt, tracer_map, tracer_type, self.composition)
         
@@ -472,10 +565,59 @@ class Bacteria():
         Add "nutrients" to bacterioplankton and append dictionary of uptake rates. 
         "Nutrients" are organic matter pools, only one array is used to store uptake of base element from each organic matter pool.
         """
+        # zeros = List.empty_list(float64[:])
+        # zeros.append(np.zeros(self.conc.shape[1],dtype=np.float64))
+        # for nut in nutrients:
+        #     self.upt[nut] = np.zeros_like(self.conc[0,:,0],dtype=np.float64)
         zeros = List.empty_list(float64[:])
-        zeros.append(np.zeros(self.conc.shape[1],dtype=np.float64))
+        zeros.append(np.zeros(self.initial_conc.shape[1],dtype=np.float64))
         for nut in nutrients:
-            self.upt[nut] = np.zeros_like(self.conc[0,:,0],dtype=np.float64)
+            self.upt[nut] = np.zeros_like(self.initial_conc[0,:],dtype=np.float64)
+
+
+    def calculate_balanced_substrate_uptake(self, c, ec, p, ep, upt, conc, d_dt, tracer_map, tracers):
+
+        cons = c[0]
+        elem_c = list(ec[cons])
+        element = tracers[cons].composition[elem_c.index(1.)]
+
+        prod = p[0]
+        elem_p = ep[prod]
+
+        bac_element_index = self.substrate_ids.index(element)
+
+        # Extract substrate information for the element being consumed
+        element_substrate_dict = self.substrate_params[bac_element_index]
+
+        components = np.zeros((len(self.substrate_params[bac_element_index])-2,len(self.initial_conc[0])),dtype=np.float64)
+        i=0
+        for key,val in self.substrate_params[bac_element_index].items():
+            if key not in {"denominator","half_sat_uptake"}:
+                index = tracers[key].composition.index(self.substrate_ids[bac_element_index])
+                components[i] = conc[tracer_map[key][index]] * element_substrate_dict[key]["coefficient"]
+                i += 1
+            
+            substrate = np.min(components,axis=0)
+
+        if element_substrate_dict[cons]["numerator"] == "self":           numerator = conc[tracer_map[cons][elem_c.index(1.)]]
+        elif element_substrate_dict[cons]["numerator"] == "substrate":    numerator = substrate
+
+        denominator = np.zeros_like(numerator)
+        for key,val in element_substrate_dict["denominator"].items():
+            if key == "substrate":  denominator += substrate
+            else:   denominator += conc[tracer_map[key][tracers[key].composition.index(val[0])]]
+
+        denominator += element_substrate_dict["half_sat_uptake"]
+
+        uptake = self.max_growth_rate * (numerator / denominator) * conc[tracer_map[prod][self.composition.index(element)]]
+
+        # Update d_dt
+        for i in range(len(elem_c)):
+            d_dt[tracer_map[cons][i]] -= elem_c[i] * uptake
+        for j in range(len(elem_p)):
+            d_dt[tracer_map[prod][j]] += elem_p[j] * uptake
+
+        upt[cons] = uptake
 
     
     def calculate_realized_uptake(self, base_element, growth_rate, conc, conc_ratio, tracer_map, tracers):
@@ -548,54 +690,6 @@ class Bacteria():
         return actual_uptake, realized_uptake, base_uptake
 
 
-    # @staticmethod
-    # @njit
-    # def mortality(c, p, ec, ep, ic, ip, mortality_ids, mortality_params, om_partition, temp_regulation_factor, conc, conc_ratio, d_dt, tracer_map, bac_composition, om_composition):
-        
-    #     # Extract parameter indices
-    #     mortality_rate = mortality_ids.index("mortality_rate")
-
-    #     # Extract dict
-    #     cons = c[0]
-    #     prod = p[0]
-    #     elem_c = ec[cons]
-    #     elem_p = ep[prod]
-    #     ind_c = ic[cons]
-    #     ind_p = ip[prod]
-
-    #     # Get concentration of base element
-    #     bac = conc[tracer_map[cons][ind_c]]
-
-    #     # Calculate morality rate
-    #     mortality = ( temp_regulation_factor * mortality_params[mortality_rate][0] * bac ) + ( mortality_params[mortality_rate][1] * (bac**2) )
-            
-    #     # Calculate concentration ratios
-    #     ratios = np.zeros((len(bac_composition),len(bac)),dtype=np.float64)
-    #     for const in bac_composition:
-    #         if const in om_composition:
-    #             index_zoo = bac_composition.index(const)
-    #             index_om = om_composition.index(const)
-    #             ratios[index_om] = conc_ratio[tracer_map[cons][index_zoo]]
-
-    #     # Update d_dt
-    #     if prod in om_partition:    # Apply partition (if necessary)
-    #         for const in om_partition[prod]:
-    #             om_const_index = om_composition.index(const)    # Get index of constituent in organic matter pool
-    #             if const in bac_composition:    # Only apply rate if constituent is also in zooplankton
-    #                 zoo_const_index = bac_composition.index(const)  # Get index of constituent in zooplankton
-    #                 d_dt[tracer_map[cons][zoo_const_index]] -= elem_c[zoo_const_index] * conc_ratio[tracer_map[cons][zoo_const_index]] * mortality * om_partition[prod][const]
-    #                 d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * ratios[om_const_index] * mortality * om_partition[prod][const]
-
-    #     else:
-    #         for const in om_partition:
-    #             om_const_index = om_composition.index(const)
-    #             if const in bac_composition:
-    #                 zoo_const_index = bac_composition.index(const)
-    #                 d_dt[tracer_map[cons][zoo_const_index]] -= elem_c[zoo_const_index] * conc_ratio[tracer_map[cons][zoo_const_index]] * mortality
-    #                 d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * ratios[om_const_index] * mortality
-
-
-
     @staticmethod
     @njit
     def excretion(base_element, c, p, ec, ep, ic, ip, cell_quota_ids, cell_quota_opt, excretion_ids, excretion_params, actual_uptake, conc, conc_ratio, d_dt, tracer_map, tracer_type, composition):
@@ -635,7 +729,7 @@ class Bacteria():
         if tracer_type[tracer_map[prod][0]] == "inorganic": # Extract cell quota id of nutrient element if inorganic
             nutrient_index = composition.index(nutrient_elements[prod])     # Index of excreted nutrient
             quota_index = cell_quota_ids.index(nutrient_elements[prod])
-            external_nut_lim = nutrient_limitation(conc[tracer_map[prod][0]], excretion_params[nutrient_excretion]["half_sat"])
+            # external_nut_lim = nutrient_limitation(conc[tracer_map[prod][0]], excretion_params[nutrient_excretion]["half_sat"])
         # Uses minimum of all quotas if organic matter pool, calculated below
 
         # Excretion
@@ -665,14 +759,14 @@ class Bacteria():
 
         # Apply correction for excess excretion (if necessary)
         # if base_index == nutrient_index:    # not necessary
-        if base_element == excreted_element:    # not necessary
-            pass
-        else:   # excess correction
-            element_ratio = bac / conc[tracer_map[cons][base_index]]
-            excretion = excretion * np.maximum(0., element_ratio - cell_quota_opt[quota_index])
+        # if base_element == excreted_element:    # not necessary
+        #     pass
+        # else:   # excess correction
+        #     element_ratio = bac / conc[tracer_map[cons][base_index]]
+        #     excretion = excretion * np.maximum(0., element_ratio - cell_quota_opt[quota_index])
 
-            # Aply nutrient limitation factor to inorganic nutrient excretion
-            if tracer_type[tracer_map[prod][0]] == "inorganic": excretion *= external_nut_lim
+        #     # Aply nutrient limitation factor to inorganic nutrient excretion
+        #     if tracer_type[tracer_map[prod][0]] == "inorganic": excretion *= external_nut_lim
 
 
         # Update d_dt
@@ -691,6 +785,7 @@ class Bacteria():
 
         # Extract parameters
         mortality_rate = mortality_ids.index("mortality_rate")
+        temp_limitation = mortality_ids.index("temp_limitation")
 
         # Extract dict
         cons = c[0]
@@ -703,8 +798,17 @@ class Bacteria():
         bac = conc[tracer_map[cons][ind_c]]
 
         # Calculate mortality rate (temperature regulated linear component)
-        mortality = ( mortality_params[mortality_rate][0] * temp_regulation_factor * bac ) + ( mortality_params[mortality_rate][1] * (bac**2) )
-        
+        # mortality = ( mortality_params[mortality_rate][0] * temp_regulation_factor * bac ) + ( mortality_params[mortality_rate][1] * (bac**2) )
+
+        linear = mortality_params[mortality_rate][0] * bac
+        quadratic = mortality_params[mortality_rate][1] * (bac**2)
+
+        # Apply temperature limitation if necessary (1. = True)
+        if mortality_params[temp_limitation][0] == 1.:  linear *= temp_regulation_factor
+        if mortality_params[temp_limitation][1] == 1.:  quadratic *= temp_regulation_factor
+
+        mortality = linear + quadratic
+
         # Calculate concentration ratios
         ratios = np.zeros((len(bac_composition),len(bac)),dtype=np.float64)
         for const in bac_composition:
@@ -819,7 +923,7 @@ class Bacteria():
                 index_om = om_composition.index(const)
                 index_bac = bac_composition.index(const)
                 ratios[index_bac] = conc_ratio[tracer_map[cons][index_om]]
-
+        
         if uptake_option == "direct":
 
             ids = uptake_ids[cons]

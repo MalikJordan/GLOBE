@@ -1,6 +1,6 @@
 simulation:
   dt: 360.      # time step [s]
-  days: 365           # days in simulation [d]
+  days: 1805          # days in simulation [d]
   configuration: 1d   # Options: 0d or 1d
 
 water_column:
@@ -11,24 +11,14 @@ water_column:
   bot_log: 150        # bottom logarithmic layers distribution
 
 environment:
-  forcing: pom1d      # Options: pom1d or seasonal
+  forcing: pom1d      # Options: constant, pom1d or seasonal
+  # constant: forces system using constant values
   # pom1d: forces system using climatological data with one-dimensional POM1D ocean circulation
   # seasonal: forces system using sinusoidal forcing between summer and winter extremes
   base_temp: 10.0  
   PAR_frac: 0.4
   light_attenuation_water: 0.0435        # [1/m]
   latitude: 45.0
-  seasonal_cycling:
-    summer_mld: 10.0
-    winter_mld: 40.0
-    summer_salt: 36.5
-    winter_salt: 37.
-    summer_sun: 300.0
-    winter_sun: 20.0
-    summer_temp: 30.
-    winter_temp: 10.
-    summer_wind: 2.
-    winter_wind: 6.
 
 initial_conditions:
   o2:

@@ -14,15 +14,28 @@ def average(concentration, physical, type):
         for i in range(0,physical["simulation"]["iters"]-1):
             daily[:,:,day] += concentration[:,:,i] # add to day tally
 
-            if (i != 0) & ((i+1) % timesteps_per_day == 0): # take average at the end of day
-                daily[:,:,day] = daily[:,:,day]/timesteps_per_day
-                monthly[:,:,month] += daily[:,:,day] # add to month tally
+            if physical["simulation"]["dt"] != 86400:
+                if (i != 0) & ((i+1) % timesteps_per_day == 0): # take average at the end of day
+                    daily[:,:,day] = daily[:,:,day]/timesteps_per_day
+                    monthly[:,:,month] += daily[:,:,day] # add to month tally
 
-                if (day != 0) & ((day+1) % 30 == 0):
-                    monthly[:,:,month] = monthly[:,:,month]/30 # take average at the end of month
-                    month += 1 # move to next month
+                    if (day != 0) & ((day+1) % 30 == 0):
+                        monthly[:,:,month] = monthly[:,:,month]/30 # take average at the end of month
+                        month += 1 # move to next month
 
-                day += 1 # move to next day
+                    day += 1 # move to next day
+            
+            else:
+                if ((i+1) % timesteps_per_day == 0): # take average at the end of day
+                    daily[:,:,day] = daily[:,:,day]/timesteps_per_day
+                    monthly[:,:,month] += daily[:,:,day] # add to month tally
+                
+                    if (day != 0) & ((day+1) % 30 == 0):
+                        monthly[:,:,month] = monthly[:,:,month]/30 # take average at the end of month
+                        month += 1 # move to next month
+                
+                    day += 1 # move to next day
+
 
     else:
         daily = np.zeros((concentration.shape[0],physical["simulation"]["days"]))
@@ -31,14 +44,25 @@ def average(concentration, physical, type):
         for i in range(0,physical["simulation"]["iters"]-1):
             daily[:,day] += concentration[:,i] # add to day tally
 
-            if (i != 0) & ((i+1) % timesteps_per_day == 0): # take average at the end of day
-                daily[:,day] = daily[:,day]/timesteps_per_day
-                monthly[:,month] += daily[:,day] # add to month tally
+            if physical["simulation"]["dt"] != 86400:
+                if (i != 0) & ((i+1) % timesteps_per_day == 0): # take average at the end of day
+                    daily[:,day] = daily[:,day]/timesteps_per_day
+                    monthly[:,month] += daily[:,day] # add to month tally
 
-                if (day != 0) & ((day+1) % 30 == 0):
-                    monthly[:,month] = monthly[:,month]/30 # take average at the end of month
-                    month += 1 # move to next month
+                    if (day != 0) & ((day+1) % 30 == 0):
+                        monthly[:,month] = monthly[:,month]/30 # take average at the end of month
+                        month += 1 # move to next month
 
-                day += 1 # move to next day
+                    day += 1 # move to next day
+            else:
+                if ((i+1) % timesteps_per_day == 0): # take average at the end of day
+                    daily[:,day] = daily[:,day]/timesteps_per_day
+                    monthly[:,month] += daily[:,day] # add to month tally
+                
+                    if (day != 0) & ((day+1) % 30 == 0):
+                        monthly[:,month] = monthly[:,month]/30 # take average at the end of month
+                        month += 1 # move to next month
+                
+                    day += 1 # move to next day
 
     return daily, monthly

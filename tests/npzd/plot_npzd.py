@@ -9,22 +9,25 @@ folder = os.getcwd() + '/tests/npzd'
 # ----------------------------------------------------------------------------------------------------
 # Get GLOBE Data --------------------------------------------------------------------
 # Load solution
-path = os.getcwd() + "/tests/npzd/data/npzd.npz"
+# path = os.getcwd() + "/tests/npzd/data/npzd.npz"
+path = os.getcwd() + "/concentration_npzd_0907.npz"
 solution = np.load(path, allow_pickle=True)
-conc = solution["concentration"]     # concentratrion matrix
-time = solution["time"]     # time array
+# conc = solution["concentration"]     # concentratrion matrix
+conc = solution["daily"]
+# time = solution["time"]     # time array
 
 # Load tracer indices
+# path = os.getcwd() + "/tests/npzd/data/tracer_indices_npzd.npz"
 path = os.getcwd() + "/tests/npzd/data/tracer_indices_npzd.npz"
 indices = np.load(path, allow_pickle=True)
 tracer_indices = {}
 for file in indices.files:
     tracer_indices[file] = list(indices[file])
 
-no3 = conc[tracer_indices["no3"][0]]
-phyto = conc[tracer_indices["phyto1"][0]]
-zoo = conc[tracer_indices["zoo1"][0]]
-pom = conc[tracer_indices["pom1"][0]]
+no3 = conc[tracer_indices["no3"][0]][0]
+phyto = conc[tracer_indices["phyto1"][0]][0]
+zoo = conc[tracer_indices["zoo1"][0]][0]
+pom = conc[tracer_indices["pom1"][0]][0]
 
 # ----------------------------------------------------------------------------------------------------
 # Test case and parameters from Riley Brady
@@ -96,7 +99,8 @@ for idx in np.arange(1, NUM_STEPS, 1):
     # pause = 1
 
 
-x = np.arange(1, NUM_STEPS + 1, 1)
+# x = np.arange(1, NUM_STEPS + 1, 1)
+x = np.arange(0, NUM_STEPS, 1)
 
 # ----------------------------------------------------------------------------------------------------
 # Plot results
@@ -110,49 +114,49 @@ marks_blank = ['','','','','','','']
 fig, axs = plt.subplots(2,2,figsize=(10,10), sharex=True)
 
 # axs[0,0].plot(x,tracers["no3"].conc[0,:-1],label='GLOBE')
-axs[0,0].plot(x,no3[:-1],label='GLOBE')
+axs[0,0].plot(x,no3,label='GLOBE')
 axs[0,0].plot(x,N,linestyle=(0, (5, 10)),color='black',label='NPZD')
 axs[0,0].set_title("(a) Nitrate")
-axs[0,0].set_xticks(months,marks_blank)
-axs[0,0].set_xlim([0,180])
-axs[0,0].set_ylabel("mmol N $\mathregular{m^{-3}}$")
+# axs[0,0].set_xticks(months,marks_blank)
+axs[0,0].set_xlim([0,360])
+axs[0,0].set_ylabel("mmol N ${m^{-3}}$")
 
 # axs[0,1].plot(x,tracers["pom1"].conc[0,:-1],label='GLOBE')
-axs[0,1].plot(x,pom[:-1],label='GLOBE')
+axs[0,1].plot(x,pom,label='GLOBE')
 axs[0,1].plot(x,D,linestyle=(0, (5, 10)),color='black',label='NPZD')
 axs[0,1].set_title("(b) Particulate Organic Nitrogen")
-axs[0,1].set_xticks(months,marks_blank)
-axs[0,1].set_xlim([0,180])
+# axs[0,1].set_xticks(months,marks_blank)
+axs[0,1].set_xlim([0,360])
 
 # axs[1,0].plot(x,tracers["phyto1"].conc[0,:-1],label='GLOBE')
-axs[1,0].plot(x,phyto[:-1],label='GLOBE')
+axs[1,0].plot(x,phyto,label='GLOBE')
 axs[1,0].plot(x,P,linestyle=(0, (5, 10)),color='black',label='NPZD')
 axs[1,0].set_title("(c) Phytoplankton")
-axs[1,0].set_xlabel("Time [months]")
-axs[1,0].set_xticks(months,marks)
-axs[1,0].set_xlim([0,180])
-axs[1,0].set_ylabel("mmol N $\mathregular{m^{-3}}$")
+axs[1,0].set_xlabel("Time [days]")
+# axs[1,0].set_xticks(months,marks)
+axs[1,0].set_xlim([0,360])
+axs[1,0].set_ylabel("mmol N ${m^{-3}}$")
 
 # axs[1,1].plot(x,tracers["zoo1"].conc[0,:-1],label='GLOBE')
-axs[1,1].plot(x,zoo[:-1],label='GLOBE')
+axs[1,1].plot(x,zoo,label='GLOBE')
 axs[1,1].plot(x,Z,linestyle=(0, (5, 10)),color='black',label='NPZD')
 axs[1,1].set_title("(d) Zooplankton")
-axs[1,1].set_xlabel("Time [months]")
-axs[1,1].set_xticks(months,marks)
-axs[1,1].set_xlim([0,180])
+axs[1,1].set_xlabel("Time [days]")
+# axs[1,1].set_xticks(months,marks)
+axs[1,1].set_xlim([0,360])
 
 handles, labels = axs[0,0].get_legend_handles_labels()
 fig.legend(handles,labels, loc='lower center', ncol=2)
 
 fig.tight_layout(h_pad=2.5,w_pad=2.5,rect=[0,0.025,1,1])
 
-npzd = os.path.join(folder + "/figures", "npzd.jpg")
+npzd = os.path.join(folder + "/figures", "npzd_0907.jpg")
 plt.savefig(npzd)
 
 error = np.zeros((4,len(N)))
-error[0,:] = (N - no3[:-1]) / (N + 1.E-20)
-error[1,:] = (P - phyto[:-1]) / (P + 1.E-20)
-error[2,:] = (Z - zoo[:-1]) / (Z + 1.E-20)
-error[3,:] = (D - pom[:-1]) / (D + 1.E-20)
-
+error[0,:] = (N - no3) / (N + 1.E-20)
+error[1,:] = (P - phyto) / (P + 1.E-20)
+error[2,:] = (Z - zoo) / (Z + 1.E-20)
+error[3,:] = (D - pom) / (D + 1.E-20)
+print(np.max(error))
 x=1

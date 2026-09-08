@@ -7,6 +7,7 @@ from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
 from setup.initialize import import_bgc_model, import_physical_model
+from functions.seasonal_cycling import get_mixed_layer_depth, get_salinity, get_sunlight, get_temperature, get_wind
 from functions.bgc_rate_eqns import bgc_rate_eqns
 from functions.calculate_averages import average
 from pom.calculations import density_profile, kinetic_energy_profile, temperature_and_salinity_profiles, zonal_velocity_profile, meridional_velocity_profile
@@ -15,7 +16,54 @@ from pom.initialize import initialize_pom
 from pom.coupling import pom_bgc_1d
 np.set_printoptions(precision=20)
 
-def create_function_inputs(tracers):
+# def create_function_inputs(tracers):
+#     """
+#     Definition: Takes tracer dictionary and creates lists, arrays, or typed.Dicts for numba calculations
+
+#     :return: concentration (array), sinking velocities (array), tracer map (typed.Dict), tracer types (list)
+#     """
+
+#     # Create list of concentrations
+#     concentration = []
+
+#     # Create typed.Dict of tracer indices in concentration
+#     tracer_map = Dict.empty(key_type=types.unicode_type, value_type=types.ListType(types.int64))
+    
+#     # Create list of trcaer types
+#     tracer_type = []   # used in vertical diffusivity calculations
+
+#     # Create list of sinking velocities for each tracer
+#     sinking = []
+
+#     index = 0   # counting number for tracer indices
+#     for trac in tracers:
+#         num_constituents = len(tracers[trac].composition)   # number of constituents in tracer
+
+#         lst = List.empty_list(types.int64)  # empty typed.List to store elements for tracer constituents
+#         for i in range(index,index+num_constituents):  lst.append(np.int64(i))  # fill list
+#         tracer_map[trac] = lst  # identify tracer constituents with their own index
+
+#         for i in range(num_constituents):
+#             # add concentration to matrix
+#             concentration.append(tracers[trac].conc[i,...])    # add concentration to matrix
+
+#             # add tracer type to list
+#             if tracers[trac].type == "detritus":    tracer_type.append(tracers[trac].form)     # need to distinguish particulate/dissolved form
+#             else:   tracer_type.append(tracers[trac].type)     # just the type
+
+#             # add sinking velocity to list
+#             if hasattr(tracers[trac],"sinking_velocity"):   sinking.append(tracers[trac].sinking_velocity)
+#             else:   sinking.append(np.zeros(tracers[trac].conc.shape[1]))
+
+#             # add tracer type to list
+#             index += 1  # update index
+
+#     concentration = np.array(concentration,dtype=np.float64)    # convert concentration from list to array
+#     sinking = np.array(sinking,dtype=np.float64)    # convert sinking from list to array
+
+#     return concentration, sinking, tracer_map, tracer_type
+
+def create_function_inputs(iters, tracers):
     """
     Definition: Takes tracer dictionary and creates lists, arrays, or typed.Dicts for numba calculations
 
@@ -23,7 +71,7 @@ def create_function_inputs(tracers):
     """
 
     # Create list of concentrations
-    concentration = []
+    initial_concentration = []
 
     # Create typed.Dict of tracer indices in concentration
     tracer_map = Dict.empty(key_type=types.unicode_type, value_type=types.ListType(types.int64))
@@ -44,7 +92,7 @@ def create_function_inputs(tracers):
 
         for i in range(num_constituents):
             # add concentration to matrix
-            concentration.append(tracers[trac].conc[i,...])    # add concentration to matrix
+            initial_concentration.append(tracers[trac].initial_conc[i,...])    # add concentration to matrix
 
             # add tracer type to list
             if tracers[trac].type == "detritus":    tracer_type.append(tracers[trac].form)     # need to distinguish particulate/dissolved form
@@ -52,12 +100,14 @@ def create_function_inputs(tracers):
 
             # add sinking velocity to list
             if hasattr(tracers[trac],"sinking_velocity"):   sinking.append(tracers[trac].sinking_velocity)
-            else:   sinking.append(np.zeros(tracers[trac].conc.shape[1]))
+            else:   sinking.append(np.zeros(tracers[trac].initial_conc.shape[1]))
 
             # add tracer type to list
             index += 1  # update index
 
-    concentration = np.array(concentration,dtype=np.float64)    # convert concentration from list to array
+    initial_concentration = np.array(initial_concentration,dtype=np.float64)    # convert concentration from list to array
+    concentration = np.zeros((initial_concentration.shape[0],initial_concentration.shape[1],iters),dtype=np.float64)
+    concentration[:,:,0] = initial_concentration.copy()
     sinking = np.array(sinking,dtype=np.float64)    # convert sinking from list to array
 
     return concentration, sinking, tracer_map, tracer_type
@@ -91,7 +141,7 @@ file = 'bfm56.yaml'
 file_path = os.getcwd() + '/' + file
 base_element, reactions, tracers = import_bgc_model(file_path, physical)
 
-concentration, sinking, tracer_map, tracer_type = create_function_inputs(tracers)
+concentration, sinking, tracer_map, tracer_type = create_function_inputs(physical["simulation"]["iters"],tracers)
 
 # ----------------------------------------------------------------------------------------------------
 # Extract commonly used variables to avoid repetitive dictionary unpacking (unchanged through simulation)
@@ -109,6 +159,7 @@ dzr = physical["vertical_grid"]["dzr"]                              # reciprocal
 upper_depth = physical["water_column"]["upper_depth"]               # depth before logarithmic spacing
 lambda_w = physical["environment"]["light_attenuation_water"]       # light attenuation coefficient for water
 
+configuration = physical["simulation"]["configuration"]
 
 # ----------------------------------------------------------------------------------------------------
 # Initialize POM1D (if necessary)
@@ -134,9 +185,10 @@ if physical["environment"]["forcing"] == "pom1d":
     counter_ids, counter_params, forcing_ids, forcing_month1, forcing_month2        = initialize_pom(num_layers, pom1d["input_files"]["temperature_IC"], pom1d["input_files"]["salinity_IC"])
     
     # density = density_profile(num_layers, column_depth, physical["vertical_grid"]["dzz"], temp_cur, sal_cur)
-    density = density_profile(num_layers, column_depth, physical["vertical_grid"]["dzz"], temp_bwd, sal_bwd)
-    pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * np.pi / 360.)
-    # pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * (3.14159265359) / 360.)
+    # density = density_profile(num_layers, column_depth, physical["vertical_grid"]["dzz"], temp_bwd, sal_bwd)
+    density = density_profile(configuration, num_layers, column_depth, physical["vertical_grid"]["dzz"], temp_bwd, sal_bwd)
+    # pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * np.pi / 360.)
+    pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * (3.14159265359) / 360.)
 
     # ----------------------------------------------------------------------------------------------------
     # Extract commonly used variables to avoid repetitive dictionary unpacking (unchanged through simulation)
@@ -180,8 +232,18 @@ if physical["environment"]["forcing"] == "pom1d":
                    weddy1_inp, weddy2_inp, surf_nut_inp, bot_nut_inp]
     
 
-load_conc = np.load(os.getcwd() + "/tests/bfm56/check_conc/conc_iter0.npy", allow_pickle=True)
+# elif physical["environment"]["forcing"] == "seasonal":
+#     seasonal = physical["environment"]["seasonal_cycling"]
+#     time_array = physical["simulation"]["time"]
+    
+#     for iter in range(0,iters-1):
+#         temperature = get_temperature(time_array[iter], seasonal["winter_temp"], seasonal["summer_temp"], seasonal["temp_excursion"])
+#         salinity = get_salinity(time_array[iter], seasonal["winter_salt"], seasonal["summer_salt"])
+#         mixed_layer_depth = get_mixed_layer_depth()
+#         surfacer_PAR = get_sunlight()
+#         wind = get_wind(time_array[iter], seasonal["winter_wind"], seasonal["summer_wind"])
 
+#         density = density_profile(num_layers, column_depth, physical["vertical_grid"]["dzz"], temperature, salinity)
 
 # ----------------------------------------------------------------------------------------------------
 # Begin simulation
@@ -266,7 +328,9 @@ for iter in range(0,iters-1):
 
     # Update density
     # density = density_profile(num_layers, column_depth, dzz, temp_cur, sal_cur)
-    density = density_profile(num_layers, column_depth, dzz, temp_bwd, sal_bwd)
+    # density = density_profile(num_layers, column_depth, dzz, temp_bwd, sal_bwd)
+    density = density_profile(configuration, num_layers, column_depth, dzz, temp_cur, sal_cur)
+    # density = density_profile(configuration, num_layers, column_depth, dzz, temp_bwd, sal_bwd)
 
     # if iter < 10:
     #     filename = f"diffusion_iter{iter:01d}.npz"
@@ -342,7 +406,7 @@ for iter in range(0,iters-1):
     else:           conc_bwd = concentration[...,iter-1].copy()
         
     concentration[...,iter], concentration[...,iter+1] = \
-        pom_bgc_1d(iter, base_element, lambda_w, temp_bwd, sal_bwd, density, ism, swrad, weddy, wgen, wsu, wsv, dif_trac,
+        pom_bgc_1d(iter, configuration, base_element, lambda_w, temp_bwd, sal_bwd, density, ism, swrad, weddy, wgen, wsu, wsv, dif_trac,
                     dt2, num_layers, z, dz, dzz, dzr, column_depth, 
                     nrt_o2, nrt_po4, nrt_no3, nrt_nh4, o2b, no3b, ponb_grad, po4b,
                     smoth, umolbgc, nbcbgc, ntp, rcp, 
@@ -361,15 +425,15 @@ for trac in tracers:
             npp += tracers[trac].npp
 
 conc_daily, conc_monthly = average(concentration,physical,'concentration')
-# np.savez('concentration_bfm17.npz',daily=conc_daily,monthly=conc_monthly)
-np.savez('concentration_bfm56-5yr.npz',daily=conc_daily,monthly=conc_monthly)
+# np.savez('concentration_bfm17-5yr-0907.npz',daily=conc_daily,monthly=conc_monthly)
+np.savez('concentration_bfm56-5yr-0907.npz',daily=conc_daily,monthly=conc_monthly)
 if npp_exists:
     npp_daily, npp_monthly = average(npp,physical,'npp')
-    # np.savez('npp_bfm17.npz',daily=npp_daily,monthly=npp_monthly)
-    np.savez('npp_bfm56-5yr.npz',daily=npp_daily,monthly=npp_monthly)
+    # np.savez('npp_bfm17-5yr-0907.npz',daily=npp_daily,monthly=npp_monthly)
+    np.savez('npp_bfm56-5yr-0907.npz',daily=npp_daily,monthly=npp_monthly)
 
-# np.savez('tracer_indices_bfm17.npz',**tracer_map)
-np.savez('tracer_indices_bfm56-5yr.npz',**tracer_map)
+# np.savez('tracer_indices_bfm17-5yr-0907.npz',**tracer_map)
+np.savez('tracer_indices_bfm56-5yr-0907.npz',**tracer_map)
 
 
 # ----------------------------------------------------------------------------------------------------

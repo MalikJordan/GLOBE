@@ -17,6 +17,7 @@ tracers:
         k3: 3.9918
         k4: 0.050091
         schmidt: 660.0
+        saturation_conversion: ideal_gas    # options: "ideal_gas" or "stp"
 
   no3:
     long_name: nitrate
@@ -65,9 +66,12 @@ tracers:
     composition: [c,n,p,chl]
     parameters:
       cell_quota:
-        max: {n: 1.26E-02, p: 7.86E-04, chl: 0.016}
-        min: {n: 6.87E-03, p: 4.29E-04, chl: 0.016}
-        opt: {n: 1.26E-02, p: 7.86E-04, chl: 0.016}
+        # max: {n: 1.26E-02, p: 7.86E-04, chl: 0.016}
+        # min: {n: 6.87E-03, p: 4.29E-04, chl: 0.016}
+        # opt: {n: 1.26E-02, p: 7.86E-04, chl: 0.016}
+        max: {c: 1., n: 1.26E-02, p: 7.86E-04, chl: 0.016}
+        min: {c: 1., n: 6.87E-03, p: 4.29E-04, chl: 0.016}
+        opt: {c: 1., n: 1.26E-02, p: 7.86E-04, chl: 0.016}
 
       nutrient_limitation:  
         colimitation: minimum               # [1] mininimum, [2] product, or [3] sum of all limiting nutrients
@@ -105,6 +109,8 @@ tracers:
         # "photosynthesis": exudation rate calculated using excreted fraction of photosynthesis
         # "uptake": exudation rate calculated using constant excreted fraction of nutrient uptake
         excreted_fraction: 0.05             # [-]
+        include_activity: True
+        include_nutrient_stress: True
 
       growth:
         light_limitation: platt             # options: monod, geider, platt, or smith
@@ -206,7 +212,8 @@ tracers:
       cell_quota:
         # n: {opt: 1.258E-02}
         # p: {opt: 7.862E-04}
-        opt: {n: 1.258E-02, p: 7.862E-04}
+        # opt: {n: 1.258E-02, p: 7.862E-04}
+        opt: {c: 1., n: 1.258E-02, p: 7.862E-04}
       
       temperature_regulation:
         temp_limited: True
@@ -355,6 +362,11 @@ reactions:
     consumed:
       phyto1: [c]
       o2: [o]
+    produced:
+
+  - type: sedimentation
+    consumed:
+      phyto1: [c,n,p,chl]
     produced:
 
   - type: uptake

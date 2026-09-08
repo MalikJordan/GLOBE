@@ -1,0 +1,100 @@
+base_element: n
+
+tracers:
+  o2:
+    long_name: oxygen
+    type: inorganic
+    composition: [o]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+      surface_flux: True
+
+      rearation:
+
+  po4:
+    long_name: phosphate
+    type: inorganic
+    composition: [p]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+  
+  no3:
+    long_name: nitrate
+    type: inorganic
+    composition: [n]
+    parameters:
+      temp_limited: False
+      nitrification:
+
+  nh4:
+    long_name: ammonium
+    type: inorganic
+    composition: [n]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+      denitrification:
+
+  n2:
+    long_name: nitrogen sink
+    type: inorganic
+    composition: [n]
+    parameters:
+
+      
+  bac1:
+    long_name: cyanobacteria
+    type: bacteria
+    composition: [n,p]
+    parameters:
+      mortality:
+      respiration:
+      uptake:
+        po4:
+
+  phyto1:
+    long_name: diatoms
+    type: phytoplankton
+    composition: [n,p]
+    parameters:
+      growth:
+        light_limitation: platt
+
+      lysis:
+      respiration:
+      uptake:
+        no3:
+        nh4:
+        po4:
+
+  phyto2:
+    long_name: flagellates
+    type: phytoplankton
+    composition: [n,p]
+    parameters:
+
+  zoo1:
+    long_name: zooplankton
+    type: zooplankton
+    composition: [n]
+    parameters:
+      excretion:
+        destination:
+          n: nh4
+        function:
+          n: 
+          
+      grazing:
+        grazing_preferences: {bac1: , phyto1: , phyto2: }
+      mortality:  # linear to detritus, quadratic loss for higher predation
+
+  pom1:
+    long_name: detrirus
+    type: detritus
+    composition: [n,p]
+    parameters:
+      remineralization:
+      sedimentation:
+  

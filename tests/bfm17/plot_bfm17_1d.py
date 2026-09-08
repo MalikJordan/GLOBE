@@ -28,7 +28,8 @@ def nrmse(check,comp):
 # Extract model results
 # ----------------------------------------------------------------------------------------------------
 # path = os.getcwd() + '/tests/bfm17/data/bfm17_pom1d_case44.nc'
-path = os.getcwd() + '/tests/bfm17/data/bfm17_pom1d_dp64.nc'
+# path = os.getcwd() + '/tests/bfm17/data/bfm17_pom1d_dp64.nc'
+path = os.getcwd() + '/tests/bfm17/data/bfm17_pom1d.nc'
 variables = nc.Dataset(path)
 variables = variables.variables
 
@@ -70,29 +71,30 @@ data_fortran[14,:,:] = pomc
 data_fortran[15,:,:] = pomn
 data_fortran[16,:,:] = pomp
 
+avg_data_fortran = np.zeros((17,150,60))
+for spec in range(0,17):
+    # for year in range(1,2):
+    for year in range(0,5):
+        for month in range(0,12):
+            for day in range(0,30):
+                # avg_data_fortran[spec,:,month] = avg_data_fortran[spec,:,month] + data_fortran[spec,:,(day + (month*30) + (year*360))]
+                avg_data_fortran[spec,:,month + (year*12)] = avg_data_fortran[spec,:,month + (year*12)] + data_fortran[spec,:,(day + (month*30) + (year*360))]
+avg_data_fortran = avg_data_fortran/30
+
+data_fortran = data_fortran[:,:,:1800]
+avg_data_fortran = avg_data_fortran[:,:,:60]
+
 # avg_data_fortran = np.zeros((17,150,12))
 # for spec in range(0,17):
-#     for year in range(1,2):
+#     for year in range(0,1):
 #     # for year in range(14,15):
 #         for month in range(0,12):
 #             for day in range(0,30):
 #                 avg_data_fortran[spec,:,month] = avg_data_fortran[spec,:,month] + data_fortran[spec,:,(day + (month*30) + (year*360))]
 # avg_data_fortran = avg_data_fortran/30
 
-# data_fortran = data_fortran[:,:,:1800]
-# avg_data_fortran = avg_data_fortran[:,:,:60]
-
-avg_data_fortran = np.zeros((17,150,12))
-for spec in range(0,17):
-    for year in range(0,1):
-    # for year in range(14,15):
-        for month in range(0,12):
-            for day in range(0,30):
-                avg_data_fortran[spec,:,month] = avg_data_fortran[spec,:,month] + data_fortran[spec,:,(day + (month*30) + (year*360))]
-avg_data_fortran = avg_data_fortran/30
-
-data_fortran = data_fortran[:,:,:360]
-avg_data_fortran = avg_data_fortran[:,:,:12]
+# data_fortran = data_fortran[:,:,:360]
+# avg_data_fortran = avg_data_fortran[:,:,:12]
 
 
 # for spec in range(0,17):
@@ -105,7 +107,8 @@ avg_data_fortran = avg_data_fortran[:,:,:12]
 
 
 # path = os.getcwd() + '/tests/bfm17/data/concentration_bfm17-1d-old.npz'
-path = os.getcwd() + '/concentration_bfm17-1d.npz'
+# path = os.getcwd() + '/concentration_bfm17-5yr.npz'
+path = os.getcwd() + '/concentration_bfm17-5yr-0907.npz'
 # path = os.getcwd() + '/concentration_bfm56-5yr.npz'
 model = np.load(path, allow_pickle=True)
 
@@ -116,19 +119,20 @@ bfm17_monthly = model["monthly"]
 # xticks = [0,360,720,1080,1440,1800,2160,2520,2880,3240]
 # xlabel = ['1','2','3','4','5','6','7','8','9','10']
 
-# bfm17_daily = bfm17_daily[:,:,:1800]
-# bfm17_monthly = bfm17_monthly[:,:,:60]
-# days = np.linspace(0,1799,1800)
+bfm17_daily = bfm17_daily[:,:,:1800]
+bfm17_monthly = bfm17_monthly[:,:,:60]
+days = np.linspace(0,1799,1800)
 
 
-days = np.linspace(0,359,360)
-xticks = [15,45,75,105,135,165,195,225,255,285,315,345]
-xlabel = ['J','','','A','','','J','','','O','','']
+# days = np.linspace(0,359,360)
+# xticks = [15,45,75,105,135,165,195,225,255,285,315,345]
+# xlabel = ['J','','','A','','','J','','','O','','']
 
-bfm17_daily = bfm17_daily[:,:,:360]
-bfm17_monthly = bfm17_monthly[:,:,:12]
-days = np.linspace(0,359,360)
+# bfm17_daily = bfm17_daily[:,:,:360]
+# bfm17_monthly = bfm17_monthly[:,:,:12]
+# days = np.linspace(0,359,360)
 
+dif_phytoc = bfm17_daily[4,0,:] - data_fortran[4,0,:]
 # ----------------------------------------------------------------------------------------------------
 # Line Plots
 # ----------------------------------------------------------------------------------------------------
@@ -765,6 +769,8 @@ plt.savefig(os.getcwd() + '/tests/bfm17/figures/pomp.jpg')
 # ----------------------------------------------------------------------------------------------------
 # 1D Field Plots
 # ----------------------------------------------------------------------------------------------------
+avg_data_fortran = avg_data_fortran[:,:,12:24]
+bfm17_monthly = bfm17_monthly[:,:,12:24]
 # rmse_data, nrmse_data = nrmse(avg_data_fortran,bfm17_monthly[:,:,:])    # 2nd year
 rmse_data, nrmse_data = nrmse(avg_data_fortran,bfm17_monthly)    # 2nd year
 fields = ['o2', 'no3', 'nh4', 'po4', 'phyto_c', 'phyto_n', 'phyto_p', 'phyto_l',

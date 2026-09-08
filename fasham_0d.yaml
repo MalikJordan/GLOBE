@@ -1,0 +1,292 @@
+base_element: n
+
+tracers:
+  no3:
+    long_name: nitrate
+    type: inorganic
+    composition: [n]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+
+  nh4:
+    long_name: ammonium
+    type: inorganic
+    composition: [n]
+    parameters:
+      temperature_regulation:
+        temp_limited: False
+
+  bac:
+    long_name: bacterioplankton
+    type: bacteria
+    composition: [n]
+    parameters:
+      cell_quota:
+        min: {n: 1.}
+        max: {n: 1.}
+        opt: {n: 1.}
+
+      temperature_regulation:
+        temp_limited: False
+
+      oxygen_inhibition:
+        oxygen_limited: False
+
+      excretion:
+        nh4:
+          option: constant
+          excretion_rate: 0.15
+
+      uptake:
+        option: balanced_substrate
+        max_growth_rate: 1.2
+
+      substrates: # include if uptake["option"] == "balanced_substrate"
+        n:
+          nh4:
+            coefficient: 1.
+            numerator: substrate
+          don:
+            coefficient: 0.
+            numerator: self
+          denominator:
+            don: [n]
+            substrate: [n]
+          half_sat_uptake: 0.5
+
+  phyto:
+    long_name: phytoplankton
+    type: phytoplankton
+    composition: [n]
+    parameters:
+      cell_quota:
+        min: {n: 1.}
+        max: {n: 1.}
+        opt: {n: 1.}
+
+      nutrient_limitation:
+        colimitation: sum
+        include: ["no3","nh4"]
+        no3:
+          type: external
+          function: linear
+          half_sat: 0.2
+          nh4_inhibited: True
+        nh4:
+          type: external
+          function: linear
+          half_sat: 0.8
+      
+      sedimentation:
+        sinking: True
+        background_sinking_rate: 1.
+        max_sinking_rate: 0.
+        sinking_threshold: 0.
+
+      temperature_regulation:
+        temp_limited: False
+
+      growth:
+        light_limitation: smith
+        light_location: middle
+        # light_attenuation: 0.03
+        light_attenuation: 0.0
+        eps_PAR: 1.
+        max_photo_rate: 1.5
+        # initial_PI_slope: 0.065
+        initial_PI_slope: 0.014105
+        silicate_limitation: False
+
+      exudation:
+        method: uptake
+        excreted_fraction: 0.05
+        # include_activity: True
+        # include_nutrient_stress: False
+
+      loss:
+        pon:
+          function: half_saturation
+          loss_rate: 0.05
+          half_sat_loss: 0.2
+          exponent: 1.
+
+      uptake:
+        no3:
+          strategy: independent
+          basis: growth
+          half_sat_uptake: 1.
+          numerator: limitation
+          denominator: colimitation
+          exclude_respiratory_cost: False     # include if basis == growth
+        nh4:
+          strategy: independent
+          basis: growth
+          half_sat_uptake: 1.
+          numerator: limitation
+          denominator: colimitation
+          exclude_respiratory_cost: False
+
+  zoo:
+    long_name: zooplankton
+    type: zooplankton
+    composition: [n]
+    parameters:
+      cell_quota:
+        opt: {n: 1.}
+
+      efficiency:
+        assimilation:
+        ingestion: 0.375
+
+      egestion:
+        unassimilated: []
+
+      grazing:
+        grazing_preferences: {bac: 0.4, phyto: 0.55, pon: 0.05}
+        function: holling-3
+        max_grazing_rate: 1.
+        half_sat_grazing: 1.
+        feeding_model: half_saturation
+        feeding_threshold: 0.
+
+      loss:
+        nh4:
+          function: half_saturation
+          loss_rate: 0.21
+          half_sat_loss: 0.2
+        don:
+          function: half_saturation
+          loss_rate: 0.03
+          half_sat_loss: 0.2
+        pon:
+          function: half_saturation
+          loss_rate: 0.06
+          half_sat_loss: 0.2
+
+  don:
+    long_name: labile dissolved organic nitrogen
+    type: detritus
+    form: dissolved
+    composition: [n]
+    parameters:
+      light_attenuation: 0.
+
+      sedimentation:
+        sinking: False
+
+  pon:
+    long_name: particulate organic nitrogen
+    type: detritus
+    form: particulate
+    composition: [n]
+    parameters:
+      light_attenuation: 0.
+
+      remineralization:
+        remineralization_rate: 0.02
+
+      sedimentation:
+        sinking: True
+        background_sinking_rate: 2.
+
+  
+reactions:
+  # Bacteria
+  - type: excretion
+    consumed:
+      bac: [n]
+    produced:
+      nh4: [n]
+
+  - type: uptake
+    consumed:
+      nh4: [n]
+    produced:
+      bac: [n]
+
+  - type: uptake
+    consumed:
+      don: [n]
+    produced:
+      bac: [n]
+
+  # Phytoplankton
+  - type: exudation
+    consumed:
+      phyto: [n]
+    produced:
+      don: [n]
+
+  - type: loss
+    consumed:
+      phyto: [n]
+    produced:
+      pon: [n]
+
+  - type: photosynthesis
+    consumed:
+      phyto: [n]
+    produced:
+
+  - type: uptake
+    consumed:
+      no3: [n]
+    produced:
+      phyto: [n]
+
+  - type: uptake
+    consumed:
+      nh4: [n]
+    produced:
+      phyto: [n]
+
+  # Zooplankton
+  - type: egestion
+    consumed:
+      zoo: [n]
+    produced:
+      pon: [n]
+
+  - type: grazing
+    consumed:
+      bac: [n]
+    produced:
+      zoo: [n]
+
+  - type: grazing
+    consumed:
+      phyto: [n]
+    produced:
+      zoo: [n]
+
+  - type: grazing
+    consumed:
+      pon: [n]
+    produced:
+      zoo: [n]
+
+  - type: loss
+    consumed:
+      zoo: [n]
+    produced:
+      nh4: [n]
+
+  - type: loss
+    consumed:
+      zoo: [n]
+    produced:
+      don: [n]
+
+  - type: loss
+    consumed:
+      zoo: [n]
+    produced:
+      pon: [n]
+
+  # Particulate Organic Nitrogen
+  - type: remineralization
+    consumed:
+      pon: [n]
+    produced:
+      don: [n]

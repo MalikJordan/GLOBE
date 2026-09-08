@@ -75,28 +75,50 @@ class Zooplankton():
                 else:
                     sys.exit("Detritus: Element '" + key + "' not recognized. Check documentation and edit input file.")
         
+        # if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
+        #     self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
+        #     for const in range(0,len(self.composition)):
+        #         self.conc[const,:,0] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
+        # else:   # Model as single box
+        #     self.conc = np.zeros((len(self.composition),num_layers,iters),dtype=np.float64)
+        #     for const in range(0,len(self.composition)):
+        #         self.conc[const,:,0] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
+        # self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
+        # self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
+
         if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
-            self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
+            self.initial_conc = np.zeros((len(self.composition),num_layers-1),dtype=np.float64)
             for const in range(0,len(self.composition)):
-                self.conc[const,:,0] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
+                self.initial_conc[const,:] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
         else:   # Model as single box
-            self.conc = np.zeros((len(self.composition),iters),dtype=np.float64)
+            self.initial_conc = np.zeros((len(self.composition),num_layers),dtype=np.float64)
             for const in range(0,len(self.composition)):
-                self.conc[const,:,0] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
-        self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
-        self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
+                self.initial_conc[const,:] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
+        # self.d_dt = np.zeros_like(self.initial_conc[...],dtype=np.float64)
+        # self.conc_ratio = np.ones_like(self.initial_conc[...],dtype=np.float64)
 
         # Add cell quotas ---------------------------------------------------------------
         # Create list of cell quota ids
         self.cell_quota_ids = List.empty_list(unicode_type)
-        for element in self.composition:    # Base element not in cell quotas (cell quota of base element would be 1.)
-            if element != base_element: self.cell_quota_ids.append(element)
+        for element in self.composition:    self.cell_quota_ids.append(element)
+
+        # for element in self.composition:    # Base element not in cell quotas (cell quota of base element would be 1.)
+        #     if element != base_element: self.cell_quota_ids.append(element)
         
-        # Create list of optimal cell quotas
-        if "opt" in tracer["parameters"]["cell_quota"]: 
+        # # Create list of optimal cell quotas
+        # if "opt" in tracer["parameters"]["cell_quota"]: 
+        #     self.cell_quota_opt = List.empty_list(float64)
+        #     for element in self.cell_quota_ids: # Add quotas in same order as ids
+        #         self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
+
+        if "cell_quota" in tracer["parameters"]:
+            # Create list of optimal cell quotas
+            if "opt" in tracer["parameters"]["cell_quota"]: 
+                self.cell_quota_opt = List.empty_list(float64)
+                for element in self.cell_quota_ids: # Add quotas in same order as ids
+                    self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
+        else:
             self.cell_quota_opt = List.empty_list(float64)
-            for element in self.cell_quota_ids: # Add quotas in same order as ids
-                self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
 
         # Add efficiencies ---------------------------------------------------------------
         if isinstance(tracer["parameters"]["efficiency"]["assimilation"],str):
@@ -212,6 +234,34 @@ class Zooplankton():
             self.prey_availability = Dict.empty(key_type=types.unicode_type, value_type=types.float64[:])
             self.grazing_rates = Dict.empty(key_type=types.unicode_type, value_type=types.float64[:])
 
+        # Loss (Generic)
+        if "loss" in tracer["parameters"]:
+            loss_dict_type = types.DictType(types.unicode_type, types.float64)
+            self.loss_ids = List.empty_list(unicode_type)   # stores produced tracer names (loss parameters will be saved for each tracer individually)
+            self.loss_params = List.empty_list(loss_dict_type)
+    
+            for outer_key,inner_dict in tracer["parameters"]["loss"].items():
+                # Create temporary dictionary
+                temp = Dict.empty(key_type=unicode_type, value_type=float64)
+    
+                # Add "exponent" to inner_dict (if necessary)
+                if inner_dict["function"] == "half_saturation" and "exponent" not in inner_dict:    inner_dict["exponent"] = 1.
+    
+                # Add inner values to temporary dictionary
+                for inner_key,inner_val in inner_dict.items():
+                    # Create numeric codes for loss option string
+                    if inner_key == "function":
+                        if inner_val == "constant":             temp["function"] = 1.
+                        elif inner_val == "half_saturation":    temp["function"] = 2.
+    
+                    # Other inner values are already ints/floats
+                    else:
+                        temp[inner_key] = np.float64(inner_val) # conversion to make sure all values are floats
+    
+                # Add outer_key to loss_ids and temp to loss_params
+                self.loss_ids.append(outer_key)
+                self.loss_params.append(temp)
+
         # Metabolic Release
         if "metabolic_release" in tracer["parameters"]:
             # set basal metabolic rate to 0. if not included in parameter list
@@ -275,45 +325,14 @@ class Zooplankton():
                 self.mortality_ids.append(key)
                 if not isinstance(val, np.ndarray): val = np.array([val],dtype=np.float64)  # Convert type to array of floats for typed.List
                 self.mortality_params.append(val)
-            
-        # # Mortality
-        # if "mortality" in tracer["parameters"]:
-        #     # Create float option numbers for use in numba typed.List
-        #     if "oxygen_limited" in tracer["parameters"]["mortality"]:
-        #         # [0] False, [1] True
-        #         if tracer["parameters"]["mortality"]["oxygen_limited"]:     tracer["parameters"]["mortality"]["oxygen_limited"] = 1
-        #         else:   tracer["parameters"]["mortality"]["oxygen_limited"] = 0
-        #     else:   tracer["parameters"]["mortality"]["oxygen_limited"] = 0     # Default to False if not in parameter list
-
-        #     if "temp_limited" in tracer["parameters"]["mortality"]:
-        #         # [0] False, [1] True
-        #         if tracer["parameters"]["mortality"]["temp_limited"]:       tracer["parameters"]["mortality"]["temp_limited"] = 1
-        #         else:   tracer["parameters"]["mortality"]["temp_limited"] = 0
-        #     else:   tracer["parameters"]["mortality"]["temp_limited"] = 0     # Default to False if not in parameter list
-
-        #     # Create list of mortality rates
-        #     mort_rate = []  # [linear,quadratic]
-        #     if "linear" in tracer["parameters"]["mortality"]["mortality_rate"]: mort_rate.append(np.float64(tracer["parameters"]["mortality"]["mortality_rate"]["linear"]))
-        #     else:   mort_rate.append(np.float64(0.))
-        #     if "quadratic" in tracer["parameters"]["mortality"]["mortality_rate"]: mort_rate.append(np.float64(tracer["parameters"]["mortality"]["mortality_rate"]["quadratic"]))
-        #     else:   mort_rate.append(np.float64(0.))
-
-        #     tracer["parameters"]["mortality"]["mortality_rate"] = np.array(mort_rate,dtype=np.float64)
-
-        #     self.mortality_ids = List.empty_list(unicode_type)
-        #     self.mortality_params = List.empty_list(float64[:])
-            
-        #     for key,val in tracer["parameters"]["mortality"].items():
-        #         self.mortality_ids.append(key)
-        #         if not isinstance(val, np.ndarray): val = np.array([val],dtype=np.float64)  # Convert type to array of floats for typed.List
-        #         self.mortality_params.append(val)
 
         # Respiration
         if "respiration" in tracer["parameters"]:
             # Translate from fraction string to float64 (if necessary)
             if "convert_o2" in tracer["parameters"]["respiration"]:
                 if isinstance(tracer["parameters"]["respiration"]["convert_o2"],str):
-                    tracer["parameters"]["respiration"]["convert_o2"] = np.array([Fraction(tracer["parameters"]["respiration"]["convert_o2"])],dtype=np.float64)
+                    # tracer["parameters"]["respiration"]["convert_o2"] = np.array([Fraction(tracer["parameters"]["respiration"]["convert_o2"])],dtype=np.float64)
+                    tracer["parameters"]["respiration"]["convert_o2"] = np.float64(Fraction(tracer["parameters"]["respiration"]["convert_o2"]))
                 else:
                     tracer["parameters"]["respiration"]["convert_o2"] = np.array([tracer["parameters"]["respiration"]["convert_o2"]],dtype=np.float64)
             if "convert_co2" in tracer["parameters"]["respiration"]:
@@ -424,6 +443,9 @@ class Zooplankton():
             else:   produced = {"empty": "empty"}
             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
+
+            # Delete "loss" reactions if this tracer is produced
+            if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
         
         # Reorder reactions (grazing needs to appear first)
         self.reactions = [item for item in self.reactions if item["type"] == "respiration"] + [item for item in self.reactions if item["type"] != "respiration"]
@@ -448,7 +470,8 @@ class Zooplankton():
         # Zero out grazing rates and total ingestion
         for prey in self.grazing_rates:
             self.grazing_rates[prey] = np.zeros_like(conc[tracer_map[self.abbrev][0]])
-        self.total_ingestion = np.zeros_like(self.conc_ratio, dtype=np.float64)
+        # self.total_ingestion = np.zeros_like(self.conc_ratio, dtype=np.float64)
+        self.total_ingestion = np.zeros((len(self.composition),len(conc[tracer_map[self.abbrev][0]])), dtype=np.float64)
         
         # Flag to return total ingestion
         return_ingestion = True     # True if no grazing rates have been calculated
@@ -491,6 +514,10 @@ class Zooplankton():
                     activity_respiration = 0.
                     basal_respiration = 0.
                 self.excretion(base_element, c, p, ec, ep, self.cell_quota_ids, self.cell_quota_opt, self.excretion_ids, self.excretion_params, activity_respiration, basal_respiration, self.ingestion_efficiency, self.total_ingestion, conc, conc_ratio, d_dt, tracer_map, self.composition)
+            if reac["type"] == "loss":
+                cons_composition = self.composition
+                prod_composition = tracers[p[0]].composition
+                self.loss(c, p, ec, ep, ic, ip, self.loss_ids, self.loss_params, conc, conc_ratio, d_dt, tracer_map, cons_composition, prod_composition)
             if reac["type"] == "metabolic_release":
                 self.metabolic_release(c, p, ec, ep, self.cell_quota_ids, self.cell_quota_opt, self.metabolism_ids, self.metabolism_params, self.basal_metabolic_rate, self.assimilation_efficiency, self.ingestion_efficiency, self.total_ingestion, self.oxy_limitation_factor, self.temp_regulation_factor, conc, conc_ratio, d_dt, tracer_map, self.composition)
             if reac["type"] == "mortality":     
@@ -501,9 +528,12 @@ class Zooplankton():
         
 
     def add_prey(self, prey):
+        # for p in prey:
+        #     self.grazing_rates[p] = np.zeros(self.conc.shape[1], dtype=np.float64)
+        #     self.prey_availability[p] = np.zeros(self.conc.shape[1], dtype=np.float64)
         for p in prey:
-            self.grazing_rates[p] = np.zeros(self.conc.shape[1], dtype=np.float64)
-            self.prey_availability[p] = np.zeros(self.conc.shape[1], dtype=np.float64)
+            self.grazing_rates[p] = np.zeros(self.initial_conc.shape[1], dtype=np.float64)
+            self.prey_availability[p] = np.zeros(self.initial_conc.shape[1], dtype=np.float64)
 
 
     @staticmethod
@@ -650,12 +680,16 @@ class Zooplankton():
         """
         # Extract parameter indices
         max_grazing_rate = grazing_ids.index("max_grazing_rate")
-        feeding_model = grazing_ids.index("feeding_model")
-        if grazing_params[feeding_model] == 1.:     search_volume = grazing_ids.index("search_volume")
-        else:   half_sat_grazing = grazing_ids.index("half_sat_grazing") 
+        # feeding_model = grazing_ids.index("feeding_model")
+        # if grazing_params[feeding_model] == 1.:     search_volume = grazing_ids.index("search_volume")
+        # else:   half_sat_grazing = grazing_ids.index("half_sat_grazing") 
 
         function = grazing_ids.index("function")    # grazing function
-        if function != 4.:  # function not ivlev --> holling type grazing functions
+        if grazing_params[function] != 4.:  # function not ivlev --> holling type grazing functions
+            feeding_model = grazing_ids.index("feeding_model")
+            if grazing_params[feeding_model] == 1.:     search_volume = grazing_ids.index("search_volume")
+            else:   half_sat_grazing = grazing_ids.index("half_sat_grazing") 
+
             if grazing_params[feeding_model] == 1:  # clearance_rate based feeding model does not use feeding threshold
                 feeding_threshold = 1.E-20  # Small constant to prevent divide by 0.
             else:
@@ -680,6 +714,8 @@ class Zooplankton():
         tc = conc[tracer_map[cons][ind_c]]
         tp = conc[tracer_map[prod][ind_p]]
 
+        prey_selection = np.zeros_like(tc)
+
         # Calculate total food availability
         for prey, preference in grazing_preferences.items():
             # Concentration of base element in prey
@@ -687,13 +723,14 @@ class Zooplankton():
 
             # Capture efficiency for current prey in list of available
             # eff_prey = conc_prey / ( conc_prey + grazing_params[feeding_threshold] )
-            if grazing_params[feeding_model] == 2.:     # "half_saturation" feeding method uses capture efficiency to scale prey availability
+            if grazing_params[function] != 4. and grazing_params[feeding_model] == 2.:     # "half_saturation" feeding method uses capture efficiency to scale prey availability
                 eff_prey = conc_prey / ( conc_prey + feeding_threshold )    # Changed to this after realizing code would break if using ivlev grazing function
-            # else:   eff_prey = 1.   # "clearance_rate" feeding method does not use captre efficiency (set to one for no scaling)
             else:   eff_prey = np.ones_like(conc_prey)   # "clearance_rate" feeding method does not use captre efficiency (set to one for no scaling)
 
             # Total food availability is sum for all prey (prey concentration squared for ONLY holling-3 sigmoidal behavior)
-            if grazing_params[function] == 3.:  prey_availability[prey] = preference * eff_prey * (conc_prey**2)
+            if grazing_params[function] != 4. and grazing_params[function] == 3.:  
+                prey_availability[prey] = preference * eff_prey * (conc_prey**2)
+                prey_selection += preference * eff_prey * conc_prey
             else:   prey_availability[prey] = preference * eff_prey * conc_prey
 
         # Total food availability is sum for all prey
@@ -720,9 +757,6 @@ class Zooplankton():
             total_uptake = slope * total_available * tp
 
         elif grazing_params[function] == 2.:    # holling-2, Hyperbolic
-            # Calculate specific grazing rate for individual prey
-            # grazing = ( grazing_params[max_grazing_rate] * prey_availability[cons] ) / ( total_available + grazing_params[half_sat_grazing] ) * tp
-
             # Calculate total uptake rate
             if grazing_params[feeding_model] == 1:  # clearance_rate
                 # grazing = ( grazing_params[max_grazing_rate] * grazing_params[search_volume] * prey_availability[cons] ) / ( (grazing_params[search_volume] * total_available) + grazing_params[max_grazing_rate] ) * tp
@@ -735,19 +769,15 @@ class Zooplankton():
                 total_uptake = ( grazing_params[max_grazing_rate] * total_available ) / ( total_available + grazing_params[half_sat_grazing] ) * tp
                         
         elif grazing_params[function] == 3.:    # holling-3, Sigmoidal
-            # # Calculate specific grazing rate for individual prey, half saturation constant is also squared for sigmoidal behavior (squared prey concentration handled in calculation of prey availability)
-            # grazing = ( grazing_params[max_grazing_rate] * prey_availability[cons] ) / ( total_available + (grazing_params[half_sat_grazing]**2) ) * tp
-
-            # # Calculate total uptake rate
-            # total_uptake = ( grazing_params[max_grazing_rate] * total_available ) / ( (total_available**2) + (grazing_params[half_sat_grazing]**2) ) * tp
-
+            # Calculate total uptake rate
             if grazing_params[feeding_model] == 1:  # clearance_rate
                 grazing = ( grazing_params[max_grazing_rate] * grazing_params[search_volume] * prey_availability[cons] ) / ( (grazing_params[search_volume] * total_available) + (grazing_params[max_grazing_rate]**2) ) * tp
                 total_uptake = ( grazing_params[max_grazing_rate] * grazing_params[search_volume] * total_available ) / ( (grazing_params[search_volume] * total_available)**2 + (grazing_params[max_grazing_rate]**2) ) * tp
             else:   # half_saturation
-                grazing = ( grazing_params[max_grazing_rate] * prey_availability[cons] ) / ( total_available + (grazing_params[half_sat_grazing]**2) ) * tp
-                total_uptake = ( grazing_params[max_grazing_rate] * total_available ) / ( (total_available**2) + (grazing_params[half_sat_grazing]**2) ) * tp
-
+                # grazing = ( grazing_params[max_grazing_rate] * prey_availability[cons] ) / ( total_available + (grazing_params[half_sat_grazing]**2) ) * tp
+                # total_uptake = ( grazing_params[max_grazing_rate] * total_available ) / ( (total_available**2) + (grazing_params[half_sat_grazing]**2) ) * tp
+                grazing = ( grazing_params[max_grazing_rate] * prey_availability[cons] ) / ( total_available + (grazing_params[half_sat_grazing] * prey_selection) ) * tp
+                total_uptake = ( grazing_params[max_grazing_rate] * total_available ) / ( total_available + (grazing_params[half_sat_grazing] * prey_selection) ) * tp
         elif grazing_params[function] == 4.:      # ivlev, Exponential
             # Calculate specific grazing rate for individual prey
             grazing = grazing_params[max_grazing_rate] * ( 1 - np.exp( -grazing_params[ivlev] * total_available ) ) * ( prey_availability[cons]/total_available ) * tp
@@ -801,6 +831,47 @@ class Zooplankton():
                         total_ingestion[index_pred] += (total_uptake / (total_available + 1.E-20)) * conc_ratio[tracer_map[prey][index_prey]] * prey_availability[prey]
         
             return total_ingestion
+
+
+    @staticmethod
+    @njit
+    def loss(c, p, ec, ep, ic, ip, loss_ids, loss_params, conc, conc_ratio, d_dt, tracer_map, cons_composition, prod_composition):
+    
+        # Source tracer of loss rate
+        cons = c[0]         # Tracer
+        elem_c = ec[cons]   # Affected constituents
+        ind_c = ic[cons][0] # Base element index
+    
+        # Destination tracer of loss rate
+        prod = p[0]         # Tracer
+        elem_p = ep[prod]   # Affected constituents
+        ind_p = ip[prod][0] # Base element index
+    
+        # Identifiy loss parameters for consumed tracer
+        ids = loss_ids.index(prod)
+        params = loss_params[ids]
+    
+        if params["function"] == 1.: # constant
+            # Calculate loss rate
+            loss = params["loss_rate"] * conc[tracer_map[cons][ind_c]]
+    
+        elif params["function"] == 2.: # half saturation
+            # Calculate loss rate
+            loss = params["loss_rate"] * monod(conc[tracer_map[cons][ind_c]], params["half_sat_loss"], params["exponent"]) * conc[tracer_map[cons][ind_c]]
+    
+        # Extract concentration ratios
+        ratios = np.zeros((len(prod_composition),len(conc[tracer_map[prod][0]])),dtype=np.float64)
+        for const in cons_composition:
+            if const in prod_composition:
+                index_cons = cons_composition.index(const)
+                index_prod = prod_composition.index(const)
+                ratios[index_prod] = conc_ratio[tracer_map[cons][index_cons]]
+    
+        # Update d_dt
+        for i in range(0,len(elem_c)):
+            d_dt[tracer_map[cons][i]] -= elem_c[i] * conc_ratio[tracer_map[cons][i]] * loss
+        for j in range(0,len(elem_p)):
+            d_dt[tracer_map[prod][j]] += elem_p[j] * ratios[j] * loss
 
 
     @staticmethod

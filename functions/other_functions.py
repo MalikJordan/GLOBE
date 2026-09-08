@@ -95,16 +95,25 @@ def light_limitation(abbrev, growth_ids, growth_params, dz, irrad, k_PAR, Vm, te
     # Smith (1936)
     # -------------------------------------------------------------------------------------------------
     elif growth_params[light_limitation] ==  -4.:   # "smith"
+        light_location = growth_ids.index("light_location")
         initial_PI_slope = growth_ids.index("initial_PI_slope")
         
+        # Calculate irradiance at depth
+        if growth_params[light_location] == 1.:     # "top"
+            irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad)
+        elif growth_params[light_location] == 2.:   # "middle"  # Lazzari et al. (2012)
+            # irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz/2)
+            irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz)
+        elif growth_params[light_location] == 3.:   # "integrated"  # Vichi et al. (2007)
+            r = irrad / (k_PAR * dz) * (1. - np.exp(-k_PAR*dz))            
+            irrad_at_depth = np.maximum(1E-20*np.ones_like(r), r)  
+        
         # Evans & Parslow (1985) formulation
-        num = Vm * growth_params[initial_PI_slope] * irrad
-        den = np.sqrt((Vm**2) + ((growth_params[initial_PI_slope]*irrad)**2))
+        # num = Vm * growth_params[initial_PI_slope] *irrad_at_depth
+        num = growth_params[initial_PI_slope] *irrad_at_depth
+        den = np.sqrt((Vm**2) + ((growth_params[initial_PI_slope]*irrad_at_depth)**2))
         
         light_limitation_factor = num/(den + 1E-20)
-
-        # fake number
-        irrad_at_depth = 1.E-20 * np.ones(len(Vm))
 
     return irrad_at_depth, light_limitation_factor
 
@@ -236,7 +245,8 @@ def tracer_elements(base_element, reaction, tracers):
                 ec[key] = np.zeros(len(tracers[key].composition),dtype=np.int64)
                 for element in tracers[key].composition:
                     i = tracers[key].composition.index(element)
-                    if element in reaction["consumed"][key]:  ec[key][i] = np.array([1],dtype=np.int64)
+                    # if element in reaction["consumed"][key]:  ec[key][i] = np.array([1],dtype=np.int64)
+                    if element in reaction["consumed"][key]:  ec[key][i] = np.int64(1)
     
     if rp:
         for key in rp:
@@ -248,7 +258,8 @@ def tracer_elements(base_element, reaction, tracers):
                 ep[key] = np.zeros(len(tracers[key].composition),dtype=np.int64)
                 for element in tracers[key].composition:
                     i = tracers[key].composition.index(element)
-                    if element in reaction["produced"][key]:  ep[key][i] = np.array([1],dtype=np.int64)
+                    # if element in reaction["produced"][key]:  ep[key][i] = np.array([1],dtype=np.int64)
+                    if element in reaction["produced"][key]:  ep[key][i] = np.int64(1)
 
     c = List(rc.keys()) if rc else List.empty_list(types.unicode_type)
     p = List(rp.keys()) if rp else List.empty_list(types.unicode_type)
@@ -272,8 +283,6 @@ def switch(parameter):
 
     return switch
 
-
-from numba import njit
 
 @njit
 def string_to_float(s):

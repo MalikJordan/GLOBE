@@ -1,0 +1,76 @@
+simulation:
+  dt: 360.      # time step [s]
+  days: 365           # days in simulation [d]
+  configuration: 0d   # Options: 0d or 1d
+
+water_column:
+  column_depth: 5.    # depth [m]
+  num_layers: 1      # number of layers in water column
+
+environment:
+  forcing: seasonal   # Options: pom1d or seasonal
+  # pom1d: forces system using climatological data with one-dimensional POM1D ocean circulation
+  # seasonal: forces system using sinusoidal forcing between summer and winter extremes
+  base_temp: 10.0  
+  PAR_frac: 0.4
+  light_attenuation_water: 0.0435        # [1/m]
+  latitude: 0.
+  forcing_data:
+    summer_mld: 10.0
+    winter_mld: 40.0
+    summer_salt: 36.5
+    winter_salt: 37.
+    summer_sun: 300.0
+    winter_sun: 20.0
+    summer_temp: 30.
+    winter_temp: 10.
+    temp_excursion: 1.
+    summer_wind: 2.
+    winter_wind: 6.
+
+initial_conditions:
+  o2:
+    composition:                            # element : initial concentration (from data file)
+      o: 230.
+
+  no3:
+    composition:                            # element : initial concentration (from data file)
+      n: 1.
+
+  nh4:
+    composition:                            # element : initial concentration
+      n: 0.06
+
+  po4:
+    composition:                            # element : initial concentration (from data file)
+      p: 0.06
+
+  hs:
+    composition:                            # element : initial concentration (from data file)
+      s: 1.
+
+  phyto1:
+    composition:                            # element : initial concentration (from data file)
+      c: 12.                                # [mg C / m^3]
+      n: 0.1512                             # [mmol N / m^3]
+      p: 9.432E-03                          # [mmol P / m^3]
+      chl: 0.192                            # [mg Chl / m^3]
+  
+  zoo1:
+    composition:                            # element : initial concentration (from data file)
+      c: 12.                                # [mg C / m^3]
+      n: 0.2004                             # [mmol N / m^3]
+      p: 0.0222                             # [mmol P / m^3]
+  
+  dom1:
+    composition:                            # element : initial concentration (from data file)
+      c: 12.                                # [mg C / m^3]
+      n: 0.1512                             # [mmol N / m^3]
+      p: 9.4344E-03                         # [mmol P / m^3]
+
+  pom1:
+    composition:                            # element : initial concentration (from data file)
+      c: 12.                                # [mg C / m^3]
+      n: 0.1512                             # [mmol N / m^3]
+      p: 9.4344E-03                         # [mmol P / m^3]
+  

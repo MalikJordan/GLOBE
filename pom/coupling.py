@@ -7,6 +7,8 @@ from functions.bgc_rate_eqns import bgc_rate_eqns
 import os
 from pom.compare_values import compare_values
 from tests.bfm17 import check_conc, check_rates
+# from tests.bfm17 import check_after_vdiff_SOS
+from tests.bfm56 import check_after_vdiff_SOS
 np.set_printoptions(precision=20)
 
 phytoc0 = [0.13600693026060057,
@@ -426,7 +428,7 @@ globe_rates = np.zeros((100,18))
 #     conc = concentration[...,iter]
 #     d_dt = np.zeros_like(conc,dtype=np.float64)
 
-def pom_bgc_1d(iter, base_element, light_attenuation_water, temperature, salinity, density, inorganic_suspended_matter, shortwave_radiation,
+def pom_bgc_1d(iter, configuration, base_element, light_attenuation_water, temperature, salinity, density, inorganic_suspended_matter, shortwave_radiation,
                 w_eddy_velocity, w_gen, wind_speed_zonal, wind_speed_meridional, dif_trac,
                 dt2, num_layers, vertical_grid, vertical_spacing, vertical_spacing_staggered, vertical_spacing_reciprocal, column_depth, 
                 nrt_o2, nrt_po4, nrt_no3, nrt_nh4, o2b, no3b, ponb_grad, po4b,
@@ -448,12 +450,23 @@ def pom_bgc_1d(iter, base_element, light_attenuation_water, temperature, salinit
 
     #     x = 1
 
+    # if iter > 24 and iter < 30:
+    #     # concentrations are fine at iter==27, incorrect starting at iter==28
+    #     # first group with wrong concentrations is phytoplankton (all constituents)
+    #     # happens before rate calculations at iter==28
+    #     # rates before this step are fine (match at iter==27 inside of vdiff_SOS)
+    #     # check phyto sedimentation
+    #     dif_cur = conc_cur - check_after_vdiff_SOS.conc_cur_iter24to29[iter-25]
+    #     dif_bwd = conc_bwd - check_after_vdiff_SOS.conc_bwd_iter24to29[iter-25]
+    #     x = 1
+
     # Physical variables for bgc rate equations
     temp, sal, dens, ism, z, dz, surface_PAR, weddy, wgen, wind = bgc_physical(temperature, salinity, density, inorganic_suspended_matter, vertical_spacing, column_depth, shortwave_radiation, water_specific_heat_times_density, w_eddy_velocity, w_gen, wind_speed_zonal, wind_speed_meridional)
 
     # Calculate rate of change
     # d_dt = bgc_rate_eqns(iter, base_element, conc, d_dt, light_attenuation_water, temp, sal, dens, ism, z, dz, surface_PAR, weddy, wgen, wind, tracer_map, tracer_type, tracers, sinking)
-    d_dt = bgc_rate_eqns(iter, base_element, conc_cur, d_dt, light_attenuation_water, temp, sal, dens, ism, z, dz, surface_PAR, weddy, wgen, wind, tracer_map, tracer_type, tracers, sinking)
+    # d_dt = bgc_rate_eqns(iter, base_element, conc_cur, d_dt, light_attenuation_water, temp, sal, dens, ism, z, dz, surface_PAR, weddy, wgen, wind, tracer_map, tracer_type, tracers, sinking)
+    d_dt = bgc_rate_eqns(iter, configuration, base_element, conc_cur, d_dt, light_attenuation_water, temp, sal, dens, z, dz, surface_PAR, wind, tracer_map, tracer_type, tracers, sinking)
     
     if "o2" in tracers: d_o2surf = tracers["o2"].surf_flux
     else:   d_o2surf = np.float64(0.)
@@ -579,10 +592,12 @@ def vertical_advection(b_cur, b_bwd, b_fwd, sinking_velocity, num_layers, dzr):
     return b_fwd
 
 
-@njit
+# @njit
 # def vertical_diffusivity(iter, concentration, d_dt, dt2, num_layers, column_depth, smoth, sinking, weddy, wgen, tracer_map, tracer_type,
 #                          nrt_o2, nrt_po4, nrt_no3, nrt_nh4, d_o2surf, o2b, no3b, ponb_grad, po4b,
 #                          z, dz, dzz, dzr, umol, nbc, ntp, swrad, kh):
+
+@njit
 def vertical_diffusivity(iter, conc_bwd, conc_cur, d_dt, dt2, num_layers, column_depth, smoth, sinking, weddy, wgen, tracer_map, tracer_type,
                          nrt_o2, nrt_po4, nrt_no3, nrt_nh4, d_o2surf, o2b, no3b, ponb_grad, po4b,
                          z, dz, dzz, dzr, umol, nbc, ntp, swrad, kh):
@@ -605,6 +620,18 @@ def vertical_diffusivity(iter, conc_bwd, conc_cur, d_dt, dt2, num_layers, column
     trelax_no3 = nrt_no3 / 86400.
     trelax_nh4 = nrt_nh4
 
+    # if iter > 0:
+    #     dif_cur_pre = conc_cur - check_after_vdiff_SOS.conc_cur[iter-1]
+    #     dif_bwd_pre = conc_bwd - check_after_vdiff_SOS.conc_bwd[iter-1]
+
+
+    # if iter >=24 and iter <=29: # matches up to iter==27, wrong starting at iter==28
+    #     # concentrations are correct at coming out of iter==27
+    #     # rate calculations are incorrect starting at iter==28, cascades through simulation from there
+    #     # what happens at iter==28?
+    #     dif_ddt = d_dt - check_after_vdiff_SOS.rates_iter24to29[iter-24]
+    #     x=1
+    # x = 1
     # Loop over bgc state variables
     # for i in range(0, len(concentration)):   # i = tracer constituent
     for i in range(0, len(conc_cur)):   # i = tracer constituent
@@ -695,6 +722,54 @@ def vertical_diffusivity(iter, conc_bwd, conc_cur, d_dt, dt2, num_layers, column
         conc_bwd[i,:] = b_cur[:-1] + 0.5 * smoth * (b_fwd[:-1] + b_bwd[:-1] - 2.*b_cur[:-1])
         conc_cur[i,:] = b_fwd[:-1]
 
+    # if iter < 5:
+    #     # incorrect rates at iter==0 for
+    #     # bac1 [c,n,p] [7,8,9]
+    #     # dom1 [c,n,p] [39,40,41]
+    #     # pom1 [c,n,p] [44,45,46] (pom1 [s] is fine)
+    #     # rates are lower than expected (dif_ddt = +) for bac1, higher than expected  (dif_ddt = -) for dom1 and pom1
+    #     # all other rates being correct likely points to bacteria uptake or mortality
+    #     dif_cur = conc_cur - check_after_vdiff_SOS.conc_cur[iter]
+    #     dif_bwd = conc_bwd - check_after_vdiff_SOS.conc_bwd[iter]
+    #     dif_ddt = d_dt - check_after_vdiff_SOS.rates[iter]
+    #     x=1
+
+    # if iter == 24:  # matches here
+    #     dif_cur = conc_cur - check_after_vdiff_SOS.conc_cur_iter24
+    #     dif_bwd = conc_bwd - check_after_vdiff_SOS.conc_bwd_iter24
+    #     dif_ddt = d_dt - check_after_vdiff_SOS.rates_iter24
+    #     x=1
+
+    # if iter >=24 and iter <=29: # matches up to iter==27, wrong starting at iter==28
+    #     dif_cur = conc_cur - check_after_vdiff_SOS.conc_cur_iter24to29[iter-24]
+    #     dif_bwd = conc_bwd - check_after_vdiff_SOS.conc_bwd_iter24to29[iter-24]
+    #     dif_ddt = d_dt - check_after_vdiff_SOS.rates_iter24to29[iter-24]
+    #     x=1
+
+    # if iter == 28:
+    #     dif_cur = conc_cur - check_after_vdiff_SOS.conc_cur_iter28
+    #     dif_bwd = conc_bwd - check_after_vdiff_SOS.conc_bwd_iter28
+    #     dif_ddt = d_dt - check_after_vdiff_SOS.rates_iter28
+    #     x=1
+
+    # if iter == 29:
+    #     dif_cur = conc_cur - check_after_vdiff_SOS.conc_cur_iter29
+    #     dif_bwd = conc_bwd - check_after_vdiff_SOS.conc_bwd_iter29
+    #     dif_ddt = d_dt - check_after_vdiff_SOS.rates_iter29
+    #     x=1
+
+    # if iter == 49:  # wrong by here, fixed (i think) by turning on sedimentation for phytoplankton
+    #     dif_cur = conc_cur - check_after_vdiff_SOS.conc_cur_iter49
+    #     dif_bwd = conc_bwd - check_after_vdiff_SOS.conc_bwd_iter49
+    #     dif_ddt = d_dt - check_after_vdiff_SOS.rates_iter49
+    #     x=1
+
+    # if iter == 119:
+    #     dif_cur = conc_cur - check_after_vdiff_SOS.conc_cur_iter119
+    #     dif_bwd = conc_bwd - check_after_vdiff_SOS.conc_bwd_iter119
+    #     dif_ddt = d_dt - check_after_vdiff_SOS.rates_iter119
+    #     x=1
+    
     # return concentration
     return conc_bwd, conc_cur
 

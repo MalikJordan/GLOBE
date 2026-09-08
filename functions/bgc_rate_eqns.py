@@ -7,7 +7,8 @@ from setup.initialize import coordinate_system
 np.set_printoptions(precision=20)
 
 
-def bgc_rate_eqns(iter, base_element, conc, d_dt, light_attenuation_water, temp, sal, dens, ism, z, dz, surface_PAR, weddy, wgen, wind, tracer_map, tracer_type, tracers, sinking):
+# def bgc_rate_eqns(iter, base_element, conc, d_dt, light_attenuation_water, temp, sal, dens, ism, z, dz, surface_PAR, weddy, wgen, wind, tracer_map, tracer_type, tracers, sinking):
+def bgc_rate_eqns(iter, configuration, base_element, conc, d_dt, light_attenuation_water, temp, sal, dens, z, dz, surface_PAR, wind, tracer_map, tracer_type, tracers, sinking):
     
     # Update concentration ratios
     # for key in tracers:
@@ -47,11 +48,11 @@ def bgc_rate_eqns(iter, base_element, conc, d_dt, light_attenuation_water, temp,
         #     bact_limitation_factor += tracers[key].bac(base_element, temp, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers)
         if tracers[key].type == "detritus":
             tracers[key].detritus(base_element, temp, conc, d_dt, tracer_map, tracers)
-        elif tracers[key].type == "inorganic":
-            tracers[key].inorg(bact_limitation_factor, conc, d_dt, tracer_map, z, dz, temp, sal, dens, wind)
+        elif tracers[key].type == "inorganic": 
+            tracers[key].inorg(configuration, bact_limitation_factor, conc, d_dt, tracer_map, z, dz, temp, sal, dens, wind)
         elif tracers[key].type == "phytoplankton":
             tracers[key].phyto(iter, base_element, temp, z, dz, k_PAR, surface_PAR, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers, sinking)
-        elif tracers[key].type == "zooplankton":
+        elif tracers[key].type == "zooplankton": 
             tracers[key].zoo(iter, base_element, temp, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers)
 
     # Convert rates fro 1/d to 1/s

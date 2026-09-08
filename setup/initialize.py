@@ -213,7 +213,8 @@ def import_physical_model(file_path):
     # Initialize coordinate system
     # ----------------------------------------------------------------------------------------------------
     # physical["vertical_grid"] = coordinate_system(physical["simulation"]["configuration"],physical["water_column"])
-    physical["vertical_grid"] = coordinate_system(physical["simulation"]["configuration"], physical["water_column"]["num_layers"], physical["water_column"]["column_depth"], physical["water_column"]["surf_log"] , physical["water_column"]["bot_log"])
+    if physical["simulation"]["configuration"] == "0d":     physical["vertical_grid"] = coordinate_system(physical["simulation"]["configuration"], physical["water_column"]["num_layers"], physical["water_column"]["column_depth"], 0., 0.)
+    elif physical["simulation"]["configuration"] == "1d":   physical["vertical_grid"] = coordinate_system(physical["simulation"]["configuration"], physical["water_column"]["num_layers"], physical["water_column"]["column_depth"], physical["water_column"]["surf_log"] , physical["water_column"]["bot_log"])
 
     # ----------------------------------------------------------------------------------------------------
     # Setup time array
