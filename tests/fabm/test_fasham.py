@@ -103,13 +103,12 @@ from functions.seasonal_cycling import get_temperature, get_salinity, get_sunlig
 
 
 
-output_file = os.getcwd() + '/tests/fabm/fasham_data/output_constant.nc'
-# output_file = os.getcwd() + '/tests/fabm/fasham_data/output_seasonal.nc'
+output_file = os.getcwd() + '/tests/fabm/data/fasham_output_constant.nc'
+# output_file = os.getcwd() + '/tests/fabm/data/fasham_output_seasonal.nc'
 ds = xr.open_dataset(output_file)
 
-# env_data_file = os.getcwd() + '/tests/fabm/fasham_data/env_nns_annual.dat'
-env_data_file = os.getcwd() + '/tests/fabm/fasham_data/env_constant.dat'
-# env_data_file = os.getcwd() + '/tests/fabm/fasham_data/env_seasonal.dat'
+env_data_file = os.getcwd() + '/tests/fabm/data/fasham_env_constant.dat'
+# env_data_file = os.getcwd() + '/tests/fabm/data/fasham_env_seasonal.dat'
 data = pd.read_csv(
     env_data_file,
     sep=r"\s+",
@@ -145,9 +144,10 @@ for i in range(0,87600):
 fasham_daily = fasham_daily[...,:360]
 x = 1
 
-conc_path = os.getcwd() + '/concentration_fasham_0d_constant.npz'
-# conc_path = os.getcwd() + '/concentration_fasham_0d_seasonal.npz'
-tracer_path = os.getcwd() + '/tracer_indices_fasham_0d.npz'
+conc_path = os.getcwd() + '/tests/fabm/data/concentration_fasham_0d_constant.npz'
+tracer_path = os.getcwd() + '/tests/fabm/data/tracer_indices_fasham_0d_constant.npz'
+# conc_path = os.getcwd() + '/tests/fabm/data/concentration_fasham_0d_seasonal.npz'
+# tracer_path = os.getcwd() + '/tests/fabm/data/tracer_indices_fasham_0d_seasonal.npz'
 
 model = np.load(conc_path, allow_pickle=True)
 globe_daily = model["daily"]

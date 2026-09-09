@@ -27,7 +27,7 @@ def nrmse(check,comp):
 # Extract model results
 # ----------------------------------------------------------------------------------------------------
 # GLOBE
-path = os.getcwd() + '/concentration_bfm56-5yr-0907.npz'
+path = os.getcwd() + '/tests/bfm56/data/concentration_bfm56.npz'
 globe_bfm = np.load(path, allow_pickle=True)
 
 globe_daily = globe_bfm["daily"]
@@ -37,7 +37,7 @@ globe_daily = globe_daily[:,:,:1800]
 globe_monthly = globe_monthly[:,:,:60]
 
 # Tracer Indices
-path = os.getcwd() + '/tracer_indices_bfm56-5yr.npz'
+path = os.getcwd() + '/tests/bfm56/data/tracer_indices_bfm56.npz'
 indices = np.load(path)
 tracer_indices = {}
 for file in indices.files:

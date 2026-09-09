@@ -21,15 +21,13 @@ zc_bfm17 = np.asarray(variables['Z5c'][:730])
 
 # Get GLOBE Data --------------------------------------------------------------------
 # Load solution
-# path = os.getcwd() + "/tests/bfm17/data/bfm17.npz"
-path = os.getcwd() + "/tests/bfm17/data/bfm17.npz"
+path = os.getcwd() + "/tests/bfm17/data/concentration_bfm17_0d.npz"
 solution = np.load(path, allow_pickle=True)
 conc = solution["concentration"]     # concentratrion matrix
 time = solution["time"]     # time array
 
 # Load tracer indices
-# path = os.getcwd() + "/tests/bfm17/data/tracer_indices_bfm17.npz"
-path = os.getcwd() + "/tests/bfm17/data/tracer_indices_bfm17.npz"
+path = os.getcwd() + "/tests/bfm17/data/tracer_indices_bfm17_0d.npz"
 indices = np.load(path)
 tracer_indices = {}
 for file in indices.files:

@@ -6,18 +6,18 @@ import numpy as np
 import os
 
 # Extract GLOBE data
-globe_path = os.getcwd() + '/concentration_bfm56-5yr-0907.npz'
+globe_path = os.getcwd() + '/tests/bfm56/data/concentration_bfm56.npz'
 model = np.load(globe_path, allow_pickle=True)
 daily = model["daily"]
 monthly = model["monthly"]
 
-npp_path = os.getcwd() + '/npp_bfm56-5yr-0907.npz'
+npp_path = os.getcwd() + '/tests/bfm56/data/npp_bfm56.npz'
 npp = np.load(npp_path, allow_pickle=True)
 npp_daily = npp["daily"]
 npp_monthly = npp["monthly"]
 
 # Tracer Indices
-path = os.getcwd() + '/tracer_indices_bfm56-5yr.npz'
+path = os.getcwd() + '/tests/bfm56/data/tracer_indices_bfm56.npz'
 indices = np.load(path)
 tracer_indices = {}
 for file in indices.files:

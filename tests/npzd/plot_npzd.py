@@ -9,15 +9,11 @@ folder = os.getcwd() + '/tests/npzd'
 # ----------------------------------------------------------------------------------------------------
 # Get GLOBE Data --------------------------------------------------------------------
 # Load solution
-# path = os.getcwd() + "/tests/npzd/data/npzd.npz"
-path = os.getcwd() + "/concentration_npzd_0907.npz"
+path = os.getcwd() + "/tests/npzd/data/concentration_npzd.npz"
 solution = np.load(path, allow_pickle=True)
-# conc = solution["concentration"]     # concentratrion matrix
 conc = solution["daily"]
-# time = solution["time"]     # time array
 
 # Load tracer indices
-# path = os.getcwd() + "/tests/npzd/data/tracer_indices_npzd.npz"
 path = os.getcwd() + "/tests/npzd/data/tracer_indices_npzd.npz"
 indices = np.load(path, allow_pickle=True)
 tracer_indices = {}
@@ -89,24 +85,10 @@ for idx in np.arange(1, NUM_STEPS, 1):
     Z[idx] = DT * (beta*zoo_graze - g*Z[t]) + Z[t]  
     D[idx] = DT * (r*P[t] + (1-alpha-beta)*zoo_graze - phi*D[t]) + D[t]
 
-    # bgc_rate_eqns(t, base_element, parameters, tracers)
-
-    # dn = N[idx] - tracers["no3"].conc[0][idx]
-    # dp = P[idx] - tracers["phyto1"].conc[0][idx]
-    # dz = Z[idx] - tracers['zoo1'].conc[0][idx]
-    # dd = D[idx] - tracers['pom1'].conc[0][idx]
-
-    # pause = 1
-
-
-# x = np.arange(1, NUM_STEPS + 1, 1)
-x = np.arange(0, NUM_STEPS, 1)
-
 # ----------------------------------------------------------------------------------------------------
 # Plot results
 # ----------------------------------------------------------------------------------------------------
-# fig, ax = plt.subplots()
-
+x = np.arange(0, NUM_STEPS, 1)
 xlabel = ['J','M','M','J','S','N']
 xticks = [15,75,135,195,255,315]
 
