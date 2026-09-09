@@ -1,18 +1,16 @@
-import copy
 import os
 import sys
 import numpy as np
 from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
-from functions.other_functions import concentration_ratio, monod, nutrient_limitation, string_to_float, temperature_dependence, tracer_elements
+from functions.other_functions import monod, string_to_float, temperature_dependence, tracer_elements
 from fractions import Fraction
 np.set_printoptions(precision=20)
 class Zooplankton():
     """
     """
 
-    # def __init__(self, abbrev, base_element, iters, num_layers, reactions, **tracer):
     def __init__(self, abbrev, base_element, physical, reactions, **tracer):
         
          # Variales that will be used later ---------------------------------------------------------------
@@ -75,17 +73,6 @@ class Zooplankton():
                 else:
                     sys.exit("Detritus: Element '" + key + "' not recognized. Check documentation and edit input file.")
         
-        # if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
-        #     self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
-        #     for const in range(0,len(self.composition)):
-        #         self.conc[const,:,0] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
-        # else:   # Model as single box
-        #     self.conc = np.zeros((len(self.composition),num_layers,iters),dtype=np.float64)
-        #     for const in range(0,len(self.composition)):
-        #         self.conc[const,:,0] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
-        # self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
-        # self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
-
         if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
             self.initial_conc = np.zeros((len(self.composition),num_layers-1),dtype=np.float64)
             for const in range(0,len(self.composition)):
@@ -94,31 +81,17 @@ class Zooplankton():
             self.initial_conc = np.zeros((len(self.composition),num_layers),dtype=np.float64)
             for const in range(0,len(self.composition)):
                 self.initial_conc[const,:] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
-        # self.d_dt = np.zeros_like(self.initial_conc[...],dtype=np.float64)
-        # self.conc_ratio = np.ones_like(self.initial_conc[...],dtype=np.float64)
-
+        
         # Add cell quotas ---------------------------------------------------------------
         # Create list of cell quota ids
         self.cell_quota_ids = List.empty_list(unicode_type)
         for element in self.composition:    self.cell_quota_ids.append(element)
 
-        # for element in self.composition:    # Base element not in cell quotas (cell quota of base element would be 1.)
-        #     if element != base_element: self.cell_quota_ids.append(element)
-        
-        # # Create list of optimal cell quotas
-        # if "opt" in tracer["parameters"]["cell_quota"]: 
-        #     self.cell_quota_opt = List.empty_list(float64)
-        #     for element in self.cell_quota_ids: # Add quotas in same order as ids
-        #         self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
-
-        if "cell_quota" in tracer["parameters"]:
-            # Create list of optimal cell quotas
-            if "opt" in tracer["parameters"]["cell_quota"]: 
-                self.cell_quota_opt = List.empty_list(float64)
-                for element in self.cell_quota_ids: # Add quotas in same order as ids
-                    self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
-        else:
+        # Create list of optimal cell quotas
+        if "opt" in tracer["parameters"]["cell_quota"]: 
             self.cell_quota_opt = List.empty_list(float64)
+            for element in self.cell_quota_ids: # Add quotas in same order as ids
+                self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
 
         # Add efficiencies ---------------------------------------------------------------
         if isinstance(tracer["parameters"]["efficiency"]["assimilation"],str):
@@ -135,25 +108,9 @@ class Zooplankton():
 
         # Add rate parameters ---------------------------------------------------------------
         # Egestion
-        # if "egestion" in tracer["parameters"]:
-        #     for key in tracer["parameters"]["egestion"]:
-        #         if isinstance(tracer["parameters"]["egestion"][key],str):   # calculated based on grazing rates
-        #             tracer["parameters"]["egestion"][key] = -1
-        #         else:   # constant excretion rate
-        #             tracer["parameters"]["egestion"][key] = np.float64(tracer["parameters"]["egestion"][key])
-
-        #     self.egestion_ids = List.empty_list(unicode_type)
-        #     self.egestion_params = List.empty_list(float64)
-
-        #     for key,val in tracer["parameters"]["egestion"].items():
-        #         self.egestion_ids.append(key)
-        #         if not isinstance(val, np.float64): val = np.float64(val)
-        #         self.egestion_params.append(val)
-
         if "egestion" in tracer["parameters"]:
             self.unassimilated_egestion = List.empty_list(unicode_type)
             for const in tracer["parameters"]["egestion"]["unassimilated"]: self.unassimilated_egestion.append(const)
-            # self.unassimilated_egestion = tracer["parameters"]["egestion"]["unassimilated"]
         else:
             self.unassimilated_egestion = List.empty_list(unicode_type)
 
@@ -178,20 +135,6 @@ class Zooplankton():
             self.excretion_params.append(constituents)
             self.excretion_params.append(destination)
             self.excretion_params.append(function)
-
-            # for key in tracer["parameters"]["excretion"]:
-            #     if isinstance(tracer["parameters"]["excretion"][key],str):   # calculated based on grazing rates
-            #         tracer["parameters"]["excretion"][key] = -1
-            #     else:   # constant excretion rate
-            #         tracer["parameters"]["excretion"][key] = np.float64(tracer["parameters"]["excretion"][key])
-
-            # self.excretion_ids = List.empty_list(unicode_type)
-            # self.excretion_params = List.empty_list(float64)
-
-            # for key,val in tracer["parameters"]["excretion"].items():
-            #     self.excretion_ids.append(key)
-            #     if not isinstance(val, np.float64): val = np.float64(val)
-            #     self.excretion_params.append(val)
 
         # Grazing 
         if "grazing" in tracer["parameters"]:
@@ -331,7 +274,6 @@ class Zooplankton():
             # Translate from fraction string to float64 (if necessary)
             if "convert_o2" in tracer["parameters"]["respiration"]:
                 if isinstance(tracer["parameters"]["respiration"]["convert_o2"],str):
-                    # tracer["parameters"]["respiration"]["convert_o2"] = np.array([Fraction(tracer["parameters"]["respiration"]["convert_o2"])],dtype=np.float64)
                     tracer["parameters"]["respiration"]["convert_o2"] = np.float64(Fraction(tracer["parameters"]["respiration"]["convert_o2"]))
                 else:
                     tracer["parameters"]["respiration"]["convert_o2"] = np.array([tracer["parameters"]["respiration"]["convert_o2"]],dtype=np.float64)
@@ -369,8 +311,6 @@ class Zooplankton():
             dict_type = types.DictType(types.unicode_type, types.float64)
             self.om_partition = Dict.empty(key_type=unicode_type,value_type=dict_type)
 
-            # self.om_partition = List.empty_list(dict_type)
-            # self.om_partition = lst
 
         # Oxygen inhibition
         if "oxygen_inhibition" in tracer["parameters"]:
@@ -385,20 +325,6 @@ class Zooplankton():
             if "exponent" in tracer["parameters"]["oxygen_inhibition"]: self.oxy_limitation_exponent = tracer["parameters"]["oxygen_inhibition"]["exponent"]
             else:   self.oxy_limitation_exponent = 1.
 
-            # if "oxygen_limited" in tracer["parameters"]["oxygen_inhibition"]:   self.oxygen_limited = tracer["parameters"]["oxygen_inhibition"]["oxygen_limited"]
-            # else:   self.oxygen_limited = False
-
-            # if self.oxygen_limited:
-            #     # Default Hill exponent to 1 if not included in parameter list
-            #     if "exponent" not in tracer["parameters"]["oxygen_inhibition"]:     tracer["parameters"]["oxygen_inhibition"]["exponent"] = np.float64(1.)
-
-            #     self.oxy_inhib_ids = List.empty_list(unicode_type)
-            #     self.oxy_inhib_params = List.empty_list(float64[:])
-                
-            #     for key,val in tracer["parameters"]["oxygen_inhibition"].items():
-            #         self.oxy_inhib_ids.append(key)
-            #         if not isinstance(val, np.ndarray): val = np.array([val],dtype=np.float64)  # Convert type to array of floats for typed.List
-            #         self.oxy_inhib_params.append(val)
         else:   
             self.oxygen_limited = False
             self.oxy_limitation_factor = 1.
@@ -418,9 +344,6 @@ class Zooplankton():
                     if tracer["parameters"]["temperature_regulation"]["function"] == "arrhenius":   tracer["parameters"]["temperature_regulation"]["function"] = 1
                     elif tracer["parameters"]["temperature_regulation"]["function"] == "eppley":    tracer["parameters"]["temperature_regulation"]["function"] = 2
                     elif tracer["parameters"]["temperature_regulation"]["function"] == "q10":       tracer["parameters"]["temperature_regulation"]["function"] = 3
-
-                # Add temperature regulation factor to dictionary
-                # tracer["parameters"]["temperature_regulation"]["temp_regulation_factor"] = np.empty((0,),dtype=np.float64)
 
                 self.temp_reg_ids = List.empty_list(unicode_type)
                 self.temp_reg_params = List.empty_list(float64[:])
@@ -507,11 +430,8 @@ class Zooplankton():
             if reac["type"] == "egestion":
                 om_composition = tracers[p[0]].composition
                 zoo_composition = self.composition
-                # self.egestion(base_element, c, p, ec, ep, self.assimilation_efficiency, self.ingestion_efficiency, self.total_ingestion, self.om_partition, conc, conc_ratio, d_dt, tracer_map, om_composition, zoo_composition)
                 self.egestion(base_element, c, p, ec, ep, self.unassimilated_egestion, self.assimilation_efficiency, self.ingestion_efficiency, self.total_ingestion, self.om_partition, conc, conc_ratio, d_dt, tracer_map, om_composition, zoo_composition)
             if reac["type"] == "excretion":     
-                # if self.calc_respiration:   self.excretion(iter, reac["parameters"], c, p, ec, ep, ic, ip, tracers, all_grazing, activity_respiration, basal_respiration)
-                # else:                       self.excretion(iter, reac["parameters"], c, p, ec, ep, ic, ip, tracers, all_grazing, 0., 0.)
                 if self.calc_respiration:   pass
                 else:
                     activity_respiration = 0.
@@ -531,9 +451,6 @@ class Zooplankton():
         
 
     def add_prey(self, prey):
-        # for p in prey:
-        #     self.grazing_rates[p] = np.zeros(self.conc.shape[1], dtype=np.float64)
-        #     self.prey_availability[p] = np.zeros(self.conc.shape[1], dtype=np.float64)
         for p in prey:
             self.grazing_rates[p] = np.zeros(self.initial_conc.shape[1], dtype=np.float64)
             self.prey_availability[p] = np.zeros(self.initial_conc.shape[1], dtype=np.float64)
@@ -553,18 +470,13 @@ class Zooplankton():
         elem_c = ec[cons]
         elem_p = ep[prod]
 
-        # Get index of base element in zooplankton
-        # base_index = zoo_composition.index(base_element)
-
         # Calculate egestion rate
         egestion = ingestion_efficiency * total_ingestion
         if len(unassimilated_egestion) > 0:
             for const in unassimilated_egestion:
                 index = zoo_composition.index(const)
                 egestion[index] *= (1. - assimilation_efficiency)
-        # if egestion_formulation == "split": # egestion not fully assimilated
-        #     egestion[base_index] = egestion[base_index] * ( 1. - assimilation_efficiency )
-
+        
         # Calculate concentration ratios
         ratios = np.zeros((len(zoo_composition),len(egestion[0])),dtype=np.float64)
         for const in zoo_composition:
@@ -579,11 +491,7 @@ class Zooplankton():
                 om_const_index = om_composition.index(const)    # Get index of constituent in organic matter pool
                 if const in zoo_composition:    # Only apply rate if constituent is also in zooplankton
                     zoo_const_index = zoo_composition.index(const)  # Get index of constituent in zooplankton
-                    # d_dt[tracer_map[cons][zoo_const_index]] -= elem_c[zoo_const_index] * conc_ratio[tracer_map[cons][zoo_const_index]] * egestion[zoo_const_index] * om_partition[prod][const]
-                    # # d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * conc_ratio[tracer_map[prod][om_const_index]] * egestion[zoo_const_index] * om_partition[prod][const]
-                    # d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * ratios[om_const_index] * egestion[zoo_const_index] * om_partition[prod][const]
                     d_dt[tracer_map[cons][zoo_const_index]] -= elem_c[zoo_const_index] * egestion[zoo_const_index] * om_partition[prod][const]
-                    # d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * conc_ratio[tracer_map[prod][om_const_index]] * egestion[zoo_const_index] * om_partition[prod][const]
                     d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * egestion[zoo_const_index] * om_partition[prod][const]
 
         else:
@@ -591,11 +499,7 @@ class Zooplankton():
                 om_const_index = om_composition.index(const)
                 if const in zoo_composition:
                     zoo_const_index = zoo_composition.index(const)
-                    # d_dt[tracer_map[cons][zoo_const_index]] -= elem_c[zoo_const_index] * conc_ratio[tracer_map[cons][zoo_const_index]] * egestion[zoo_const_index]
-                    # # d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * conc_ratio[tracer_map[prod][om_const_index]] * egestion[zoo_const_index]
-                    # d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * ratios[om_const_index] * egestion[zoo_const_index]
                     d_dt[tracer_map[cons][zoo_const_index]] -= elem_c[zoo_const_index] * egestion[zoo_const_index]
-                    # d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * conc_ratio[tracer_map[prod][om_const_index]] * egestion[zoo_const_index]
                     d_dt[tracer_map[prod][om_const_index]] += elem_p[om_const_index] * egestion[zoo_const_index]
 
     
@@ -612,12 +516,6 @@ class Zooplankton():
         destination = excretion_params[excretion_ids.index("destination")]
         excretion_function = excretion_params[excretion_ids.index("function")]
 
-        # # Nutrient elements
-        # nutrient_elements = Dict.empty(key_type=types.unicode_type,value_type=types.unicode_type)
-        # nutrient_elements["no3"] = "n"
-        # nutrient_elements["nh4"] = "n"
-        # nutrient_elements["po4"] = "p"
-
         # Extract dict
         cons = c[0]
         prod = p[0]
@@ -629,21 +527,14 @@ class Zooplankton():
         element = constituents[element_index]
         
         # Get concentration of constituent in zooplankton
-        # nutrient_index = composition.index(nutrient_elements[prod])     # Index of excreted nutrient
-        # zoo = conc[tracer_map[cons][0]]
         nutrient_index = composition.index(element)         # Index of excreted nutrient
         zoo = conc[tracer_map[cons][nutrient_index]]
         base_index = composition.index(base_element)    # Index of base element
 
         # Extract cell quota id
-        # quota_index = cell_quota_ids.index(nutrient_elements[prod])
         quota_index = cell_quota_ids.index(element)
 
-        # Extract parameter indices
-        # nutrient_excretion = excretion_ids.index(prod)
-
         # Excretion rate based on grazing rate
-        # if excretion_params[nutrient_excretion] == -1.:
         if excretion_function[element_index] == "activity":
                 excreted_base = np.maximum(np.zeros_like(total_ingestion[nutrient_index]), total_ingestion[base_index] * (1. - ingestion_efficiency) - activity_respiration)
                 excreted_nutrient = np.maximum(np.zeros_like(total_ingestion[nutrient_index]), ( total_ingestion[nutrient_index] * (1. - ingestion_efficiency) ) + ( basal_respiration * conc_ratio[tracer_map[cons][nutrient_index]] ))
@@ -653,19 +544,12 @@ class Zooplankton():
         else:   # constant excretion rate
             rate_str = excretion_function[element_index]
             excretion_rate = string_to_float(rate_str)
-            # excretion_rate = np.float64(function[element_index])
             excretion = excretion_rate * zoo
 
             # Calculate excretion of excess nutrient if necessary
             if element != base_element:
                 element_ratio = conc_ratio[tracer_map[cons][nutrient_index]]
                 excretion = excretion * np.maximum(0., element_ratio - cell_quota_opt[quota_index])
-
-            # excretion = excretion_params[nutrient_excretion] * zoo
-
-            # # Calculate excretion of excess nutrient
-            # element_ratio = zoo / conc[tracer_map[cons][base_index]]
-            # excretion = excretion * np.maximum(0., element_ratio - cell_quota_opt[quota_index])
 
         # Update d_dt
         d_dt[tracer_map[cons][nutrient_index]] -= excretion
@@ -683,10 +567,7 @@ class Zooplankton():
         """
         # Extract parameter indices
         max_grazing_rate = grazing_ids.index("max_grazing_rate")
-        # feeding_model = grazing_ids.index("feeding_model")
-        # if grazing_params[feeding_model] == 1.:     search_volume = grazing_ids.index("search_volume")
-        # else:   half_sat_grazing = grazing_ids.index("half_sat_grazing") 
-
+        
         function = grazing_ids.index("function")    # grazing function
         if grazing_params[function] != 4.:  # function not ivlev --> holling type grazing functions
             feeding_model = grazing_ids.index("feeding_model")
@@ -725,7 +606,6 @@ class Zooplankton():
             conc_prey = conc[tracer_map[prey][ind_c]]
 
             # Capture efficiency for current prey in list of available
-            # eff_prey = conc_prey / ( conc_prey + grazing_params[feeding_threshold] )
             if grazing_params[function] != 4. and grazing_params[feeding_model] == 2.:     # "half_saturation" feeding method uses capture efficiency to scale prey availability
                 eff_prey = conc_prey / ( conc_prey + feeding_threshold )    # Changed to this after realizing code would break if using ivlev grazing function
             else:   eff_prey = np.ones_like(conc_prey)   # "clearance_rate" feeding method does not use captre efficiency (set to one for no scaling)
@@ -775,10 +655,8 @@ class Zooplankton():
             # Calculate total uptake rate
             if grazing_params[feeding_model] == 1:  # clearance_rate
                 grazing = ( grazing_params[max_grazing_rate] * grazing_params[search_volume] * prey_availability[cons] ) / ( (grazing_params[search_volume] * total_available) + (grazing_params[max_grazing_rate]**2) ) * tp
-                total_uptake = ( grazing_params[max_grazing_rate] * grazing_params[search_volume] * total_available ) / ( (grazing_params[search_volume] * total_available)**2 + (grazing_params[max_grazing_rate]**2) ) * tp
+                total_uptake = ( grazing_params[max_grazing_rate] * grazing_params[search_volume] * total_available ) / ( (grazing_params[search_volume] * total_available) + (grazing_params[max_grazing_rate]**2) ) * tp
             else:   # half_saturation
-                # grazing = ( grazing_params[max_grazing_rate] * prey_availability[cons] ) / ( total_available + (grazing_params[half_sat_grazing]**2) ) * tp
-                # total_uptake = ( grazing_params[max_grazing_rate] * total_available ) / ( (total_available**2) + (grazing_params[half_sat_grazing]**2) ) * tp
                 grazing = ( grazing_params[max_grazing_rate] * prey_availability[cons] ) / ( total_available + (grazing_params[half_sat_grazing] * prey_selection) ) * tp
                 total_uptake = ( grazing_params[max_grazing_rate] * total_available ) / ( total_available + (grazing_params[half_sat_grazing] * prey_selection) ) * tp
         elif grazing_params[function] == 4.:      # ivlev, Exponential
@@ -966,11 +844,7 @@ class Zooplankton():
         """
         # Extract parameter indices
         mortality_rate = mortality_ids.index("mortality_rate")
-        # oxygen_limited = mortality_ids.index("oxygen_limited")
         temp_limitation = mortality_ids.index("temp_limitation")
-        # if mortality_params[oxygen_limited][0] == 1.:   # include an additional oxygen-dependent mortality term
-        #     mortality_rate_oxy = mortality_ids.index("mortality_rate_oxy")
-        #     # half_sat_oxygen = mortality_ids.index("half_sat_oxygen")
 
         # Extract dict
         cons = c[0]
@@ -983,8 +857,6 @@ class Zooplankton():
         zoo = conc[tracer_map[cons][ind_c]]
 
         # Calculate mortality rate
-        # mortality = ( mortality_params[mortality_rate][0] * zoo ) + ( mortality_params[mortality_rate][1] * (zoo**2) )
-
         linear = mortality_params[mortality_rate][0] * zoo
         quadratic = mortality_params[mortality_rate][1] * (zoo**2)
         oxygen = ( 1. - oxy_limitation_factor ) * mortality_params[mortality_rate][2] * zoo
@@ -996,11 +868,6 @@ class Zooplankton():
 
         mortality = linear + quadratic + oxygen
         
-        # # Oxygen limitation
-        # if mortality_params[oxygen_limited][0] == 1.:
-        #     # oxy_limitation_factor = np.minimum(1., nutrient_limitation(conc[tracer_map["o2"][0]], mortality_params[half_sat_oxygen]))
-        #     mortality += (1. - oxy_limitation_factor) * mortality_params[mortality_rate_oxy] * zoo
-    
         # Calculate concentration ratios
         ratios = np.zeros((len(zoo_composition),len(zoo)),dtype=np.float64)
         for const in zoo_composition:

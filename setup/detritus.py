@@ -6,7 +6,7 @@ from numba.types import float64, unicode_type
 from numba.typed import Dict, List
 from fractions import Fraction
 from functions.seasonal_cycling import *
-from functions.other_functions import concentration_ratio, tracer_elements, temperature_dependence, monod
+from functions.other_functions import tracer_elements, temperature_dependence, monod
 from fractions import Fraction
 np.set_printoptions(precision=20)
 class Detritus():
@@ -125,7 +125,6 @@ class Detritus():
                     self.temp_reg_params.append(val)
         else:   self.temp_limited = False
 
-        
         # Add concentrations ---------------------------------------------------------------
         self.composition = List.empty_list(unicode_type)
         conc = []
@@ -174,17 +173,6 @@ class Detritus():
                 else:
                     sys.exit("Detritus: Element '" + key + "' not recognized. Check documentation and edit input file.")
 
-        # if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
-        #     self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
-        #     for const in range(0,len(self.composition)):
-        #         self.conc[const,:,0] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
-        # else:   # Model as single box
-        #     self.conc = np.zeros((len(self.composition),num_layers,iters),dtype=np.float64)
-        #     for const in range(0,len(self.composition)):
-        #         self.conc[const,:,0] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
-        # self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
-        # self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
-
         if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
             self.initial_conc = np.zeros((len(self.composition),num_layers-1),dtype=np.float64)
             for const in range(0,len(self.composition)):
@@ -193,10 +181,7 @@ class Detritus():
             self.initial_conc = np.zeros((len(self.composition),num_layers),dtype=np.float64)
             for const in range(0,len(self.composition)):
                 self.initial_conc[const,:] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
-        # self.d_dt = np.zeros_like(self.initial_conc[...],dtype=np.float64)
-        # self.conc_ratio = np.ones_like(self.initial_conc[...],dtype=np.float64)
         
-
         # Add reactions ---------------------------------------------------------------
         self.reactions = []
         for reac in reactions:

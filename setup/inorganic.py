@@ -5,7 +5,7 @@ from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
 from functions.seasonal_cycling import *
-from functions.other_functions import concentration_ratio, nutrient_limitation, temperature_dependence, tracer_elements, switch, calculate_acidity, calculate_Hplus, find_roots_of_f_TA, monod
+from functions.other_functions import nutrient_limitation, temperature_dependence, switch, calculate_acidity,find_roots_of_f_TA, monod
 from fractions import Fraction
 np.set_printoptions(precision=20)
 class Inorganic():
@@ -145,9 +145,6 @@ class Inorganic():
                     elif tracer["parameters"]["temperature_regulation"]["function"] == "eppley":    tracer["parameters"]["temperature_regulation"]["function"] = 2
                     elif tracer["parameters"]["temperature_regulation"]["function"] == "q10":       tracer["parameters"]["temperature_regulation"]["function"] = 3
 
-                # Add temperature regulation factor to dictionary
-                # tracer["parameters"]["temperature_regulation"]["temp_regulation_factor"] = np.empty((0,),dtype=np.float64)
-
                 self.temp_reg_ids = List.empty_list(unicode_type)
                 self.temp_reg_params = List.empty_list(float64[:])
                 
@@ -182,17 +179,6 @@ class Inorganic():
             elif isinstance(composition[key], (list,np.ndarray)):   # Already an array of initial conditions
                 conc.append(np.array(composition[key]))
 
-        # if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
-        #     self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
-        #     for const in range(0,len(self.composition)):
-        #         self.conc[const,:,0] = conc[const][:-1]
-        # else:   # Model as single box
-        #     self.conc = np.zeros((len(self.composition),num_layers,iters),dtype=np.float64)
-        #     for const in range(0,len(self.composition)):
-        #         self.conc[const,:,0] = conc[const]
-        # self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
-        # self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
-
         if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
             self.initial_conc = np.zeros((len(self.composition),num_layers-1),dtype=np.float64)
             for const in range(0,len(self.composition)):
@@ -201,8 +187,6 @@ class Inorganic():
             self.initial_conc = np.zeros((len(self.composition),num_layers),dtype=np.float64)
             for const in range(0,len(self.composition)):
                 self.initial_conc[const,:] = conc[const]
-        # self.d_dt = np.zeros_like(self.initial_conc[...],dtype=np.float64)
-        # self.conc_ratio = np.ones_like(self.initial_conc[...],dtype=np.float64)
         
         # Add reactions ---------------------------------------------------------------
         self.reactions = []
@@ -272,7 +256,6 @@ class Inorganic():
         
 
         # Convert bacteria limitation
-        # bact_limitation_factor /= denitrification_params[oxic_anoxic_coeff]
         bact_limitation_factor /= 0.5   # / 0.5 for oxic-anoxic stoichiometric conversion
 
         # Calculate denitrification
@@ -285,10 +268,8 @@ class Inorganic():
         d_dt[tracer_map["no3"][0]] -= denitrification
         if "n2" in tracer_map:  d_dt[tracer_map["n2"][0]] += denitrification
         if "hs" in tracer_map:
-            # x = -(o2 - hs) / denitrification_params[oxic_anoxic_coeff]
             x = -(o2 - hs) / 0.5    # / 0.5 for oxic-anoxic stoichiometric conversion
             y = switch(x)
-            # convert = denitrification_params[oxic_anoxic_coeff] * denitrification_params[nit_anoxic_coeff] * y
             convert = 0.5 * 1.25 * y    # * 0.5 for oxic-anoxic stoichiometric conversion, * 1.25 for nit-anoxic stoichiometric conversion
             d_dt[tracer_map["hs"][0]] -= convert * denitrification
 
@@ -382,9 +363,7 @@ class Inorganic():
             oxy_sat = np.exp(-173.4292 + (249.6339/abt) + (143.3483*np.log(abt))-(21.8492*abt) + salinity*(-0.033096 + 0.014259*abt - 0.0017*(abt**2)))/(24.4665E-3)
         elif reaeration_params[saturation_conversion] == 2.:    # stp, (1 ml/l = 10^3/22.391 = 44.661 uMol/L) 
             oxy_sat = np.exp(-173.4292 + (249.6339/abt) + (143.3483*np.log(abt))-(21.8492*abt) + salinity*(-0.033096 + 0.014259*abt - 0.0017*(abt**2)))*44.661
-        # Use this one with BFM17 0D
-        # oxy_sat = np.exp(-173.4292 + (249.6339/abt) + (143.3483*np.log(abt))-(21.8492*abt) + salinity*(-0.033096 + 0.014259*abt - 0.0017*(abt**2)))*44.661
-
+        
         # Calculate Schmidt number, ratio between the kinematic viscosity and the molecular diffusivity of CO2
         schmidt_number = reaeration_params[k1] - ( reaeration_params[k2]*temperature ) + ( reaeration_params[k3]*(temperature**2) ) - ( reaeration_params[k4]*(temperature**3) )
         schmidt_ratio = reaeration_params[schmidt] / schmidt_number
@@ -431,13 +410,8 @@ class Inorganic():
             if convert: d_dt[tracer_map["o2"][0]] -= reoxidation * reoxidation_params[convert_o2]
             else:       d_dt[tracer_map["o2"][0]] -= reoxidation
 
-
-    def caco3_saturation():
-        pass
-    
     
     @staticmethod
-    # @njit
     def co2_flux(air_sea_flux_ids, air_sea_flux_params, temperature, salinity, density, wind, dz, conc, d_dt, tracer_map):
         """
         Definition:: Calculates pH and rate of co2 air-sea flux
@@ -461,11 +435,9 @@ class Inorganic():
         ta = conc[tracer_map["ta"][0]][0]
 
         # Calculate Schmidt number, ratio between the kinematic viscosity and the molecular diffusivity of carbon dioxide
-        # schmidt_number = np.float64((air_sea_flux_params[c1] - air_sea_flux_params[c2]*temperature + air_sea_flux_params[c3]*(temperature**2) - air_sea_flux_params[c4]*(temperature**3)))
         schmidt_number = (air_sea_flux_params[c1] - air_sea_flux_params[c2]*temperature + air_sea_flux_params[c3]*(temperature**2) - air_sea_flux_params[c4]*(temperature**3))
         
         # Schmidt_ratio is limited to 0 when T > 40 °C
-        # sr = np.float64(air_sea_flux_params[schmidt]/schmidt_number)
         sr = air_sea_flux_params[schmidt][0]/schmidt_number[0]
         schmidt_ratio = max(0., sr)
 
@@ -509,10 +481,10 @@ class Inorganic():
 
         # Create co2 flux array
         co2_flux = np.zeros_like(conc[tracer_map["co2"][0]])
-        # co2_flux[0] = air_sea_flux
         co2_flux[0] = air_sea_flux[0]
 
         # Update d_dt
         d_dt[tracer_map["co2"][0]] += co2_flux
 
         return air_sea_flux[0]
+    

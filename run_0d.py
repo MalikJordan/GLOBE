@@ -1,6 +1,5 @@
 import os
 import time
-# import sys
 import numpy as np
 import yaml
 from numba import njit, types
@@ -12,55 +11,7 @@ from functions.bgc_rate_eqns import bgc_rate_eqns
 from functions.calculate_averages import average
 from functions.other_functions import concentration_ratio, light_attenuation
 from pom.calculations import density_profile
-# from tests.fabm.test_fasham import fasham, ds
 np.set_printoptions(precision=20)
-
-# def create_function_inputs(tracers):
-#     """
-#     Definition: Takes tracer dictionary and creates lists, arrays, or typed.Dicts for numba calculations
-
-#     :return: concentration (array), sinking velocities (array), tracer map (typed.Dict), tracer types (list)
-#     """
-
-#     # Create list of concentrations
-#     concentration = []
-
-#     # Create typed.Dict of tracer indices in concentration
-#     tracer_map = Dict.empty(key_type=types.unicode_type, value_type=types.ListType(types.int64))
-    
-#     # Create list of trcaer types
-#     tracer_type = []   # used in vertical diffusivity calculations
-
-#     # Create list of sinking velocities for each tracer
-#     sinking = []
-
-#     index = 0   # counting number for tracer indices
-#     for trac in tracers:
-#         num_constituents = len(tracers[trac].composition)   # number of constituents in tracer
-
-#         lst = List.empty_list(types.int64)  # empty typed.List to store elements for tracer constituents
-#         for i in range(index,index+num_constituents):  lst.append(np.int64(i))  # fill list
-#         tracer_map[trac] = lst  # identify tracer constituents with their own index
-
-#         for i in range(num_constituents):
-#             # add concentration to matrix
-#             concentration.append(tracers[trac].conc[i,...])    # add concentration to matrix
-
-#             # add tracer type to list
-#             if tracers[trac].type == "detritus":    tracer_type.append(tracers[trac].form)     # need to distinguish particulate/dissolved form
-#             else:   tracer_type.append(tracers[trac].type)     # just the type
-
-#             # add sinking velocity to list
-#             if hasattr(tracers[trac],"sinking_velocity"):   sinking.append(tracers[trac].sinking_velocity)
-#             else:   sinking.append(np.zeros(tracers[trac].conc.shape[1]))
-
-#             # add tracer type to list
-#             index += 1  # update index
-
-#     concentration = np.array(concentration,dtype=np.float64)    # convert concentration from list to array
-#     sinking = np.array(sinking,dtype=np.float64)    # convert sinking from list to array
-
-#     return concentration, sinking, tracer_map, tracer_type
 
 def create_function_inputs(iters, tracers):
     """
@@ -113,7 +64,6 @@ def create_function_inputs(iters, tracers):
 
 
 start = time.perf_counter()
-# from pom.check_phys import dens, u, ub, v, vb, t, tb, s, sb, q2, q2b, q2l, q2lb, km, kh, kq
 # ----------------------------------------------------------------------------------------------------
 # Import and initialize model
 # ----------------------------------------------------------------------------------------------------

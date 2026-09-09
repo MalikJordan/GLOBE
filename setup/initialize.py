@@ -1,5 +1,4 @@
 import numpy as np
-import os
 import sys
 import yaml
 from numba import njit, types
@@ -11,78 +10,14 @@ from setup.inorganic import Inorganic
 from setup.phytoplankton import Phytoplankton
 from setup.zooplankton import Zooplankton
 
-
-# def coordinate_system(configuration, parameters):
-
-#     # Create empty dictionary for vertical grid parameters
-#     vertical_grid = {}
-
-#     # Create coordinate system
-#     if configuration == "0d":
-#         vertical_grid["dz"] = parameters["column_depth"] / parameters["num_layers"]
-#         vertical_grid["z"] = np.linspace(parameters["dz"]/2, parameters["column_depth"] - parameters["dz"]/2, parameters["num_layers"])
-
-#     elif configuration == "1d":
-#         # Initialize vertical coordinate system arrays
-#         l = np.ones(parameters["num_layers"])       # length scale
-#         z = np.zeros(parameters["num_layers"])      # vertical coordinates
-#         zz = np.zeros(parameters["num_layers"])     # staggered vertical coordinates
-#         dz = np.zeros(parameters["num_layers"])     # vertical spacing
-#         dzz = np.zeros(parameters["num_layers"])    # staggered vertical spacing
-#         dzr = np.zeros(parameters["num_layers"])    # reciprocal of vertical spacing
-
-#         # Calculate initial spacing
-#         surface_logspace_layers = parameters["surf_log"] - 2.
-#         bottom_logspace_layers = parameters["num_layers"] - parameters["bot_log"] - 1.
-
-#         layers = (parameters["bot_log"] - parameters["surf_log"]) + 4.
-        
-#         initial_spacing = 2. / layers / np.exp(0.693147 * (surface_logspace_layers))
-
-#         dzz[0] = -0.5 * initial_spacing
-
-#         # Set vertical coordinates
-#         for i in range(1, int(parameters["surf_log"])-1):
-#             z[i-1] = -initial_spacing * 2**(i-2)
-#             zz[i-1] = -initial_spacing * 2**(i-1.5)
-
-#         for i in range(int(parameters["surf_log"])-1, parameters["num_layers"]+1):
-#             z[i-1] = -(i - surface_logspace_layers) / layers
-#             zz[i-1] = -(i - surface_logspace_layers + 0.5) / layers
-        
-#         # Set vertical spacing
-#         dz[:-1] = z[:-1] - z[1:]
-#         dzz[:-1] = zz[:-1] - zz[1:]
-
-#         dz[-1] = 1.E-06     # Small value to avoid division by zero for dzr
-#         dzr = 1. / dz       # Take reciprocal
-#         dz[-1] = 0.         # Correct dz value
-
-#         # Set length scale
-#         l[0] = 0.
-#         l[-1] = 0.
-
-#         vertical_grid["l"] = l
-#         vertical_grid["z"] = z
-#         vertical_grid["zz"] = zz
-#         vertical_grid["dz"] = dz
-#         vertical_grid["dzz"] = dzz
-#         vertical_grid["dzr"] = dzr
-
-#     return vertical_grid
-
-
 @njit
 def coordinate_system(configuration, num_layers, column_depth, surf_log, bot_log):
-# def coordinate_system(configuration, num_layers, column_depth, params_dz, surf_log, bot_log):
     
     # Create empty dictionary for vertical grid parameters
     vertical_grid = Dict.empty(key_type=unicode_type, value_type=float64[:])
 
     # Create coordinate system
     if configuration == "0d":
-        # vertical_grid["dz"] = column_depth / num_layers
-        # vertical_grid["z"] = np.linspace(params_dz/2, column_depth - params_dz/2, num_layers)
         vertical_grid["dz"] = np.array([column_depth], dtype=np.float64)
         vertical_grid["z"] = np.array([column_depth/2], dtype=np.float64)
 
@@ -152,37 +87,17 @@ def import_bgc_model(file_path, physical):
     for key in model:
         if model[key]["type"] == "bacteria":
             tracers[key] = Bacteria(key, base_element, physical, reactions, **model[key])
-            # tracers[key] = Bacteria(key, base_element, physical["simulation"]["iters"], physical["water_column"]["num_layers"], reactions, **model[key])
         elif model[key]["type"] == "detritus":
             tracers[key] = Detritus(key, base_element, physical, reactions, **model[key])
-            # tracers[key] = Detritus(key, base_element, physical["simulation"]["iters"], physical["water_column"]["num_layers"], reactions, **model[key])
         elif model[key]["type"] == "inorganic": 
             tracers[key] = Inorganic(key, physical, reactions, **model[key])
-            # tracers[key] = Inorganic(key, physical["simulation"]["iters"], physical["water_column"]["num_layers"], reactions, **model[key])
         elif model[key]["type"] == "phytoplankton": 
             tracers[key] = Phytoplankton(key, base_element, physical, reactions, **model[key])
-            # tracers[key] = Phytoplankton(key, base_element, physical["simulation"]["iters"], physical["water_column"]["num_layers"], reactions, **model[key])
         elif model[key]["type"] == "zooplankton": 
             tracers[key] = Zooplankton(key, base_element, physical, reactions, **model[key])
-            # tracers[key] = Zooplankton(key, base_element, physical["simulation"]["iters"], physical["water_column"]["num_layers"], reactions, **model[key])
         else:
             sys.exit("Warning: Functional group '" + model[key]["type"] + "' not accepted. Please review documentation and make necessary changes.")
     
-    # tracers = {}
-    # for key in model:
-    #     if model[key]["type"] == "bacteria":
-    #         tracers[key] = Bacteria(key, physical["simulation"]["iters"], reactions, **model[key])
-    #     elif model[key]["type"] == "detritus":
-    #         tracers[key] = Detritus(key, physical["simulation"]["iters"], reactions, **model[key])
-    #     elif model[key]["type"] == "inorganic":
-    #         tracers[key] = Inorganic(key, physical["simulation"]["iters"], reactions, **model[key])
-    #     elif model[key]["type"] == "phytoplankton":
-    #         tracers[key] = Phytoplankton(key, physical["simulation"]["iters"], reactions, **model[key])
-    #     elif model[key]["type"] == "zooplankton":
-    #         tracers[key] = Zooplankton(key, physical["simulation"]["iters"], reactions, **model[key])
-    #     else:
-    #         sys.exit("Warning: Functional group '" + model[key]["type"] + "' not accepted. Please review documentation and make necessary changes.")
-            
     # ----------------------------------------------------------------------------------------------------
     # Add necessary components to Phytoplankton and Zooplankton groups
     # ----------------------------------------------------------------------------------------------------

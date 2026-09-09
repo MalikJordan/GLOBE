@@ -5,9 +5,8 @@ from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
 from functions.seasonal_cycling import *
-from functions.other_functions import concentration_ratio, irradiance, light_attenuation, light_limitation, max_growth_rate, nutrient_limitation, monod, temperature_dependence, tracer_elements, switch
+from functions.other_functions import irradiance, light_limitation, max_growth_rate, monod, temperature_dependence, tracer_elements, switch
 from fractions import Fraction
-from pom.check_phy import nitr_lim, phos_lim, mult_lim, photo
 np.set_printoptions(precision=20)
 class Phytoplankton():
     """
@@ -51,7 +50,6 @@ class Phytoplankton():
             
             for key,val in tracer["parameters"]["exudation"].items():
                 self.exudation_ids.append(key)
-                # if not isinstance(val, np.ndarray): val = np.array([val],dtype=np.float64)  # Convert type to array of floats for typed.List
                 self.exudation_params.append(np.float64(val))
 
         # Growth
@@ -90,7 +88,6 @@ class Phytoplankton():
 
             for key,val in tracer["parameters"]["growth"].items():
                 self.growth_ids.append(key)
-                # if not isinstance(val, np.ndarray): val = np.array([val],dtype=np.float64)  # Convert type to array of floats for typed.List
                 self.growth_params.append(np.float64(val))
 
         # Loss (Generic)
@@ -587,9 +584,6 @@ class Phytoplankton():
                     elif tracer["parameters"]["temperature_regulation"]["function"] == "eppley":    tracer["parameters"]["temperature_regulation"]["function"] = 2
                     elif tracer["parameters"]["temperature_regulation"]["function"] == "q10":       tracer["parameters"]["temperature_regulation"]["function"] = 3
 
-                # Add temperature regulation factor to dictionary
-                # tracer["parameters"]["temperature_regulation"]["temp_regulation_factor"] = np.empty((0,),dtype=np.float64)
-
                 self.temp_reg_ids = List.empty_list(unicode_type)
                 self.temp_reg_params = List.empty_list(float64[:])
                 
@@ -671,18 +665,7 @@ class Phytoplankton():
 
                 else:
                     sys.exit("Phytoplankton: Element '" + key + "' not recognized. Check documentation and edit input file.")
-        
-        # if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
-        #     self.conc = np.zeros((len(self.composition),num_layers-1,iters),dtype=np.float64)
-        #     for const in range(0,len(self.composition)):
-        #         self.conc[const,:,0] = scale * conc[const][:-1] # Apply scaling factor here to prevent from applying multiple times in the above step
-        # else:   # Model as single box
-        #     self.conc = np.zeros((len(self.composition),num_layers,iters),dtype=np.float64)
-        #     for const in range(0,len(self.composition)):
-        #         self.conc[const,:,0] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
-        # self.d_dt = np.zeros_like(self.conc[...,0],dtype=np.float64)
-        # self.conc_ratio = np.ones_like(self.conc[...,0],dtype=np.float64)
-
+   
         if num_layers > 1:  # Model as "boxes" between layers (num_layers-1)
             self.initial_conc = np.zeros((len(self.composition),num_layers-1),dtype=np.float64)
             for const in range(0,len(self.composition)):
@@ -691,70 +674,35 @@ class Phytoplankton():
             self.initial_conc = np.zeros((len(self.composition),num_layers),dtype=np.float64)
             for const in range(0,len(self.composition)):
                 self.initial_conc[const,:] = scale * conc[const]      # Apply scaling factor here to prevent from applying multiple times in the above step
-        # self.d_dt = np.zeros_like(self.initial_conc[...],dtype=np.float64)
-        # self.conc_ratio = np.ones_like(self.initial_conc[...],dtype=np.float64)
-
+        
         # Add cell quotas ---------------------------------------------------------------
         # Create list of cell quota ids
         self.cell_quota_ids = List.empty_list(unicode_type)
         for element in self.composition:    self.cell_quota_ids.append(element)
 
-        # for element in self.composition:    # Base element not in cell quotas (cell quota of base element would be 1.)
-        #     if element != base_element: self.cell_quota_ids.append(element)
-        
-        # # Create list of maximum cell quotas
-        # if "max" in tracer["parameters"]["cell_quota"]: 
-        #     self.cell_quota_max = List.empty_list(float64)
-        #     for element in self.cell_quota_ids: # Add quotas in same order as ids
-        #         self.cell_quota_max.append(tracer["parameters"]["cell_quota"]["max"][element])
-    
-        # # Create list of minimum cell quotas
-        # if "min" in tracer["parameters"]["cell_quota"]: 
-        #     self.cell_quota_min = List.empty_list(float64)
-        #     for element in self.cell_quota_ids: # Add quotas in same order as ids
-        #         self.cell_quota_min.append(tracer["parameters"]["cell_quota"]["min"][element])
-    
-        # # Create list of optimal cell quotas
-        # if "opt" in tracer["parameters"]["cell_quota"]: 
-        #     self.cell_quota_opt = List.empty_list(float64)
-        #     for element in self.cell_quota_ids: # Add quotas in same order as ids
-        #         self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
-    
-        if "cell_quota" in tracer["parameters"]:
-            # Create list of maximum cell quotas
-            if "max" in tracer["parameters"]["cell_quota"]: 
-                self.cell_quota_max = List.empty_list(float64)
-                for element in self.cell_quota_ids: # Add quotas in same order as ids
-                    self.cell_quota_max.append(tracer["parameters"]["cell_quota"]["max"][element])
-    
-            # Create list of minimum cell quotas
-            if "min" in tracer["parameters"]["cell_quota"]: 
-                self.cell_quota_min = List.empty_list(float64)
-                for element in self.cell_quota_ids: # Add quotas in same order as ids
-                    self.cell_quota_min.append(tracer["parameters"]["cell_quota"]["min"][element])
-    
-            # Create list of optimal cell quotas
-            if "opt" in tracer["parameters"]["cell_quota"]: 
-                self.cell_quota_opt = List.empty_list(float64)
-                for element in self.cell_quota_ids: # Add quotas in same order as ids
-                    self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
-        else:
+        # Create list of maximum cell quotas
+        if "max" in tracer["parameters"]["cell_quota"]: 
             self.cell_quota_max = List.empty_list(float64)
+            for element in self.cell_quota_ids: # Add quotas in same order as ids
+                self.cell_quota_max.append(tracer["parameters"]["cell_quota"]["max"][element])
+    
+        # Create list of minimum cell quotas
+        if "min" in tracer["parameters"]["cell_quota"]: 
             self.cell_quota_min = List.empty_list(float64)
+            for element in self.cell_quota_ids: # Add quotas in same order as ids
+                self.cell_quota_min.append(tracer["parameters"]["cell_quota"]["min"][element])
+    
+        # Create list of optimal cell quotas
+        if "opt" in tracer["parameters"]["cell_quota"]: 
             self.cell_quota_opt = List.empty_list(float64)
-        
+            for element in self.cell_quota_ids: # Add quotas in same order as ids
+                self.cell_quota_opt.append(tracer["parameters"]["cell_quota"]["opt"][element])
+    
         # Add production arrays ---------------------------------------------------------------
         self.upt = Dict.empty(
                 key_type=types.unicode_type, 
                 value_type=types.float64[:]
             )   # Uptake
-
-        # self.exu = np.zeros_like(self.conc[0,:,0],dtype=np.float64) # Exudation (Initialzied to 1 for use in respiration)
-        # self.gpp = np.zeros_like(self.conc[0,:,0],dtype=np.float64) # Gross Primary Production (Initialized to 1 for use in exudation and respiration)
-        # self.lys = np.zeros_like(self.conc[0,:,0],dtype=np.float64) # Lysis (carbon)
-        # self.npp = np.zeros_like(self.conc[0,...],dtype=np.float64) # Net Primary Production (include full time span for model output)
-        # self.psn = np.zeros_like(self.conc[0,:,0],dtype=np.float64) # Photosynthesis
-        # self.rsp = np.zeros_like(self.conc[0,:,0],dtype=np.float64) # Respiration
 
         self.exu = np.zeros_like(self.initial_conc[0,:],dtype=np.float64) # Exudation (Initialzied to 1 for use in respiration)
         self.gpp = np.zeros_like(self.initial_conc[0,:],dtype=np.float64) # Gross Primary Production (Initialized to 1 for use in exudation and respiration)
@@ -886,18 +834,10 @@ class Phytoplankton():
         """
         Add nutrients to phytoplankton and append dictionary of uptake rates
         """
-        # zeros = List.empty_list(float64[:])
-        # zeros.append(np.zeros(self.conc.shape[1],dtype=np.float64))
-        # for nut in nutrients:
-        #     self.upt[nut] = np.zeros_like(self.conc[0,:,0],dtype=np.float64)
-        #     # if nut in self.nutrient_limitation["include"]:  self.nutrient_limitation_factor[nut] = np.zeros_like(self.conc[0,:,0],dtype=np.float64)
-        #     self.nutrient_limitation_factor[nut] = zeros
-
         zeros = List.empty_list(float64[:])
         zeros.append(np.zeros(self.initial_conc.shape[1],dtype=np.float64))
         for nut in nutrients:
             self.upt[nut] = np.zeros_like(self.initial_conc[0,:],dtype=np.float64)
-            # if nut in self.nutrient_limitation["include"]:  self.nutrient_limitation_factor[nut] = np.zeros_like(self.initial_conc[0,:,0],dtype=np.float64)
             self.nutrient_limitation_factor[nut] = zeros
 
 
@@ -906,7 +846,6 @@ class Phytoplankton():
         Definition:: Calculates nutrient limitation factor as either a minimum, product, or sum of all nutrients which limit phytoplankton growth
         """
 
-        # fN = []
         fN = List.empty_list(float64[:])
         for key in self.nutrient_limitation:
             if key != "colimitation" and key != "include":
@@ -917,7 +856,6 @@ class Phytoplankton():
                 element_index = self.composition.index(element)
 
                 # Get index of nutrient chemcical constituent in cell quota dictionary
-                # quota_index = self.cell_quota.index(element)
                 quota_index = self.cell_quota_ids.index(element)
                 
                 if self.nutrient_limitation[key]["type"] == "internal":
@@ -925,17 +863,14 @@ class Phytoplankton():
                     func = ( conc_ratio[tracer_map[self.abbrev][element_index]] - self.cell_quota_min[quota_index]) / ( self.cell_quota_opt[quota_index] - self.cell_quota_min[quota_index] )
                     
                     # Ensures nonzero value
-                    # func = np.maximum(1.E-20*np.ones_like(func), func)
                     func = np.minimum(np.ones_like(func),np.maximum(1.E-20*np.ones_like(func), func))   # maximum value of 1.
 
                     # Update dictionary
                     lim = List.empty_list(float64[:])
                     lim.append(np.minimum(np.ones_like(func),func))
                     self.nutrient_limitation_factor[key] = lim
-                    # self.nutrient_limitation_factor[key] = [np.minimum(np.ones_like(func), func)]
 
                     # Append fN for colimitation calculation
-                    # if key in self.nutrient_limitation["colimitation"]["nutrients"]:
                     if key in self.nutrient_limitation["include"]:
                         fN.append(func)
                 
@@ -951,31 +886,23 @@ class Phytoplankton():
                         func = monod(conc[tracer_map[key][0]], self.nutrient_limitation[key]["half_sat"], exponent)
 
                         # Ensures nonzero value
-                        # func = np.maximum(1.E-20*np.ones_like(func), func)
                         func = np.minimum(np.ones_like(func),np.maximum(1.E-20*np.ones_like(func), func))   # maximum value of 1.
 
                         # Update dictionary
                         lim = List.empty_list(float64[:])
                         lim.append(np.minimum(np.ones_like(func),func))
                         self.nutrient_limitation_factor[key] = lim
-                        # self.nutrient_limitation_factor[key] = np.minimum(np.ones_like(func), func)
 
                     elif self.nutrient_limitation[key]["function"] == "linear":
                         # Calculate nutrient limitation factor
                         func = conc[tracer_map[key][0]] / self.nutrient_limitation[key]["half_sat"]
                     
-                        # Ensures nonzero value
-                        # func = np.maximum(1.E-20*np.ones_like(func), func)
-                        # func = np.minimum(np.ones_like(func),np.maximum(1.E-20*np.ones_like(func), func))   # maximum value of 1.
-
                         # Update dictionary
                         lim = List.empty_list(float64[:])
                         lim.append(func)
                         self.nutrient_limitation_factor[key] = lim
-                        # self.nutrient_limitation_factor[key] = np.minimum(np.ones_like(func), func)
 
                     # Append fN for colimitation calculation
-                    # if key in self.nutrient_limitation["colimitation"]["nutrients"]:
                     if "colimitation" in self.nutrient_limitation and key in self.nutrient_limitation["include"]:
                         fN.append(func)
 
@@ -996,54 +923,6 @@ class Phytoplankton():
                 sys.exit("Nutrient colimitation not recognized. Check documentation and edit input file.")
         else:   # Only one nutrient available
             self.nutrient_colimitation_factor = np.min(np.array(fN), axis=0)
-
-
-    # def aggregation(self, iter, base_element, parameters, c, ec, ic, tracers):
-    #     """
-    #     Definition:: Calculates the aggregation loss of phytoplankton during high biomass, bloom conditions
-    #     Parameterized as a quadratic (density dependent) loss term
-    #     """
-    #     # Extract dict
-    #     c = c[0]
-    #     p = p[0]
-    #     ec = ec[c]
-    #     ep = ep[p]
-    #     ic = ic[c]
-    #     ip = ip[p]
-
-    #     # Get concentration of base element
-    #     index = self.composition.index(base_element)
-    #     phyto = np.array(tracers[self.abbrev].conc[index][iter])
-
-    #     # Calculate growth ratio
-    #     growth_ratio = np.minimum(np.ones_like(self.psn[iter]), self.psn[iter]/ ( self.temp_regulation_factor * parameters["aggregation_frac"] * parameters["max_photo_rate"]))
-
-    #     # Calculate aggregation limit
-    #     agg_limit = (1. - growth_ratio)**2
-
-    #     # Calculate aggregation loss
-    #     agg_loss = agg_limit * parameters["aggegation_loss"] * (phyto**2)
-
-    #     # Convert aggregation rate (if necessary)
-    #     if "convert_aggregation" in parameters:
-    #         if parameters["convert_aggregation"] == "cell_quota":
-    #             quota_index = self.nutrient_limitation["nutrients"].index(c)
-    #             agg_loss *= self.nutrient_limitation_factor[quota_index]
-    #         else:
-    #             if isinstance(parameters["convert_aggregation"],(int,float)) and not isinstance(parameters["convert_aggregation"],bool):
-    #                 agg_loss *= parameters["convert_aggregation"]   
-    #             elif isinstance(parameters["convert_aggregation"],str):   
-    #                 agg_loss *= float(Fraction(parameters["convert_aggregation"]))
-
-    #     # Calculate concentration ratio
-    #     concentration_ratio(iter, index, self)
-
-    #     # Update d_dt
-    #     self.d_dt -= ec * tracers[c].conc_ratio * agg_loss
-
-    #     # Apply partition to organic matter group (if necessary)
-    #     if "partition" in parameters:   tracers[p].d_dt += ep * agg_loss * parameters["partition"]
-    #     else:                           tracers[p].d_dt += ep * agg_loss
 
 
     @staticmethod
@@ -1122,11 +1001,6 @@ class Phytoplankton():
             if exudation_params[include_nutrient_stress] == 1.: nutrient_stress = photosynthesis * ( 1. - exudation_params[exc_frac] ) * ( 1. - nutrient_colimitation_factor )
             else:   nutrient_stress = np.zeros_like(photosynthesis)
 
-            # # Calculate activity and nutrient stress components
-            # activity = photosynthesis * exudation_params[exc_frac]
-            # # nutrient_stress = self.psn[iter] * ( 1. - parameters["excreted_fraction"] ) * ( 1. - self.nutrient_limitation_factor )
-            # nutrient_stress = photosynthesis * ( 1. - exudation_params[exc_frac] ) * ( 1. - nutrient_colimitation_factor )
-            
             # Calculate exudation rate
             exu = activity + nutrient_stress
             exudation = exu * tc
@@ -1281,28 +1155,16 @@ class Phytoplankton():
             nutrient_stress_lysis = ( lysis_params[max_stress_lysis_rate] * lysis_params[half_sat_stress_lysis] ) / ( nutrient_colimitation_factor + lysis_params[half_sat_stress_lysis] ) \
                                         + ( lysis_params[extra_lysis_rate] * phyto ) / ( phyto + lysis_params[half_sat_extra_lysis] + 1.E-20 )
             
-            # # Apportion lysis between organic matter pools based on type == particulate or dissolved
-            # if tracer_type[tracer_map[prod][0]] == "dissolved":     lysis = ( 1 - apportioning_factor ) * nutrient_stress_lysis * phyto
-            # elif tracer_type[tracer_map[prod][0]] == "particulate": lysis = apportioning_factor * nutrient_stress_lysis * phyto
-
             # Update lysis variable
             lys = nutrient_stress_lysis
 
             # Match phyto and organic matter concentration ratios
-            # ratios = np.zeros(len(tracers[p].conc_ratio))
             ratios = np.zeros((len(composition_om),conc.shape[1]))
             for const in composition_phyto:
                 if const in composition_om:
                     index_phyto = composition_phyto.index(const)
                     index_om = composition_om.index(const)
                     ratios[index_om] = conc_ratio[tracer_map[cons][index_phyto]]
-
-            # # Update d_dt
-            # for i in range(len(elem_c)):
-            #     d_dt[tracer_map[cons][i]] -= elem_c[i] * conc_ratio[tracer_map[cons][i]] * lysis
-            # for j in range(len(elem_p)):
-            #     d_dt[tracer_map[prod][j]] += elem_p[j] * ratios[j] * lysis
-
 
             # Apply apportioning factor if necessary
             if prod in lysis_apportioning_factor:
@@ -1337,16 +1199,10 @@ class Phytoplankton():
                 else:   # constant
                     mult *= lysis_params[convert_lysis]
                     ratios *= lysis_params[convert_lysis]
-                    # for const in composition_phyto:
-                    #     mult[const] *= lysis_params[convert_lysis][const]
-                    # for const in composition_om:
-                    #     ratios[const] *= lysis_params[convert_lysis][const]
-
+                    
             if part:
                 ratios *= lysis_params[partition]
-                # for const in composition_om:
-                #     ratios[const] *= lysis_params[partition][const]
-
+                
             # Update d_dt
             for i in range(len(elem_c)):
                 d_dt[tracer_map[cons][i]] -= elem_c[i] * mult[i] * lys
@@ -1429,8 +1285,6 @@ class Phytoplankton():
         if growth_params[light_lim] in [-1., -2., -3., -4.]:   # ["geider", "monod", "platt", "smith"]:
             eps_PAR = growth_ids.index("eps_PAR")
 
-            # k_PAR incorrect starting at iter==28
-
             # Calculate irradiance at surface
             irrad = irradiance(growth_params[eps_PAR], surface_PAR, coordinates, k_PAR)
 
@@ -1446,7 +1300,6 @@ class Phytoplankton():
         if growth_params[si_lim] == 1.:    # Photosynthesis is limited by silicate
             photosynthesis *= nutrient_limitation_factor["sio4"][0]
         
-        # return photosynthesis, fI, irr
         return photosynthesis, irr, Vm
     
 
@@ -1629,9 +1482,6 @@ class Phytoplankton():
 
                 # Determine uptake strategy
                 if params[basis] == 1.:         # constant uptake rate
-                    # constant = ids.index("constant")
-                    # uptake = params[constant] * nutrient_limitation_factor["no3"][0] * phyto
-                    # uptake_to_om = np.zeros_like(uptake)
                     constant = ids.index("constant")
                     
                     if params[form] == 1.:      # specific affinity, use nutrient quota with concentration of base element
@@ -1683,7 +1533,6 @@ class Phytoplankton():
                     elif params[excl_resp] == 1.:   # True, exclude respiratory cost
                         uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * half_sat * phyto
 
-                    # uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_limitation_factor["no3"][0] * phyto
                     uptake_to_om = np.zeros_like(uptake)
 
                 elif params[basis] == 3.:       # nutrient based uptake rate
@@ -1732,10 +1581,7 @@ class Phytoplankton():
                     max_uptake_DIN = max_uptake_no3 + max_uptake_nh4
 
                     # Extract nutrient quota
-                    # quota_index = self.nutrient_limitation["nutrients"].index("no3")
-                    # nutrient_quota = self.nutrient_limitation["opt_quota"][quota_index]
                     quota_index = cell_quota_ids.index("n")
-                    # nutrient_quota = cell_quota_opt[quota_index]
                     nutrient_quota = cell_quota_max[quota_index]
 
                     # Intracellular missing amount of N
@@ -1757,8 +1603,6 @@ class Phytoplankton():
                     uptake_to_om = -actual_uptake * (1. - upt_switch)
 
                     uptake = no3_uptake
-                    # if "nh4" in tracer_map:     uptake -= uptake_to_om/2    # /2 to split between no3 and nh4
-                    # pass
                 
                 # Multiply by Monod function of nutrient limitation (if necessary)
                 # if "nh4" in tracer_map and nh4_inhibited:    # no3_lim / (no3_lim + nh4_lim)
@@ -1770,12 +1614,7 @@ class Phytoplankton():
 
                 # Update d_dt
                 d_dt[tracer_map[cons][0]] -= uptake
-                # if "n" in composition:     
-                #     if "nh4" in tracer_map: # /2 to split uptake_to_om between no3 and nh4 uptake rates
-                #         d_dt[tracer_map[abbrev][index]] += uptake - uptake_to_om/2
-                #     else:
-                #         d_dt[tracer_map[abbrev][index]] += uptake - uptake_to_om
-                    
+                  
                 if len(p) > 1:  # both phyto and om produced
                     for i in range(len(ephy)):
                         d_dt[tracer_map[abbrev][i]] += ephy[i] * (uptake - uptake_to_om)
@@ -1805,9 +1644,6 @@ class Phytoplankton():
 
                 # Determine uptake strategy
                 if params[basis] == 1.:         # constant uptake rate
-                    # constant = ids.index("constant")
-                    # uptake = params[constant] * nutrient_limitation_factor["nh4"][0] * phyto
-                    # uptake_to_om = np.zeros_like(uptake)
                     constant = ids.index("constant")
                     
                     if params[form] == 1.:      # specific affinity, use nutrient quota with concentration of base element
@@ -1857,7 +1693,6 @@ class Phytoplankton():
                     elif params[excl_resp] == 1.:   # True, exclude respiratory cost
                         uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * half_sat * phyto
 
-                    # uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_limitation_factor["nh4"][0] * phyto
                     uptake_to_om = np.zeros_like(uptake)
 
                 elif params[basis] == 3.:       # nutrient based uptake rate
@@ -1903,11 +1738,10 @@ class Phytoplankton():
                     max_uptake_no3 = params[specific_affinity] * no3 * phyto * nh4_preference
                     max_uptake_nh4 = params[specific_affinity] * nh4 * phyto
                     max_uptake_DIN = max_uptake_no3 + max_uptake_nh4
+
                     # Extract nutrient quota
-                    # quota_index = self.nutrient_limitation["nutrients"].index("no3")
-                    # nutrient_quota = self.nutrient_limitation["opt_quota"][quota_index]
+                    
                     quota_index = cell_quota_ids.index("n")
-                    # nutrient_quota = cell_quota_opt[quota_index]
                     nutrient_quota = cell_quota_max[quota_index]
 
                     # Intracellular missing amount of N
@@ -1929,9 +1763,7 @@ class Phytoplankton():
                     uptake_to_om = -actual_uptake * (1. - upt_switch)
 
                     uptake = nh4_uptake
-                    # if "nh4" in tracer_map:     uptake -= uptake_to_om/2    # /2 to split between no3 and nh4
-                    # pass
-
+                    
                 # Multiply by Monod function of nutrient limitation (if necessary)
                 # if nh4_inhibited:    # nh4_lim / (nh4_lim + no3_lim)
                 #     uptake *= monod(nutrient_limitation_factor["nh4"][0], nutrient_limitation_factor["no3"][0], 1.)
@@ -1942,12 +1774,7 @@ class Phytoplankton():
 
                 # Update d_dt
                 d_dt[tracer_map[cons][0]] -= np.maximum(uptake, np.zeros_like(uptake))
-                # if "n" in composition:     
-                #     if "no3" in tracer_map: # /2 to split uptake_to_om between no3 and nh4 uptake rates
-                #         d_dt[tracer_map[abbrev][index]] += np.maximum(uptake, np.zeros_like(uptake)) - uptake_to_om/2
-                #     else:
-                #         d_dt[tracer_map[abbrev][index]] += np.maximum(uptake, np.zeros_like(uptake)) - uptake_to_om
-                    
+                   
                 if len(p) > 1:  # both phyto and om produced
                     for i in range(len(ephy)):
                         d_dt[tracer_map[abbrev][i]] += ephy[i] * (uptake - uptake_to_om)
@@ -1959,11 +1786,6 @@ class Phytoplankton():
                         d_dt[tracer_map[abbrev][i]] += ephy[i] * (uptake - uptake_to_om)
 
             elif cons == "po4":
-                # Get concentration of element in phytoplankton
-                # if "p" in self.composition:
-                #     index = self.composition.index("p")
-                # else:   # If element doesn't isn't directly resolved, use base element with conversion factor
-                #     index = self.composition.index(base_element)
                 form = ids.index("form")
                 if params[form] ==  1.:     # use specific affinity
                     index = composition.index(base_element)
@@ -1977,11 +1799,7 @@ class Phytoplankton():
                 nutrient_quota = cell_quota_opt[quota_index]
 
                 # Determine uptake strategy
-                # Determine uptake strategy
                 if params[basis] == 1.:         # constant uptake rate
-                    # constant = ids.index("constant")
-                    # uptake = params[constant] * nutrient_limitation_factor["po4"][0] * phyto
-                    # uptake_to_om = np.zeros_like(uptake)
                     constant = ids.index("constant")
                     
                     if params[form] == 1.:      # specific affinity, use nutrient quota with concentration of base element
@@ -2033,7 +1851,6 @@ class Phytoplankton():
                     elif params[excl_resp] == 1.:   # True, exclude respiratory cost
                         uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * half_sat * phyto
                     
-                    # uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_limitation_factor["no3"][0] * phyto
                     uptake_to_om = np.zeros_like(uptake)
 
                 elif params[basis] == 3.:       # nutrient based uptake rate
@@ -2079,7 +1896,6 @@ class Phytoplankton():
 
                     # Actual uptake of nutrient
                     actual_uptake = np.minimum(max_uptake, missing + assim_uptake)
-                    # actual_uptake = np.maximum(np.zeros_like(max_uptake), np.minimum(max_uptake,missing + assim_uptake))
 
                     upt_switch = switch(actual_uptake)
 
@@ -2089,30 +1905,16 @@ class Phytoplankton():
                     uptake = uptake_to_phyto
 
                 # Update d_dt
-                # tracers[c].d_dt -= np.array(ec) * uptake
-                # tracers[self.abbrev].d_dt += ep * phyto_uptake
                 d_dt[tracer_map[cons][0]] -= elem_c * uptake_to_phyto
-                # tracers[self.abbrev].d_dt += ephy * uptake_to_phyto
                 if len(p) > 1:  
-                    # tracers[self.abbrev].d_dt -= ephy * uptake_to_om
-                    # tracers[om].d_dt += eom * uptake_to_om
                     for i in range(len(ephy)):
-                        # tracers[self.abbrev].d_dt[i] += ephy[i] * uptake_to_phyto
-                        # tracers[self.abbrev].d_dt[i] += ephy[i] *  np.minimum(max_uptake, missing + assim_uptake)
                         d_dt[tracer_map[abbrev][i]] += ephy[i] *  (uptake - uptake_to_om)
-                        # d_dt[tracer_map[abbrev][i]] += ephy[i] *  np.minimum(max_uptake, missing + assim_uptake)
-                        # tracers[self.abbrev].d_dt[i] += ephy[i] * np.maximum(np.zeros_like(max_uptake), np.minimum(max_uptake,missing + assim_uptake))
                     for j in range(len(eom)):
                         d_dt[tracer_map[om][j]] += eom[j] *  uptake_to_om
                         
                 else:
                     for i in range(len(ephy)):
                         d_dt[tracer_map[abbrev][i]] += ephy[i] *  (uptake - uptake_to_om)
-                        # d_dt[tracer_map[abbrev][i]] += ephy[i] *  np.minimum(max_uptake, missing + assim_uptake)
-                        
-                    
-
-                    # if c == 'po4':  self.uptp[iter] = uptake_to_phyto
                 
             elif cons == "fe":
                 form = ids.index("form")
@@ -2140,7 +1942,6 @@ class Phytoplankton():
                 elem_c = ec[cons][0]
                 
                 # Determine uptake strategy
-                # Determine uptake strategy
                 if params[basis] == 1.:         # constant uptake rate
                     constant = ids.index("constant")
                 
@@ -2154,13 +1955,6 @@ class Phytoplankton():
                     uptake_to_om = np.zeros_like(uptake)
                 
                 elif params[basis] == 2.:       # uptake based on growth rate (excluding respiratory costs)
-                    # if params[form] == 1.:  # specific affinity, use nutrient quota with concentration of base element
-                    #     uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_quota * phyto
-                    # else:   # use concentration of nutrient constituent
-                    #     uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_limitation_factor["sio4"][0] * phyto
-                    # # uptake = photosynthesis * nutrient_limitation_factor["sio4"][0] * phyto
-                    # uptake_to_om = np.zeros_like(uptake)
-                
                     if len(p) > 1: # If uptake can be source of organic matter
                         phy = list(p).index(abbrev)
                         ephy = ep[abbrev]
@@ -2263,11 +2057,6 @@ class Phytoplankton():
                     for i in range(len(ephy)):  d_dt[tracer_map[abbrev][i]] += ephy[i] *  (uptake - uptake_to_om)
 
             elif cons == "sio4":    
-                # Get concentration of element in phytoplankton
-                # if "p" in self.composition:
-                #     index = self.composition.index("p")
-                # else:   # If element doesn't isn't directly resolved, use base element with conversion factor
-                #     index = self.composition.index(base_element)
                 form = ids.index("form")
                 if params[form] ==  1.:     # use specific affinity
                     index = composition.index(base_element)
@@ -2293,16 +2082,13 @@ class Phytoplankton():
                 elem_c = ec[cons][0]
                     
                 # Determine uptake strategy
-                # Determine uptake strategy
                 if params[basis] == 1.:         # constant uptake rate
                     constant = ids.index("constant")
 
                     if params[form] == 1.:      # specific affinity, use nutrient quota with concentration of base element
                         uptake = params[constant] * nutrient_quota * phyto
-
                     elif params[form] == 2.:    # use concentration of nutrient constituent
                         uptake = params[constant] * phyto
-
                     elif params[form] == 3.:    # use nutrient limitation factor
                         uptake = params[constant] * nutrient_limitation_factor["sio4"][0] * phyto
                     
@@ -2310,13 +2096,6 @@ class Phytoplankton():
                     uptake_to_om = np.zeros_like(uptake)
 
                 elif params[basis] == 2.:       # uptake based on growth rate (excluding respiratory costs)
-                    # if params[form] == 1.:  # specific affinity, use nutrient quota with concentration of base element
-                    #     uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_quota * phyto
-                    # else:   # use concentration of nutrient constituent
-                    #     uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_limitation_factor["sio4"][0] * phyto
-                    # # uptake = photosynthesis * nutrient_limitation_factor["sio4"][0] * phyto
-                    # uptake_to_om = np.zeros_like(uptake)
-
                     if len(p) > 1: # If uptake can be source of organic matter
                         phy = list(p).index(abbrev)
                         ephy = ep[abbrev]
@@ -2346,7 +2125,6 @@ class Phytoplankton():
                     elif params[den] == 2.: denominator = nutrient_limitation_factor["sio4"][0]
                     elif params[den] == 3.: denominator = nutrient_colimitation_factor
                     elif params[den] == 4:  denominator = nutrient_quota * np.ones_like(sio4)
-                    # elif params[den] == 5.: denominator = 0.
                     elif params[den] == 5.: denominator = np.zeros_like(sio4)
                     
                     # Half sat equation

@@ -1,38 +1,6 @@
 import numpy as np
 from numba import njit
-from pom.check_diffusion import a, c, vh, vhp
 np.set_printoptions(precision=20)
-
-# order of inputs --> (case, dt2, num_layers, column_depth, z, dz, zz, dzz, l, mld, umol, nbc, ntp, swrad, km, kh, kq, ke, kef, keb, kel, kelf, kelb, density, temp, sal, u, uf, ub, bsu, wsu, v, vf, vb, bsv, wsv)
-# @njit
-# def density_profile(num_layers, column_depth, dzz, temp, sal):
-#     """
-#     Description: Calculates vertical density profile
-                 
-#                  dzz = staggered vertical spacing
-#     """
-    
-#     gravity = 9.806
-#     vertical_density_profile = np.zeros(num_layers)
-#     pressure = -gravity * 1.025 * dzz[:-1] * column_depth * 0.01
-
-#     cr = 1449.1 + 0.0821*pressure + (4.55*temp[:-1]) - (0.045*np.power(temp[:-1],2)) + (1.34*(sal[:-1] - 35.))
-#     cr = pressure/np.power(cr,2)
-
-#     density = 999.842594 + (6.793952E-02 * temp[:-1]) - (9.095290E-03 * np.power(temp[:-1],2)) \
-#             + (1.001685E-04 * np.power(temp[:-1],3)) - (1.120083E-06 * np.power(temp[:-1],4)) \
-#             + (6.536332E-09 * np.power(temp[:-1],5))
-#     density = density + (0.824493 - (4.0899E-03 * temp[:-1]) + (7.6438E-05 * np.power(temp[:-1],2)) \
-#             - (8.2467E-07 * np.power(temp[:-1],3)) + (5.3875E-09 * np.power(temp[:-1],4))) * sal[:-1] \
-#             + (-5.72466E-03 + (1.0227E-04 * temp[:-1]) - (1.6546E-06 * np.power(temp[:-1],2))) * (np.power(np.abs(sal[:-1]),1.5)) \
-#             + 4.8314E-4*np.power(sal[:-1],2)
-#     density = density + 1.E05*cr*(1. - (2*cr))
-
-#     vertical_density_profile[:-1] = (density - 1000.) * 1.E-03
-#     vertical_density_profile[-1] = vertical_density_profile[-2]
-
-#     return vertical_density_profile
-
 
 def density_profile(configuration, num_layers, column_depth, dzz, temp, sal):
     """
@@ -73,7 +41,6 @@ def density_profile(configuration, num_layers, column_depth, dzz, temp, sal):
                 - (8.2467E-07 * np.power(temp[:-1],3)) + (5.3875E-09 * np.power(temp[:-1],4))) * sal[:-1] \
                 + (-5.72466E-03 + (1.0227E-04 * temp[:-1]) - (1.6546E-06 * np.power(temp[:-1],2))) * (np.power(np.abs(sal[:-1]),1.5)) \
                 + 4.8314E-4*np.power(sal[:-1],2)
-        # density = density + 1.E05*cr*(1. - (2*cr))
 
         vertical_density_profile[:-1] = (density - 1000.) * 1.E-03
         vertical_density_profile[-1] = vertical_density_profile[-2]

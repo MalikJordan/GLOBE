@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 from numba import njit, types
 from numba.typed import Dict, List
 np.set_printoptions(precision=20)
@@ -53,7 +52,6 @@ def light_limitation(abbrev, growth_ids, growth_params, dz, irrad, k_PAR, Vm, te
     # -------------------------------------------------------------------------------------------------
     # Geider et al. (1997) / Jassby and Platt (1976)
     # -------------------------------------------------------------------------------------------------
-    # elif growth_params[light_limitation] in [-2.,-3.]:  # ["geider","platt"]
     elif growth_params[light_limitation] == -2. or growth_params[light_limitation] == -3.:  # ["geider","platt"]
         light_location = growth_ids.index("light_location")
         initial_PI_slope = growth_ids.index("initial_PI_slope")
@@ -62,13 +60,13 @@ def light_limitation(abbrev, growth_ids, growth_params, dz, irrad, k_PAR, Vm, te
         if growth_params[light_location] == 1.:     # "top"
             irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * 86400                              # *86400 to convert from [1/s] to [1/d]
         elif growth_params[light_location] == 2.:   # "middle"  # Lazzari et al. (2012)
-            irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz/2) * 86400     # *86400 to convert from [1/s] to [1/d]
+            # irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz/2) * 86400     # *86400 to convert from [1/s] to [1/d]
+            irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz) * 86400     # *86400 to convert from [1/s] to [1/d]
         elif growth_params[light_location] == 3.:   # "integrated"  # Vichi et al. (2007)
             r = irrad / (k_PAR * dz) * (1. - np.exp(-k_PAR*dz))            
             irrad_at_depth = np.maximum(1E-20*np.ones_like(r), r*86400)                                        # *86400 to convert from [1/s] to [1/d]
 
         # Calculate Chl:C ratio using either ...   
-        # if {"c","chl"}.issubset(composition): # Carbon and Chlorophyll concentrations (if preselt)
         if "c" in composition and "chl" in composition:
             carbon_index = composition.index("c")
             pc = conc[tracer_map[abbrev][carbon_index]]
@@ -109,7 +107,6 @@ def light_limitation(abbrev, growth_ids, growth_params, dz, irrad, k_PAR, Vm, te
             irrad_at_depth = np.maximum(1E-20*np.ones_like(r), r)  
         
         # Evans & Parslow (1985) formulation
-        # num = Vm * growth_params[initial_PI_slope] *irrad_at_depth
         num = growth_params[initial_PI_slope] *irrad_at_depth
         den = np.sqrt((Vm**2) + ((growth_params[initial_PI_slope]*irrad_at_depth)**2))
         
@@ -145,8 +142,6 @@ def irradiance(eps_PAR, surface_PAR, depth, k_PAR):
     eps_PAR = fraction of photosynthetically available radiation
     0.217 = conversion from Einstein to Watts
     """
-
-    # irradiance = surface_PAR * eps_PAR / 0.217
 
     irradiance = np.zeros(len(depth))
     irradiance[0] = surface_PAR * eps_PAR / 0.217
@@ -476,7 +471,6 @@ def calculate_acidity(temperature, salinity, density, wind, d, schmidt_ratio, co
     return k0, k1, k1p, k2, k2p, k3p, ksi, kw, ks, kf, kb, ken, bt, st, ft, pt, sit, ldic, alk
 
 
-# @njit
 def calculate_Hplus(pH, k1, k2, k1p, k2p, k3p, ksi, kw, ks, kf, kb, bt, st, ft, pt, sit, ldic, alk):
     """ This function expresses total alkalinity (TA) as a function of DIC, 
     hSWS (H+ on sea water scale) and constants. It also calculates the 
@@ -523,7 +517,6 @@ def calculate_Hplus(pH, k1, k2, k1p, k2p, k3p, ksi, kw, ks, kf, kb, bt, st, ft, 
     return fn, df
 
 
-# @njit
 def find_roots_of_f_TA(x1, x2, xacc, maxit, k1, k2, k1p, k2p, k3p, ksi, kw, ks, kf, kb, bt, st, ft, pt, sit, ldic, alk):
     """ This function finds the roots of the total alkalinity function
     

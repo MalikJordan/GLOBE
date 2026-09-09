@@ -1,6 +1,5 @@
 import os
 import time
-# import sys
 import numpy as np
 import yaml
 from numba import njit, types
@@ -15,53 +14,6 @@ from pom.forcing import forcing_manager
 from pom.initialize import initialize_pom
 from pom.coupling import pom_bgc_1d
 np.set_printoptions(precision=20)
-
-# def create_function_inputs(tracers):
-#     """
-#     Definition: Takes tracer dictionary and creates lists, arrays, or typed.Dicts for numba calculations
-
-#     :return: concentration (array), sinking velocities (array), tracer map (typed.Dict), tracer types (list)
-#     """
-
-#     # Create list of concentrations
-#     concentration = []
-
-#     # Create typed.Dict of tracer indices in concentration
-#     tracer_map = Dict.empty(key_type=types.unicode_type, value_type=types.ListType(types.int64))
-    
-#     # Create list of trcaer types
-#     tracer_type = []   # used in vertical diffusivity calculations
-
-#     # Create list of sinking velocities for each tracer
-#     sinking = []
-
-#     index = 0   # counting number for tracer indices
-#     for trac in tracers:
-#         num_constituents = len(tracers[trac].composition)   # number of constituents in tracer
-
-#         lst = List.empty_list(types.int64)  # empty typed.List to store elements for tracer constituents
-#         for i in range(index,index+num_constituents):  lst.append(np.int64(i))  # fill list
-#         tracer_map[trac] = lst  # identify tracer constituents with their own index
-
-#         for i in range(num_constituents):
-#             # add concentration to matrix
-#             concentration.append(tracers[trac].conc[i,...])    # add concentration to matrix
-
-#             # add tracer type to list
-#             if tracers[trac].type == "detritus":    tracer_type.append(tracers[trac].form)     # need to distinguish particulate/dissolved form
-#             else:   tracer_type.append(tracers[trac].type)     # just the type
-
-#             # add sinking velocity to list
-#             if hasattr(tracers[trac],"sinking_velocity"):   sinking.append(tracers[trac].sinking_velocity)
-#             else:   sinking.append(np.zeros(tracers[trac].conc.shape[1]))
-
-#             # add tracer type to list
-#             index += 1  # update index
-
-#     concentration = np.array(concentration,dtype=np.float64)    # convert concentration from list to array
-#     sinking = np.array(sinking,dtype=np.float64)    # convert sinking from list to array
-
-#     return concentration, sinking, tracer_map, tracer_type
 
 def create_function_inputs(iters, tracers):
     """
@@ -114,7 +66,6 @@ def create_function_inputs(iters, tracers):
 
 
 start = time.perf_counter()
-# from pom.check_phys import dens, u, ub, v, vb, t, tb, s, sb, q2, q2b, q2l, q2lb, km, kh, kq
 # ----------------------------------------------------------------------------------------------------
 # Import and initialize model
 # ----------------------------------------------------------------------------------------------------
@@ -164,14 +115,6 @@ configuration = physical["simulation"]["configuration"]
 # ----------------------------------------------------------------------------------------------------
 # Initialize POM1D (if necessary)
 # ----------------------------------------------------------------------------------------------------
-# if physical["environment"]["forcing"] == "pom1d":
-#     with open(os.getcwd() + '/pom1d.yaml', 'r') as f:
-#         pom1d = yaml.full_load(f)
-#     physical, forcing = initialize_pom(pom1d, physical)
-#     physical = density_profile(physical)
-#     # pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * np.pi / 360.)
-#     pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * (3.14159265359) / 360.)
-
 if physical["environment"]["forcing"] == "pom1d":
     with open(os.getcwd() + '/pom1d.yaml', 'r') as f:
         pom1d = yaml.full_load(f)
@@ -184,11 +127,8 @@ if physical["environment"]["forcing"] == "pom1d":
     wsu, wsv, bsu, bsv, ism, swrad, wgen, weddy, mld, \
     counter_ids, counter_params, forcing_ids, forcing_month1, forcing_month2        = initialize_pom(num_layers, pom1d["input_files"]["temperature_IC"], pom1d["input_files"]["salinity_IC"])
     
-    # density = density_profile(num_layers, column_depth, physical["vertical_grid"]["dzz"], temp_cur, sal_cur)
-    # density = density_profile(num_layers, column_depth, physical["vertical_grid"]["dzz"], temp_bwd, sal_bwd)
     density = density_profile(configuration, num_layers, column_depth, physical["vertical_grid"]["dzz"], temp_bwd, sal_bwd)
-    # pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * np.pi / 360.)
-    pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * (3.14159265359) / 360.)
+    pom1d["general"]["coriolis"] = 2. * pom1d["general"]["earth_angular_velocity"] * np.sin(physical["environment"]["latitude"] * 2. * np.pi / 360.)
 
     # ----------------------------------------------------------------------------------------------------
     # Extract commonly used variables to avoid repetitive dictionary unpacking (unchanged through simulation)
@@ -327,78 +267,7 @@ for iter in range(0,iters-1):
     sal_cur[:] = sal_fwd[:]
 
     # Update density
-    # density = density_profile(num_layers, column_depth, dzz, temp_cur, sal_cur)
-    # density = density_profile(num_layers, column_depth, dzz, temp_bwd, sal_bwd)
     density = density_profile(configuration, num_layers, column_depth, dzz, temp_cur, sal_cur)
-    # density = density_profile(configuration, num_layers, column_depth, dzz, temp_bwd, sal_bwd)
-
-    # if iter < 10:
-    #     filename = f"diffusion_iter{iter:01d}.npz"
-    #     load_diffusion = np.load(os.getcwd() + "/tests/bfm17/check_phys/" + filename, allow_pickle=True)
-
-    #     delta_mom = dif_mom - load_diffusion["mom"]
-    #     delta_trac = dif_trac - load_diffusion["trac"]
-    #     delta_ke = dif_ke - load_diffusion["ke"]
-
-    #     filename2 = f"velocity_iter{iter:01d}.npz"
-    #     load_velocity = np.load(os.getcwd() + "/tests/bfm17/check_phys/" + filename2, allow_pickle=True)
-
-    #     delta_u_cur = u_cur - load_velocity["u_cur"]
-    #     delta_u_bwd = u_bwd - load_velocity["u_bwd"]
-    #     delta_u_fwd = u_fwd - load_velocity["u_fwd"]
-    #     delta_v_cur = v_cur - load_velocity["v_cur"]
-    #     delta_v_bwd = v_bwd - load_velocity["v_bwd"]
-    #     delta_v_fwd = v_fwd - load_velocity["v_fwd"]
-
-    #     x=1
-
-    # if iter == 119:
-    #     filename = f"diffusion_iter{iter:03d}.npz"
-    #     load_diffusion = np.load(os.getcwd() + "/tests/bfm17/check_phys/" + filename, allow_pickle=True)
-
-    #     delta_mom = dif_mom - load_diffusion["mom"]
-    #     delta_trac = dif_trac - load_diffusion["trac"]
-    #     delta_ke = dif_ke - load_diffusion["ke"]
-
-    #     filename2 = f"velocity_iter{iter:03d}.npz"
-    #     load_velocity = np.load(os.getcwd() + "/tests/bfm17/check_phys/" + filename2, allow_pickle=True)
-
-    #     delta_u_cur = u_cur - load_velocity["u_cur"]
-    #     delta_u_bwd = u_bwd - load_velocity["u_bwd"]
-    #     delta_u_fwd = u_fwd - load_velocity["u_fwd"]
-    #     delta_v_cur = v_cur - load_velocity["v_cur"]
-    #     delta_v_bwd = v_bwd - load_velocity["v_bwd"]
-    #     delta_v_fwd = v_fwd - load_velocity["v_fwd"]
-
-    #     x=1
-
-    # if iter == 3719:
-    #     filename = f"diffusion_iter{iter:04d}.npz"
-    #     load_diffusion = np.load(os.getcwd() + "/tests/bfm17/check_phys/" + filename, allow_pickle=True)
-
-    #     delta_mom = dif_mom - load_diffusion["mom"]
-    #     delta_trac = dif_trac - load_diffusion["trac"]
-    #     delta_ke = dif_ke - load_diffusion["ke"]
-
-    #     filename2 = f"velocity_iter{iter:04d}.npz"
-    #     load_velocity = np.load(os.getcwd() + "/tests/bfm17/check_phys/" + filename2, allow_pickle=True)
-
-    #     delta_u_cur = u_cur - load_velocity["u_cur"]
-    #     delta_u_bwd = u_bwd - load_velocity["u_bwd"]
-    #     delta_u_fwd = u_fwd - load_velocity["u_fwd"]
-    #     delta_v_cur = v_cur - load_velocity["v_cur"]
-    #     delta_v_bwd = v_bwd - load_velocity["v_bwd"]
-    #     delta_v_fwd = v_fwd - load_velocity["v_fwd"]
-
-    #     x=1
-
-    
-    # pom_bgc_1d(iter, base_element, concentration, lambda_w, temp_bwd, sal_bwd, density, ism, swrad, weddy, wgen, wsu, wsv, dz, column_depth, rcp, tracer_map, tracers)
-    # pom_bgc_1d(iter, base_element, lambda_w, temp_bwd, sal_bwd, density, ism, swrad, weddy, wgen, wsu, wsv, dif_trac,
-    #            dt2, num_layers, z, dz, dzz, dzr, column_depth, 
-    #            nrt_o2, nrt_po4, nrt_no3, nrt_nh4, o2b, no3b, ponb_grad, po4b,
-    #            smoth, umolbgc, nbcbgc, ntp, rcp, 
-    #            concentration, sinking, tracer_map, tracer_type, tracers)
 
     # Extract concentrations at current and backward time step for leapfrog integration
     conc_cur = concentration[...,iter].copy()
