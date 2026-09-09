@@ -235,19 +235,24 @@ class Phytoplankton():
                         self.coupled_uptake["no3"] = coupled_uptake_no3
 
                 if "form" in tracer["parameters"]["uptake"]["no3"]:
-                    if tracer["parameters"]["uptake"]["no3"]["form"] == "affinity":       tracer["parameters"]["uptake"]["no3"]["form"] = 1
-                    elif tracer["parameters"]["uptake"]["no3"]["form"] == "constituent":  tracer["parameters"]["uptake"]["no3"]["form"] = 2
+                    if tracer["parameters"]["uptake"]["no3"]["form"] == "affinity":        tracer["parameters"]["uptake"]["no3"]["form"] = 1
+                    elif tracer["parameters"]["uptake"]["no3"]["form"] == "constituent":   tracer["parameters"]["uptake"]["no3"]["form"] = 2
+                    elif tracer["parameters"]["uptake"]["no3"]["form"] == "limitation":    tracer["parameters"]["uptake"]["no3"]["form"] = 3
+                else:   tracer["parameters"]["uptake"]["no3"]["form"] = 2  # Default to constituent
 
                 if tracer["parameters"]["uptake"]["no3"]["basis"] == 2 and tracer["parameters"]["uptake"]["no3"]["strategy"] == 1:  # basis == growth, strategy == independent
                     # Create numeric codes for numerator options
-                    if tracer["parameters"]["uptake"]["no3"]["numerator"] == "self":            tracer["parameters"]["uptake"]["no3"]["numerator"] = 1
-                    elif tracer["parameters"]["uptake"]["no3"]["numerator"] == "limitation":    tracer["parameters"]["uptake"]["no3"]["numerator"] = 2
-                    elif tracer["parameters"]["uptake"]["no3"]["numerator"] == "colimitation":  tracer["parameters"]["uptake"]["no3"]["numerator"] = 3
-
+                    if tracer["parameters"]["uptake"]["no3"]["numerator"] == "self":           tracer["parameters"]["uptake"]["no3"]["numerator"] = 1
+                    elif tracer["parameters"]["uptake"]["no3"]["numerator"] == "limitation":   tracer["parameters"]["uptake"]["no3"]["numerator"] = 2
+                    elif tracer["parameters"]["uptake"]["no3"]["numerator"] == "colimitation": tracer["parameters"]["uptake"]["no3"]["numerator"] = 3
+                    elif tracer["parameters"]["uptake"]["no3"]["numerator"] == "cell_quota":   tracer["parameters"]["uptake"]["no3"]["numerator"] = 4
+            
                     # Create numeric codes for denominator options
-                    if tracer["parameters"]["uptake"]["no3"]["denominator"] == "self":              tracer["parameters"]["uptake"]["no3"]["denominator"] = 1
-                    elif tracer["parameters"]["uptake"]["no3"]["denominator"] == "limitation":      tracer["parameters"]["uptake"]["no3"]["denominator"] = 2
-                    elif tracer["parameters"]["uptake"]["no3"]["denominator"] == "colimitation":    tracer["parameters"]["uptake"]["no3"]["denominator"] = 3
+                    if tracer["parameters"]["uptake"]["no3"]["denominator"] == "self":             tracer["parameters"]["uptake"]["no3"]["denominator"] = 1
+                    elif tracer["parameters"]["uptake"]["no3"]["denominator"] == "limitation":     tracer["parameters"]["uptake"]["no3"]["denominator"] = 2
+                    elif tracer["parameters"]["uptake"]["no3"]["denominator"] == "colimitation":   tracer["parameters"]["uptake"]["no3"]["denominator"] = 3
+                    elif tracer["parameters"]["uptake"]["no3"]["denominator"] == "cell_quota":     tracer["parameters"]["uptake"]["no3"]["denominator"] = 4
+                    elif tracer["parameters"]["uptake"]["no3"]["denominator"] == "zero":           tracer["parameters"]["uptake"]["no3"]["denominator"] = 5
 
                 # Add uptake keys,values to numba typed.Lists
                 uptake_no3_ids = List.empty_list(unicode_type)
@@ -307,20 +312,24 @@ class Phytoplankton():
                         self.coupled_uptake["nh4"] = coupled_uptake_nh4
 
                 if "form" in tracer["parameters"]["uptake"]["nh4"]:
-                    if tracer["parameters"]["uptake"]["nh4"]["form"] == "affinity":       tracer["parameters"]["uptake"]["nh4"]["form"] = 1
-                    elif tracer["parameters"]["uptake"]["nh4"]["form"] == "constituent":  tracer["parameters"]["uptake"]["nh4"]["form"] = 2
+                    if tracer["parameters"]["uptake"]["nh4"]["form"] == "affinity":        tracer["parameters"]["uptake"]["nh4"]["form"] = 1
+                    elif tracer["parameters"]["uptake"]["nh4"]["form"] == "constituent":   tracer["parameters"]["uptake"]["nh4"]["form"] = 2
+                    elif tracer["parameters"]["uptake"]["nh4"]["form"] == "limitation":    tracer["parameters"]["uptake"]["nh4"]["form"] = 3
+                else:   tracer["parameters"]["uptake"]["nh4"]["form"] = 2  # Default to constituent
 
-                # if tracer["parameters"]["uptake"]["nh4"]["basis"] == 0 and tracer["parameters"]["uptake"]["nh4"]["strategy"] == 1:  # basis == half_saturation, strategy == independent
                 if tracer["parameters"]["uptake"]["nh4"]["basis"] == 2 and tracer["parameters"]["uptake"]["nh4"]["strategy"] == 1:  # basis == growth, strategy == independent
                     # Create numeric codes for numerator options
-                    if tracer["parameters"]["uptake"]["nh4"]["numerator"] == "self":            tracer["parameters"]["uptake"]["nh4"]["numerator"] = 1
-                    elif tracer["parameters"]["uptake"]["nh4"]["numerator"] == "limitation":    tracer["parameters"]["uptake"]["nh4"]["numerator"] = 2
-                    elif tracer["parameters"]["uptake"]["nh4"]["numerator"] == "colimitation":  tracer["parameters"]["uptake"]["nh4"]["numerator"] = 3
+                    if tracer["parameters"]["uptake"]["nh4"]["numerator"] == "self":           tracer["parameters"]["uptake"]["nh4"]["numerator"] = 1
+                    elif tracer["parameters"]["uptake"]["nh4"]["numerator"] == "limitation":   tracer["parameters"]["uptake"]["nh4"]["numerator"] = 2
+                    elif tracer["parameters"]["uptake"]["nh4"]["numerator"] == "colimitation": tracer["parameters"]["uptake"]["nh4"]["numerator"] = 3
+                    elif tracer["parameters"]["uptake"]["nh4"]["numerator"] == "cell_quota":   tracer["parameters"]["uptake"]["nh4"]["numerator"] = 4
             
                     # Create numeric codes for denominator options
-                    if tracer["parameters"]["uptake"]["nh4"]["denominator"] == "self":              tracer["parameters"]["uptake"]["nh4"]["denominator"] = 1
-                    elif tracer["parameters"]["uptake"]["nh4"]["denominator"] == "limitation":      tracer["parameters"]["uptake"]["nh4"]["denominator"] = 2
-                    elif tracer["parameters"]["uptake"]["nh4"]["denominator"] == "colimitation":    tracer["parameters"]["uptake"]["nh4"]["denominator"] = 3
+                    if tracer["parameters"]["uptake"]["nh4"]["denominator"] == "self":             tracer["parameters"]["uptake"]["nh4"]["denominator"] = 1
+                    elif tracer["parameters"]["uptake"]["nh4"]["denominator"] == "limitation":     tracer["parameters"]["uptake"]["nh4"]["denominator"] = 2
+                    elif tracer["parameters"]["uptake"]["nh4"]["denominator"] == "colimitation":   tracer["parameters"]["uptake"]["nh4"]["denominator"] = 3
+                    elif tracer["parameters"]["uptake"]["nh4"]["denominator"] == "cell_quota":     tracer["parameters"]["uptake"]["nh4"]["denominator"] = 4
+                    elif tracer["parameters"]["uptake"]["nh4"]["denominator"] == "zero":           tracer["parameters"]["uptake"]["nh4"]["denominator"] = 5
 
                 # Add uptake keys,values to numba typed.Lists
                 uptake_nh4_ids = List.empty_list(unicode_type)
@@ -381,19 +390,24 @@ class Phytoplankton():
                         self.coupled_uptake["po4"] = coupled_uptake_po4
 
                 if "form" in tracer["parameters"]["uptake"]["po4"]:
-                    if tracer["parameters"]["uptake"]["po4"]["form"] == "affinity":       tracer["parameters"]["uptake"]["po4"]["form"] = 1
-                    elif tracer["parameters"]["uptake"]["po4"]["form"] == "constituent":  tracer["parameters"]["uptake"]["po4"]["form"] = 2
+                    if tracer["parameters"]["uptake"]["po4"]["form"] == "affinity":        tracer["parameters"]["uptake"]["po4"]["form"] = 1
+                    elif tracer["parameters"]["uptake"]["po4"]["form"] == "constituent":   tracer["parameters"]["uptake"]["po4"]["form"] = 2
+                    elif tracer["parameters"]["uptake"]["po4"]["form"] == "limitation":    tracer["parameters"]["uptake"]["po4"]["form"] = 3
+                else:   tracer["parameters"]["uptake"]["po4"]["form"] = 2  # Default to constituent
 
                 if tracer["parameters"]["uptake"]["po4"]["basis"] == 2 and tracer["parameters"]["uptake"]["po4"]["strategy"] == 1:  # basis == growth, strategy == independent
                     # Create numeric codes for numerator options
-                    if tracer["parameters"]["uptake"]["po4"]["numerator"] == "self":            tracer["parameters"]["uptake"]["po4"]["numerator"] = 1
-                    elif tracer["parameters"]["uptake"]["po4"]["numerator"] == "limitation":    tracer["parameters"]["uptake"]["po4"]["numerator"] = 2
-                    elif tracer["parameters"]["uptake"]["po4"]["numerator"] == "colimitation":  tracer["parameters"]["uptake"]["po4"]["numerator"] = 3
+                    if tracer["parameters"]["uptake"]["po4"]["numerator"] == "self":           tracer["parameters"]["uptake"]["po4"]["numerator"] = 1
+                    elif tracer["parameters"]["uptake"]["po4"]["numerator"] == "limitation":   tracer["parameters"]["uptake"]["po4"]["numerator"] = 2
+                    elif tracer["parameters"]["uptake"]["po4"]["numerator"] == "colimitation": tracer["parameters"]["uptake"]["po4"]["numerator"] = 3
+                    elif tracer["parameters"]["uptake"]["po4"]["numerator"] == "cell_quota":   tracer["parameters"]["uptake"]["po4"]["numerator"] = 4
             
                     # Create numeric codes for denominator options
-                    if tracer["parameters"]["uptake"]["po4"]["denominator"] == "self":              tracer["parameters"]["uptake"]["po4"]["denominator"] = 1
-                    elif tracer["parameters"]["uptake"]["po4"]["denominator"] == "limitation":      tracer["parameters"]["uptake"]["po4"]["denominator"] = 2
-                    elif tracer["parameters"]["uptake"]["po4"]["denominator"] == "colimitation":    tracer["parameters"]["uptake"]["po4"]["denominator"] = 3
+                    if tracer["parameters"]["uptake"]["po4"]["denominator"] == "self":             tracer["parameters"]["uptake"]["po4"]["denominator"] = 1
+                    elif tracer["parameters"]["uptake"]["po4"]["denominator"] == "limitation":     tracer["parameters"]["uptake"]["po4"]["denominator"] = 2
+                    elif tracer["parameters"]["uptake"]["po4"]["denominator"] == "colimitation":   tracer["parameters"]["uptake"]["po4"]["denominator"] = 3
+                    elif tracer["parameters"]["uptake"]["po4"]["denominator"] == "cell_quota":     tracer["parameters"]["uptake"]["po4"]["denominator"] = 4
+                    elif tracer["parameters"]["uptake"]["po4"]["denominator"] == "zero":           tracer["parameters"]["uptake"]["po4"]["denominator"] = 5
 
                 # Add uptake keys,values to numba typed.Lists
                 uptake_po4_ids = List.empty_list(unicode_type)
@@ -451,19 +465,24 @@ class Phytoplankton():
                         self.coupled_uptake["fe"] = coupled_uptake_fe
 
                 if "form" in tracer["parameters"]["uptake"]["fe"]:
-                    if tracer["parameters"]["uptake"]["fe"]["form"] == "affinity":      tracer["parameters"]["uptake"]["fe"]["form"] = 1
-                    elif tracer["parameters"]["uptake"]["fe"]["form"] == "constituent": tracer["parameters"]["uptake"]["fe"]["form"] = 2
+                    if tracer["parameters"]["uptake"]["fe"]["form"] == "affinity":        tracer["parameters"]["uptake"]["fe"]["form"] = 1
+                    elif tracer["parameters"]["uptake"]["fe"]["form"] == "constituent":   tracer["parameters"]["uptake"]["fe"]["form"] = 2
+                    elif tracer["parameters"]["uptake"]["fe"]["form"] == "limitation":    tracer["parameters"]["uptake"]["fe"]["form"] = 3
+                else:   tracer["parameters"]["uptake"]["fe"]["form"] = 2  # Default to constituent
 
                 if tracer["parameters"]["uptake"]["fe"]["basis"] == 2 and tracer["parameters"]["uptake"]["fe"]["strategy"] == 1:  # basis == growth, strategy == independent
                     # Create numeric codes for numerator options
-                    if tracer["parameters"]["uptake"]["fe"]["numerator"] == "self":            tracer["parameters"]["uptake"]["fe"]["numerator"] = 1
-                    elif tracer["parameters"]["uptake"]["fe"]["numerator"] == "limitation":    tracer["parameters"]["uptake"]["fe"]["numerator"] = 2
-                    elif tracer["parameters"]["uptake"]["fe"]["numerator"] == "colimitation":  tracer["parameters"]["uptake"]["fe"]["numerator"] = 3
+                    if tracer["parameters"]["uptake"]["fe"]["numerator"] == "self":           tracer["parameters"]["uptake"]["fe"]["numerator"] = 1
+                    elif tracer["parameters"]["uptake"]["fe"]["numerator"] == "limitation":   tracer["parameters"]["uptake"]["fe"]["numerator"] = 2
+                    elif tracer["parameters"]["uptake"]["fe"]["numerator"] == "colimitation": tracer["parameters"]["uptake"]["fe"]["numerator"] = 3
+                    elif tracer["parameters"]["uptake"]["fe"]["numerator"] == "cell_quota":   tracer["parameters"]["uptake"]["fe"]["numerator"] = 4
             
                     # Create numeric codes for denominator options
-                    if tracer["parameters"]["uptake"]["fe"]["denominator"] == "self":              tracer["parameters"]["uptake"]["fe"]["denominator"] = 1
-                    elif tracer["parameters"]["uptake"]["fe"]["denominator"] == "limitation":      tracer["parameters"]["uptake"]["fe"]["denominator"] = 2
-                    elif tracer["parameters"]["uptake"]["fe"]["denominator"] == "colimitation":    tracer["parameters"]["uptake"]["fe"]["denominator"] = 3
+                    if tracer["parameters"]["uptake"]["fe"]["denominator"] == "self":             tracer["parameters"]["uptake"]["fe"]["denominator"] = 1
+                    elif tracer["parameters"]["uptake"]["fe"]["denominator"] == "limitation":     tracer["parameters"]["uptake"]["fe"]["denominator"] = 2
+                    elif tracer["parameters"]["uptake"]["fe"]["denominator"] == "colimitation":   tracer["parameters"]["uptake"]["fe"]["denominator"] = 3
+                    elif tracer["parameters"]["uptake"]["fe"]["denominator"] == "cell_quota":     tracer["parameters"]["uptake"]["fe"]["denominator"] = 4
+                    elif tracer["parameters"]["uptake"]["fe"]["denominator"] == "zero":           tracer["parameters"]["uptake"]["fe"]["denominator"] = 5
                 
                 # Add uptake keys,values to numba typed.Lists
                 uptake_fe_ids = List.empty_list(unicode_type)
@@ -520,8 +539,10 @@ class Phytoplankton():
                         self.coupled_uptake["sio4"] = coupled_uptake_sio4
 
                 if "form" in tracer["parameters"]["uptake"]["sio4"]:
-                    if tracer["parameters"]["uptake"]["sio4"]["form"] == "affinity":      tracer["parameters"]["uptake"]["sio4"]["form"] = 1
-                    elif tracer["parameters"]["uptake"]["sio4"]["form"] == "constituent": tracer["parameters"]["uptake"]["sio4"]["form"] = 2
+                    if tracer["parameters"]["uptake"]["sio4"]["form"] == "affinity":        tracer["parameters"]["uptake"]["sio4"]["form"] = 1
+                    elif tracer["parameters"]["uptake"]["sio4"]["form"] == "constituent":   tracer["parameters"]["uptake"]["sio4"]["form"] = 2
+                    elif tracer["parameters"]["uptake"]["sio4"]["form"] == "limitation":    tracer["parameters"]["uptake"]["sio4"]["form"] = 3
+                else:   tracer["parameters"]["uptake"]["sio4"]["form"] = 2  # Default to constituent
 
                 if tracer["parameters"]["uptake"]["sio4"]["basis"] == 2 and tracer["parameters"]["uptake"]["sio4"]["strategy"] == 1:  # basis == growth, strategy == independent
                     # Create numeric codes for numerator options
@@ -1585,6 +1606,7 @@ class Phytoplankton():
 
         elif params[strategy] == 1.:  #"independent":
             
+            form = ids.index("form")
             cons = c[0]
             basis = ids.index("basis")
 
@@ -1597,6 +1619,9 @@ class Phytoplankton():
 
                 phyto = conc[tracer_map[abbrev][index]]
 
+                quota_index = cell_quota_ids.index("n")
+                nutrient_quota = cell_quota_opt[quota_index]
+
                 # Get nutrient concentrations
                 no3 = conc[tracer_map["no3"][0]]
                 if "nh4" in tracer_map:     nh4 = conc[tracer_map["nh4"][0]]
@@ -1604,9 +1629,20 @@ class Phytoplankton():
 
                 # Determine uptake strategy
                 if params[basis] == 1.:         # constant uptake rate
+                    # constant = ids.index("constant")
+                    # uptake = params[constant] * nutrient_limitation_factor["no3"][0] * phyto
+                    # uptake_to_om = np.zeros_like(uptake)
                     constant = ids.index("constant")
-                    uptake = params[constant] * nutrient_limitation_factor["no3"][0] * phyto
+                    
+                    if params[form] == 1.:      # specific affinity, use nutrient quota with concentration of base element
+                        uptake = params[constant] * nutrient_quota * phyto
+                    elif params[form] == 2.:    # use concentration of nutrient constituent
+                        uptake = params[constant] * phyto
+                    elif params[form] == 3.:    # use nutrient limitation factor
+                        uptake = params[constant] * nutrient_limitation_factor["no3"][0] * phyto
+                    
                     uptake_to_om = np.zeros_like(uptake)
+
                 elif params[basis] == 2.:       # uptake based on growth rate (excluding respiratory costs)
                     if len(p) > 1: # If uptake can be source of organic matter
                         phy = list(p).index(abbrev)
@@ -1630,11 +1666,14 @@ class Phytoplankton():
                     if params[num] == 1.:   numerator = no3
                     elif params[num] == 2.: numerator = nutrient_limitation_factor["no3"][0]
                     elif params[num] == 3.: numerator = nutrient_colimitation_factor
+                    elif params[num] == 4.: numerator = nutrient_quota * np.ones_like(no3)
                     
                     # Determine denominator of half saturation equation
                     if params[den] == 1.:   denominator = no3
                     elif params[den] == 2.: denominator = nutrient_limitation_factor["no3"][0]
                     elif params[den] == 3.: denominator = nutrient_colimitation_factor
+                    elif params[den] == 4:  denominator = nutrient_quota * np.ones_like(no3)
+                    elif params[den] == 5.: denominator = np.zeros_like(no3)
 
                     # Half sat equation
                     half_sat = numerator / ( params[half_sat_uptake] + denominator + 1.E-20 )
@@ -1646,6 +1685,7 @@ class Phytoplankton():
 
                     # uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_limitation_factor["no3"][0] * phyto
                     uptake_to_om = np.zeros_like(uptake)
+
                 elif params[basis] == 3.:       # nutrient based uptake rate
                     if len(p) > 1: # If uptake can be source of organic matter
                         phy = list(p).index(abbrev)
@@ -1755,6 +1795,9 @@ class Phytoplankton():
 
                 phyto = conc[tracer_map[abbrev][index]]
 
+                quota_index = cell_quota_ids.index("n")
+                nutrient_quota = cell_quota_opt[quota_index]
+
                 nh4 = conc[tracer_map["nh4"][0]]
                 if "no3" in tracer_map:     no3 = conc[tracer_map["no3"][0]]
                 else:   no3 = np.zeros_like(nh4)
@@ -1762,9 +1805,18 @@ class Phytoplankton():
 
                 # Determine uptake strategy
                 if params[basis] == 1.:         # constant uptake rate
+                    # constant = ids.index("constant")
+                    # uptake = params[constant] * nutrient_limitation_factor["nh4"][0] * phyto
+                    # uptake_to_om = np.zeros_like(uptake)
                     constant = ids.index("constant")
-                    uptake = params[constant] * nutrient_limitation_factor["nh4"][0] * phyto
-                    uptake_to_om = np.zeros_like(uptake)
+                    
+                    if params[form] == 1.:      # specific affinity, use nutrient quota with concentration of base element
+                        uptake = params[constant] * nutrient_quota * phyto
+                    elif params[form] == 2.:    # use concentration of nutrient constituent
+                        uptake = params[constant] * phyto
+                    elif params[form] == 3.:    # use nutrient limitation factor
+                        uptake = params[constant] * nutrient_limitation_factor["nh4"][0] * phyto
+
                 elif params[basis] == 2.:       # uptake based on growth rate (excluding respiratory costs)
                     if len(p) > 1: # If uptake can be source of organic matter
                         phy = list(p).index(abbrev)
@@ -1788,11 +1840,14 @@ class Phytoplankton():
                     if params[num] == 1.:   numerator = nh4
                     elif params[num] == 2.: numerator = nutrient_limitation_factor["nh4"][0]
                     elif params[num] == 3.: numerator = nutrient_colimitation_factor
+                    elif params[num] == 4.: numerator = nutrient_quota * np.ones_like(nh4)
                     
                     # Determine denominator of half saturation equation
                     if params[den] == 1.:   denominator = nh4
                     elif params[den] == 2.: denominator = nutrient_limitation_factor["nh4"][0]
                     elif params[den] == 3.: denominator = nutrient_colimitation_factor
+                    elif params[den] == 4:  denominator = nutrient_quota * np.ones_like(nh4)
+                    elif params[den] == 5.: denominator = np.zeros_like(nh4)
                     
                     # Half sat equation
                     half_sat = numerator / ( params[half_sat_uptake] + denominator + 1.E-20 )
@@ -1804,6 +1859,7 @@ class Phytoplankton():
 
                     # uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_limitation_factor["nh4"][0] * phyto
                     uptake_to_om = np.zeros_like(uptake)
+
                 elif params[basis] == 3.:       # nutrient based uptake rate
                     if len(p) > 1: # If uptake can be source of organic matter
                         phy = list(p).index(abbrev)
@@ -1917,12 +1973,26 @@ class Phytoplankton():
                 phyto = conc[tracer_map[abbrev][index]]
                 po4 = conc[tracer_map["po4"][0]]
 
+                quota_index = cell_quota_ids.index("p")
+                nutrient_quota = cell_quota_opt[quota_index]
+
                 # Determine uptake strategy
                 # Determine uptake strategy
                 if params[basis] == 1.:         # constant uptake rate
+                    # constant = ids.index("constant")
+                    # uptake = params[constant] * nutrient_limitation_factor["po4"][0] * phyto
+                    # uptake_to_om = np.zeros_like(uptake)
                     constant = ids.index("constant")
-                    uptake = params[constant] * nutrient_limitation_factor["po4"][0] * phyto
+                    
+                    if params[form] == 1.:      # specific affinity, use nutrient quota with concentration of base element
+                        uptake = params[constant] * nutrient_quota * phyto
+                    elif params[form] == 2.:    # use concentration of nutrient constituent
+                        uptake = params[constant] * phyto
+                    elif params[form] == 3.:    # use nutrient limitation factor
+                        uptake = params[constant] * nutrient_limitation_factor["po4"][0] * phyto
+                    
                     uptake_to_om = np.zeros_like(uptake)
+
                 elif params[basis] == 2.:       # uptake based on growth rate (excluding respiratory costs)
                     if len(p) > 1: # If uptake can be source of organic matter
                         phy = list(p).index(abbrev)
@@ -1946,11 +2016,14 @@ class Phytoplankton():
                     if params[num] == 1.:   numerator = po4
                     elif params[num] == 2.: numerator = nutrient_limitation_factor["po4"][0]
                     elif params[num] == 3.: numerator = nutrient_colimitation_factor
+                    elif params[num] == 4.: numerator = nutrient_quota * np.ones_like(po4)
                     
                     # Determine denominator of half saturation equation
                     if params[den] == 1.:   denominator = po4
                     elif params[den] == 2.: denominator = nutrient_limitation_factor["po4"][0]
                     elif params[den] == 3.: denominator = nutrient_colimitation_factor
+                    elif params[den] == 4:  denominator = nutrient_quota * np.ones_like(po4)
+                    elif params[den] == 5.: denominator = np.zeros_like(po4)
                     
                     # Half sat equation
                     half_sat = numerator / ( params[half_sat_uptake] + denominator + 1.E-20 )
@@ -1962,6 +2035,7 @@ class Phytoplankton():
                     
                     # uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_limitation_factor["no3"][0] * phyto
                     uptake_to_om = np.zeros_like(uptake)
+
                 elif params[basis] == 3.:       # nutrient based uptake rate
                     if len(p) > 1: # If uptake can be source of organic matter
                         phy = list(p).index(abbrev)
@@ -2041,40 +2115,152 @@ class Phytoplankton():
                     # if c == 'po4':  self.uptp[iter] = uptake_to_phyto
                 
             elif cons == "fe":
-                pass
-                # convert = False
-                # if "convert_uptake" in ids:     
-                #     convert = True
-                #     convert_uptake = ids.index("convert_uptake")
-
-                # # Get concentration of element in phytoplankton
-                # if "fe" in composition:
-                #     index = composition.index("fe")
-                # else:   # If element doesn't isn't directly resolved, use base element with conversion factor
-                #     index = composition.index(base_element)
-
-                # phyto = conc[tracer_map[abbrev][index]]
-
-                # # Determine uptake strategy
-                # if params[basis] == 1.:         # constant uptake rate
-                #     constant = ids.index("constant")
-                #     uptake = params[constant] * temp_regulation_factor * nutrient_limitation_factor["fe"] * phyto
-                # elif params[basis] == 2.:       # uptake based on growth rate
-                #     uptake = photosynthesis * nutrient_limitation_factor["fe"] * phyto
-                # elif params[basis] == 3.:       # nutrient based uptake rate
-                #     pass
-
-                # # Mulitply by conversion factor (if needed)
-                # if convert:     uptake *= params["convert_uptake"]
-
-                # # Uptake is zero if Fe:Base ratio meets or exceeds maximum ratio
-                # if "fe" in composition:    # Only need to calculate if iron is directly resolved
-                #     iron_quota = cell_quota_ids.index("fe")
-                #     if conc_ratio[tracer_map[abbrev][index]] >= cell_quota_max[iron_quota]:    uptake = np.zeros_like(uptake)
-
-                # # Update d_dt
-                # d_dt[tracer_map[c][0]] -= uptake
-                # if "fe" in composition:    d_dt[tracer_map[abbrev][index]] += uptake
+                form = ids.index("form")
+                if params[form] ==  1.:     # use specific affinity
+                    index = composition.index(base_element)
+                else:   # use nutrient constituent
+                    index = composition.index("fe")
+                
+                phyto = conc[tracer_map[abbrev][index]]
+                fe = conc[tracer_map["fe"][0]]
+                
+                quota_index = cell_quota_ids.index("fe")
+                nutrient_quota = cell_quota_opt[quota_index]
+                
+                if len(p) > 1: # If uptake can be source of organic matter
+                    phy = list(p).index(abbrev)
+                    ephy = ep[abbrev]
+                    if phy == 0:    i = 1
+                    else:           i = 0
+                    om = p[i]
+                    eom = ep[om]
+                else:
+                    phy = p[0]
+                    ephy = ep[phy]
+                elem_c = ec[cons][0]
+                
+                # Determine uptake strategy
+                # Determine uptake strategy
+                if params[basis] == 1.:         # constant uptake rate
+                    constant = ids.index("constant")
+                
+                    if params[form] == 1.:      # specific affinity, use nutrient quota with concentration of base element
+                        uptake = params[constant] * nutrient_quota * phyto
+                    elif params[form] == 2.:    # use concentration of nutrient constituent
+                        uptake = params[constant] * phyto
+                    elif params[form] == 3.:    # use nutrient limitation factor
+                        uptake = params[constant] * nutrient_limitation_factor["fe"][0] * phyto
+                
+                    uptake_to_om = np.zeros_like(uptake)
+                
+                elif params[basis] == 2.:       # uptake based on growth rate (excluding respiratory costs)
+                    # if params[form] == 1.:  # specific affinity, use nutrient quota with concentration of base element
+                    #     uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_quota * phyto
+                    # else:   # use concentration of nutrient constituent
+                    #     uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * nutrient_limitation_factor["sio4"][0] * phyto
+                    # # uptake = photosynthesis * nutrient_limitation_factor["sio4"][0] * phyto
+                    # uptake_to_om = np.zeros_like(uptake)
+                
+                    if len(p) > 1: # If uptake can be source of organic matter
+                        phy = list(p).index(abbrev)
+                        ephy = ep[abbrev]
+                
+                        if phy == 0:    i = 1
+                        else:           i = 0
+                        om = p[i]
+                        eom = ep[om]
+                    else:
+                        phy = p[0]
+                        ephy = ep[phy]
+                
+                    # Extract additional parameters
+                    half_sat_uptake = ids.index("half_sat_uptake")
+                    num = ids.index("numerator")
+                    den = ids.index("denominator")
+                    excl_resp = ids.index("exclude_respiratory_cost")
+                
+                    # Determine numerator of half saturation equation
+                    if params[num] == 1.:   numerator = fe
+                    elif params[num] == 2.: numerator = nutrient_limitation_factor["fe"][0]
+                    elif params[num] == 3.: numerator = nutrient_colimitation_factor
+                    elif params[num] == 4.: numerator = nutrient_quota * np.ones_like(fe)
+                
+                    # Determine denominator of half saturation equation
+                    if params[den] == 1.:   denominator = fe
+                    elif params[den] == 2.: denominator = nutrient_limitation_factor["fe"][0]
+                    elif params[den] == 3.: denominator = nutrient_colimitation_factor
+                    elif params[den] == 4:  denominator = nutrient_quota * np.ones_like(fe)
+                    # elif params[den] == 5.: denominator = 0.
+                    elif params[den] == 5.: denominator = np.zeros_like(fe)
+                
+                    # Half sat equation
+                    half_sat = numerator / ( params[half_sat_uptake] + denominator + 1.E-20 )
+                
+                    if params[excl_resp] == 0.:     # False, do not exclude respiratory cost
+                        uptake = photosynthesis * half_sat * phyto
+                    elif params[excl_resp] == 1.:   # True, exclude respiratory cost
+                        uptake = np.maximum(np.zeros_like(photosynthesis,dtype=np.float64), photosynthesis - basal_respiration) * half_sat * phyto
+                
+                    uptake_to_om = np.zeros_like(uptake)
+                
+                elif params[basis] == 3.:       # nutrient based uptake rate
+                    if len(p) > 1: # If uptake can be source of organic matter
+                        phy = list(p).index(abbrev)
+                        ephy = ep[abbrev]
+                        phyto_nutrient_index = list(ephy).index(1.)
+                        phyto_nutrient = conc[tracer_map[abbrev][phyto_nutrient_index]]
+                
+                        if phy == 0:    i = 1
+                        else:           i = 0
+                        om = p[i]
+                        eom = ep[om]
+                        om_nutrient_index = list(eom).index(1.)
+                        om_nutrient = conc[tracer_map[om][om_nutrient_index]]
+                    else:
+                        phy = p[0]
+                        ephy = ep[phy]
+                        phyto_nutrient_index = list(ephy).index(1.)
+                        phyto_nutrient = conc[tracer_map[abbrev][phyto_nutrient_index]]
+                
+                    # Get concentration of nutrient
+                    elem_c = ec[cons][0]
+                    ind_c = ic[cons][0]
+                    nutrient = conc[tracer_map[cons][ind_c]]
+                
+                    # Calculate maximum nutrient uptake
+                    specific_affinity = ids.index("specific_affinity")
+                    max_uptake = params[specific_affinity] * nutrient * phyto
+                
+                    # Extract nutrient quota
+                    quota_index = cell_quota_ids.index("fe")
+                    # nutrient_quota = cell_quota_opt[quota_index]
+                    nutrient_quota = cell_quota_max[quota_index]
+                
+                    # Intracellular missing amount of nutrient
+                    luxury_storage = ids.index("luxury_storage")
+                    missing = max_photo_rate * temp_regulation_factor * ( params[luxury_storage] * nutrient_quota * phyto - phyto_nutrient )
+                
+                    # Nutrient uptake based on net assimilation of C
+                    assim_uptake = params[luxury_storage] * nutrient_quota * net_primary_production
+                
+                    # Actual uptake of nutrient
+                    actual_uptake = np.minimum(max_uptake, missing + assim_uptake)
+                
+                    upt_switch = switch(actual_uptake)
+                
+                    uptake_to_phyto = upt_switch * actual_uptake
+                    uptake_to_om = -actual_uptake * (1. - upt_switch)
+                
+                    uptake = uptake_to_phyto
+                
+                # Update d_dt
+                d_dt[tracer_map[cons][0]] -= uptake
+                if len(p) > 1:  
+                    for i in range(len(ephy)):  d_dt[tracer_map[abbrev][i]] += ephy[i] *  (uptake - uptake_to_om)
+                    for j in range(len(eom)):   d_dt[tracer_map[om][j]] += eom[j] *  uptake_to_om
+                
+                else:
+                    for i in range(len(ephy)):  d_dt[tracer_map[abbrev][i]] += ephy[i] *  (uptake - uptake_to_om)
 
             elif cons == "sio4":    
                 # Get concentration of element in phytoplankton
@@ -2111,10 +2297,15 @@ class Phytoplankton():
                 if params[basis] == 1.:         # constant uptake rate
                     constant = ids.index("constant")
 
-                    if params[form] == 1.:  # specific affinity, use nutrient quota with concentration of base element
+                    if params[form] == 1.:      # specific affinity, use nutrient quota with concentration of base element
                         uptake = params[constant] * nutrient_quota * phyto
-                    else:   # use concentration of nutrient constituent
+
+                    elif params[form] == 2.:    # use concentration of nutrient constituent
+                        uptake = params[constant] * phyto
+
+                    elif params[form] == 3.:    # use nutrient limitation factor
                         uptake = params[constant] * nutrient_limitation_factor["sio4"][0] * phyto
+                    
                     # uptake = params[constant] * nutrient_limitation_factor["sio4"][0] * phyto
                     uptake_to_om = np.zeros_like(uptake)
 

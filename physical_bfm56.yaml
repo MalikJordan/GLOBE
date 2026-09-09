@@ -1,6 +1,7 @@
 simulation:
   dt: 360.            # time step [s]
-  days: 1805           # days in simulation [d]
+  # days: 1805           # days in simulation [d]
+  days: 35           # days in simulation [d]
   configuration: 1d   # Options: 0d or 1d
 
 water_column:
@@ -106,9 +107,9 @@ initial_conditions:
       
   mesozoo2:
     composition:                            # element : initial concentration (from data file)
-      c: 0.
-      n: 0.
-      p: 0.
+      c: 10.
+      n: {c: 0.0126}
+      p: {c: 7.862E-04}
 
   # mesozoo2:
   #   composition:                            # element : initial concentration (from data file)

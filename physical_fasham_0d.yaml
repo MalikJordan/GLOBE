@@ -8,7 +8,7 @@ water_column:
   num_layers: 1      # number of layers in water column
 
 environment:
-  forcing: seasonal   # Options: constant, pom1d or seasonal
+  forcing: constant   # Options: constant, pom1d or seasonal
   # constant: forces system using constant values
   # pom1d: forces system using climatological data with one-dimensional POM1D ocean circulation
   # seasonal: forces system using sinusoidal forcing between summer and winter extremes
@@ -16,24 +16,24 @@ environment:
   PAR_frac: 1.
   light_attenuation_water: 0.05        # [1/m]
   latitude: 54.
-  # forcing_data:
-  #   temperature: 10.
-  #   salinity: 35.
-  #   sunlight: 100.
-  #   wind: 4.
-  #   mld: 20.
   forcing_data:
-    summer_mld: 10.0
-    winter_mld: 40.0
-    summer_salt: 31.
-    winter_salt: 33.5
-    summer_sun: 240.0
-    winter_sun: 20.0
-    summer_temp: 15.
-    winter_temp: 7.
-    temp_excursion: 0.
-    summer_wind: 2.
-    winter_wind: 6.
+    temperature: 10.
+    salinity: 35.
+    sunlight: 100.
+    wind: 4.
+    mld: 20.
+  # forcing_data:
+  #   summer_mld: 10.0
+  #   winter_mld: 40.0
+  #   summer_salt: 31.
+  #   winter_salt: 33.5
+  #   summer_sun: 240.0
+  #   winter_sun: 20.0
+  #   summer_temp: 15.
+  #   winter_temp: 7.
+  #   temp_excursion: 0.
+  #   summer_wind: 2.
+  #   winter_wind: 6.
 
 initial_conditions:
   no3:

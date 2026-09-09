@@ -130,14 +130,14 @@ start = time.perf_counter()
 #     first_check = False
 
 # Import physical model
-# file = 'tests/npzd/physical_npzd.yaml'
-file = 'physical_bfm17_0d.yaml'
+file = 'tests/npzd/physical_npzd.yaml'
+# file = 'physical_bfm17_0d.yaml'
 # file = 'physical_fasham_0d.yaml'
 file_path = os.getcwd() + '/' + file
 physical = import_physical_model(file_path)
 
-# file = 'tests/npzd/npzd.yaml'
-file = 'bfm17_0d.yaml'
+file = 'tests/npzd/npzd.yaml'
+# file = 'bfm17_0d.yaml'
 # file = 'fasham_0d.yaml'
 file_path = os.getcwd() + '/' + file
 base_element, reactions, tracers = import_bgc_model(file_path, physical)
@@ -214,12 +214,12 @@ for trac in tracers:
             npp += tracers[trac].npp
 
 conc_daily, conc_monthly = average(concentration,physical,'concentration')
-np.savez('concentration_bfm17_0d_0907.npz',daily=conc_daily,monthly=conc_monthly)
+np.savez('concentration_npzd_0908.npz',daily=conc_daily,monthly=conc_monthly)
 if npp_exists:
     npp_daily, npp_monthly = average(npp,physical,'npp')
-    np.savez('npp_bfm17_0d_0907.npz',daily=npp_daily,monthly=npp_monthly)
+    np.savez('npp_npzd_0908.npz',daily=npp_daily,monthly=npp_monthly)
 
-np.savez('tracer_indices_bfm17_0d_0907.npz',**tracer_map)
+np.savez('tracer_indices_npzd_0908.npz',**tracer_map)
 
 # ----------------------------------------------------------------------------------------------------
 # Simulation complete

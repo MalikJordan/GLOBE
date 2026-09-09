@@ -425,15 +425,18 @@ for trac in tracers:
             npp += tracers[trac].npp
 
 conc_daily, conc_monthly = average(concentration,physical,'concentration')
-# np.savez('concentration_bfm17-5yr-0908.npz',daily=conc_daily,monthly=conc_monthly)
-np.savez('concentration_bfm56-5yr-0908.npz',daily=conc_daily,monthly=conc_monthly)
+# np.savez('concentration_bfm17-5yr.npz',daily=conc_daily,monthly=conc_monthly)
+# np.savez('concentration_bfm56-5yr.npz',daily=conc_daily,monthly=conc_monthly)
+np.savez('concentration_bfm56-arbitrary_mesozoo2.npz',daily=conc_daily,monthly=conc_monthly)
 if npp_exists:
     npp_daily, npp_monthly = average(npp,physical,'npp')
-    # np.savez('npp_bfm17-5yr-0908.npz',daily=npp_daily,monthly=npp_monthly)
-    np.savez('npp_bfm56-5yr-0908.npz',daily=npp_daily,monthly=npp_monthly)
+    # np.savez('npp_bfm17-5yr.npz',daily=npp_daily,monthly=npp_monthly)
+    # np.savez('npp_bfm56-5yr.npz',daily=npp_daily,monthly=npp_monthly)
+    np.savez('npp_bfm56-arbitrary_mesozoo2.npz',daily=npp_daily,monthly=npp_monthly)
 
-# np.savez('tracer_indices_bfm17-5yr-0908.npz',**tracer_map)
-np.savez('tracer_indices_bfm56-5yr-0908.npz',**tracer_map)
+# np.savez('tracer_indices_bfm17-5yr.npz',**tracer_map)
+# np.savez('tracer_indices_bfm56-5yr.npz',**tracer_map)
+np.savez('tracer_indices_bfm56-arbitrary_mesozoo2.npz',**tracer_map)
 
 
 # ----------------------------------------------------------------------------------------------------
