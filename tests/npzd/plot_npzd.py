@@ -21,9 +21,9 @@ for file in indices.files:
     tracer_indices[file] = list(indices[file])
 
 no3 = conc[tracer_indices["no3"][0]][0]
-phyto = conc[tracer_indices["phyto1"][0]][0]
-zoo = conc[tracer_indices["zoo1"][0]][0]
-pom = conc[tracer_indices["pom1"][0]][0]
+phyto = conc[tracer_indices["phyto"][0]][0]
+zoo = conc[tracer_indices["zoo"][0]][0]
+pom = conc[tracer_indices["pom"][0]][0]
 
 # ----------------------------------------------------------------------------------------------------
 # Test case and parameters from Riley Brady
@@ -92,40 +92,80 @@ x = np.arange(0, NUM_STEPS, 1)
 xlabel = ['J','M','M','J','S','N']
 xticks = [15,75,135,195,255,315]
 
-fig, axs = plt.subplots(2,2,figsize=(8,8), sharex=True)
+fig, axs = plt.subplots(1,4,figsize=(15,4), sharex=True)
 
-axs[0,0].plot(x,no3,label='GLOBE')
-axs[0,0].plot(x,N,linestyle=(0, (5, 10)),color='black',label='NPZD')
-axs[0,0].set_title("(a) Nitrate")
-axs[0,0].set_xlim([0,360])
-axs[0,0].set_ylabel("mmol N ${m^{-3}}$")
+axs[0].plot(x,no3,'-b',label='GLOBE')
+axs[0].plot(x,N,'--k',label='NPZD')
+# axs[0].set_title("(a) Nitrate")
+axs[0].set_title("(a)")
+axs[0].set_xlim([0,360])
+axs[0].set_xlabel("Time [month]")
+axs[0].set_ylabel("mmol N ${m^{-3}}$")
 
-axs[0,1].plot(x,pom,label='GLOBE')
-axs[0,1].plot(x,D,linestyle=(0, (5, 10)),color='black',label='NPZD')
-axs[0,1].set_title("(b) Particulate Organic Nitrogen")
-axs[0,1].set_xlim([0,360])
-axs[0,1].set_ylabel("mmol N ${m^{-3}}$")
+axs[1].plot(x,pom,'-b',label='GLOBE')
+axs[1].plot(x,D,'-.k',label='NPZD')
+# axs[1].set_title("(b) Particulate Organic Nitrogen")
+axs[1].set_title("(b)")
+axs[1].set_xlim([0,360])
+axs[1].set_xlabel("Time [month]")
 
-axs[1,0].plot(x,phyto,label='GLOBE')
-axs[1,0].plot(x,P,linestyle=(0, (5, 10)),color='black',label='NPZD')
-axs[1,0].set_title("(c) Phytoplankton")
-axs[1,0].set_xlabel("Time [month]")
-axs[1,0].set_xlim([0,360])
-axs[1,0].set_xlabel("Time [month]")
-axs[1,0].set_xticks(xticks,xlabel)
-axs[1,0].set_ylabel("mmol N ${m^{-3}}$")
+axs[2].plot(x,phyto,'-b',label='GLOBE')
+axs[2].plot(x,P,'-.k',label='NPZD')
+# axs[2].set_title("(c) Phytoplankton")
+axs[2].set_title("(c)")
+axs[2].set_xlim([0,360])
+axs[2].set_xlabel("Time [month]")
+axs[2].set_xlabel("Time [month]")
+axs[2].set_ylabel("mmol N ${m^{-3}}$")
 
-axs[1,1].plot(x,zoo,label='GLOBE')
-axs[1,1].plot(x,Z,linestyle=(0, (5, 10)),color='black',label='NPZD')
-axs[1,1].set_title("(d) Zooplankton")
-axs[1,1].set_xlabel("Time [month]")
-axs[1,1].set_xlim([0,360])
-axs[1,1].set_xlabel("Time [month]")
-axs[1,1].set_xticks(xticks,xlabel)
-axs[1,0].set_ylabel("mmol N ${m^{-3}}$")
+axs[3].plot(x,zoo,'-b',label='GLOBE')
+axs[3].plot(x,Z,'-.k',label='NPZD')
+# axs[3].set_title("(d) Zooplankton")
+axs[3].set_title("(d)")
+axs[3].set_xlim([0,360])
+axs[3].set_xlabel("Time [month]")
+axs[3].set_xticks(xticks,xlabel)
 
-handles, labels = axs[0,0].get_legend_handles_labels()
+handles, labels = axs[0].get_legend_handles_labels()
 fig.legend(handles,labels, loc='lower center', ncol=2)
+
+
+# fig, axs = plt.subplots(2,2,figsize=(8,8), sharex=True)
+
+# axs[0,0].plot(x,no3,label='GLOBE')
+# axs[0,0].plot(x,N,linestyle=(0, (5, 10)),color='black',label='NPZD')
+# # axs[0,0].set_title("(a) Nitrate")
+# axs[0,0].set_title("(a)")
+# axs[0,0].set_xlim([0,360])
+# axs[0,0].set_ylabel("mmol N ${m^{-3}}$")
+
+# axs[0,1].plot(x,pom,label='GLOBE')
+# axs[0,1].plot(x,D,linestyle=(0, (5, 10)),color='black',label='NPZD')
+# # axs[0,1].set_title("(b) Particulate Organic Nitrogen")
+# axs[0,1].set_title("(b)")
+# axs[0,1].set_xlim([0,360])
+# # axs[0,1].set_ylabel("mmol N ${m^{-3}}$")
+
+# axs[1,0].plot(x,phyto,label='GLOBE')
+# axs[1,0].plot(x,P,linestyle=(0, (5, 10)),color='black',label='NPZD')
+# # axs[1,0].set_title("(c) Phytoplankton")
+# axs[1,0].set_title("(c)")
+# axs[1,0].set_xlim([0,360])
+# axs[1,0].set_xlabel("Time [month]")
+# axs[1,0].set_xticks(xticks,xlabel)
+# axs[1,0].set_ylabel("mmol N ${m^{-3}}$")
+
+# axs[1,1].plot(x,zoo,label='GLOBE')
+# axs[1,1].plot(x,Z,linestyle=(0, (5, 10)),color='black',label='NPZD')
+# # axs[1,1].set_title("(d) Zooplankton")
+# axs[1,1].set_title("(d)")
+# axs[1,1].set_xlim([0,360])
+# axs[1,1].set_xlabel("Time [month]")
+# axs[1,1].set_xticks(xticks,xlabel)
+# axs[1,0].set_ylabel("mmol N ${m^{-3}}$")
+
+# handles, labels = axs[0,0].get_legend_handles_labels()
+# fig.legend(handles,labels, loc='lower center', ncol=2)
 
 fig.tight_layout(h_pad=2.5,w_pad=2.5,rect=[0,0.025,1,1])
 
@@ -133,9 +173,9 @@ npzd = os.path.join(folder + "/figures", "npzd.jpg")
 plt.savefig(npzd)
 
 error = np.zeros((4,len(N)))
-error[0,:] = (N - no3) / (N + 1.E-20)
-error[1,:] = (P - phyto) / (P + 1.E-20)
-error[2,:] = (Z - zoo) / (Z + 1.E-20)
-error[3,:] = (D - pom) / (D + 1.E-20)
+error[0,:] = 100 * (N - no3) / (N + 1.E-20)
+error[1,:] = 100 *(P - phyto) / (P + 1.E-20)
+error[2,:] = 100 * (Z - zoo) / (Z + 1.E-20)
+error[3,:] = 100 * (D - pom) / (D + 1.E-20)
 print(np.max(error))
 x=1
