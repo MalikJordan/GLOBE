@@ -762,7 +762,7 @@ class Phytoplankton():
                 break
 
 
-    def phyto(self, iter, base_element, temperature, z, dz, k_PAR, surface_PAR, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers, sinking):
+    def phyto(self, configuration, iter, base_element, temperature, z, dz, k_PAR, surface_PAR, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers, sinking):
         
         # Zero out variables
         for nut in self.upt:                                # Uptake
@@ -800,8 +800,10 @@ class Phytoplankton():
                 composition_phyto = self.composition
                 composition_om = tracers[p[0]].composition            
                 self.lys = self.lysis(base_element, c, p, ec, ep, ic, ip, self.lysis_ids, self.lysis_params, self.lysis_apportioning_factor, self.cell_quota_ids, self.cell_quota_min, self.cell_quota_opt, self.nutrient_limitation["include"], self.nutrient_colimitation_factor, self.temp_regulation_factor, conc, conc_ratio, d_dt, tracer_map, tracer_type, composition_phyto, composition_om)
-            # if reac["type"] == "photosynthesis":                self.psn, fI, irr = self.photosynthesis(self.abbrev, self.growth_ids, self.growth_params, z, z, k_PAR, temperature, surface_PAR, self.temp_regulation_factor, self.nutrient_colimitation_factor, self.nutrient_limitation_factor, conc, d_dt, tracer_map, self.composition)
-            if reac["type"] == "photosynthesis":                self.psn, irr, max_photo_rate = self.photosynthesis(self.abbrev, self.growth_ids, self.growth_params, z, z, k_PAR, temperature, surface_PAR, self.temp_regulation_factor, self.nutrient_colimitation_factor, self.nutrient_limitation_factor, conc, d_dt, tracer_map, self.composition)
+            # if reac["type"] == "photosynthesis":                self.psn, irr, max_photo_rate = self.photosynthesis(self.abbrev, self.growth_ids, self.growth_params, z, z, k_PAR, temperature, surface_PAR, self.temp_regulation_factor, self.nutrient_colimitation_factor, self.nutrient_limitation_factor, conc, d_dt, tracer_map, self.composition)
+            if reac["type"] == "photosynthesis":
+                if configuration == "0d":   self.psn, irr, max_photo_rate = self.photosynthesis(self.abbrev, self.growth_ids, self.growth_params, z, dz, k_PAR, temperature, surface_PAR, self.temp_regulation_factor, self.nutrient_colimitation_factor, self.nutrient_limitation_factor, conc, d_dt, tracer_map, self.composition)
+                elif configuration == "1d": self.psn, irr, max_photo_rate = self.photosynthesis(self.abbrev, self.growth_ids, self.growth_params, z, z, k_PAR, temperature, surface_PAR, self.temp_regulation_factor, self.nutrient_colimitation_factor, self.nutrient_limitation_factor, conc, d_dt, tracer_map, self.composition)
             if reac["type"] == "respiration":                   self.rsp, activity_respiration, basal_respiration = self.respiration(self.abbrev, base_element, c, p, ec, ep, ic, ip, self.respiration_ids, self.respiration_params, self.temp_regulation_factor, self.exu, self.psn, conc, d_dt, tracer_map, self.composition)
 
         # Calculate net primary production

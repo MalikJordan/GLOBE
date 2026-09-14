@@ -108,7 +108,7 @@ tracers:
       light_attenuation: 0.
 
       remineralization:
-        remineralization_rate: 0.4
+        remineralization_rate: {n: 0.4}
 
 
 reactions:

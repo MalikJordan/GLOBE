@@ -100,8 +100,9 @@ def light_limitation(abbrev, growth_ids, growth_params, dz, irrad, k_PAR, Vm, te
         if growth_params[light_location] == 1.:     # "top"
             irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad)
         elif growth_params[light_location] == 2.:   # "middle"  # Lazzari et al. (2012)
-            # irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz/2)
-            irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz)
+            # SWAP THESE LINES TO TEST FASHAM AGAIN
+            irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz/2)
+            # irrad_at_depth = np.maximum(1E-20*np.ones_like(irrad), irrad) * np.exp( -k_PAR * dz)
         elif growth_params[light_location] == 3.:   # "integrated"  # Vichi et al. (2007)
             r = irrad / (k_PAR * dz) * (1. - np.exp(-k_PAR*dz))            
             irrad_at_depth = np.maximum(1E-20*np.ones_like(r), r)  

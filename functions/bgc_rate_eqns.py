@@ -25,7 +25,7 @@ def bgc_rate_eqns(iter, configuration, base_element, conc, d_dt, light_attenuati
         elif tracers[key].type == "inorganic": 
             tracers[key].inorg(configuration, bact_limitation_factor, conc, d_dt, tracer_map, z, dz, temp, sal, dens, wind)
         elif tracers[key].type == "phytoplankton":
-            tracers[key].phyto(iter, base_element, temp, z, dz, k_PAR, surface_PAR, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers, sinking)
+            tracers[key].phyto(configuration, iter, base_element, temp, z, dz, k_PAR, surface_PAR, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers, sinking)
         elif tracers[key].type == "zooplankton": 
             tracers[key].zoo(iter, base_element, temp, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers)
 

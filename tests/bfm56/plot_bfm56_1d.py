@@ -12,13 +12,16 @@ def nrmse(check,comp):
     dif = np.zeros(len(check))
     rms = np.zeros(len(check))
     max = np.zeros(len(check))
+    std = np.zeros(len(check))
     for i in range(0,len(check)):
         avg[i] = np.abs(np.mean(check[i,:,:]))
         dif[i] = np.max(check[i,:,:]) - np.min(check[i,:,:])
         rms[i] = np.power( np.mean( np.power( check[i,:,:]-comp[i,:,:], 2 ) )   ,0.5)
         max[i] = np.max(check[i,:,:])
-    # nrmse = 100*rms/avg    
-    nrmse = 100*rms/max
+        std[i] = np.std(check[i,:,:])
+        # nrmse = 100*rms/avg    
+        # nrmse = 100*rms/max
+    nrmse = 100*rms/(std + 1.E-20)
 
     return rms, nrmse
 
@@ -300,7 +303,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/oxygen.jpg')
@@ -350,7 +353,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/co2.jpg')
@@ -400,7 +403,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/nitrate.jpg')
@@ -450,7 +453,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/ammonium.jpg')
@@ -500,7 +503,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phosphate.jpg')
@@ -550,7 +553,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/silicate.jpg')
@@ -600,7 +603,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/bac1c.jpg')
@@ -649,7 +652,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/bac1n.jpg')
@@ -698,7 +701,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/bac1p.jpg')
@@ -748,7 +751,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto1c.jpg')
@@ -797,7 +800,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto1n.jpg')
@@ -846,7 +849,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto1p.jpg')
@@ -895,7 +898,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto1l.jpg')
@@ -944,7 +947,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto1s.jpg')
@@ -994,7 +997,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto2c.jpg')
@@ -1043,7 +1046,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto2n.jpg')
@@ -1092,7 +1095,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto2p.jpg')
@@ -1141,7 +1144,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto2l.jpg')
@@ -1191,7 +1194,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto3c.jpg')
@@ -1240,7 +1243,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto3n.jpg')
@@ -1289,7 +1292,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto3p.jpg')
@@ -1338,7 +1341,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto3l.jpg')
@@ -1388,7 +1391,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto4c.jpg')
@@ -1437,7 +1440,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto4n.jpg')
@@ -1486,7 +1489,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto4p.jpg')
@@ -1535,7 +1538,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/phyto4l.jpg')
@@ -1585,7 +1588,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/mesoz1c.jpg')
@@ -1634,7 +1637,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/mesoz1n.jpg')
@@ -1683,7 +1686,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/mesoz1p.jpg')
@@ -1733,7 +1736,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/mesoz2c.jpg')
@@ -1782,7 +1785,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/mesoz2n.jpg')
@@ -1831,7 +1834,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/mesoz2p.jpg')
@@ -1881,7 +1884,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/microz1c.jpg')
@@ -1930,7 +1933,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/microz1n.jpg')
@@ -1979,7 +1982,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/microz1p.jpg')
@@ -2029,7 +2032,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/microz2c.jpg')
@@ -2078,7 +2081,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/microz2n.jpg')
@@ -2127,7 +2130,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/microz2p.jpg')
@@ -2177,7 +2180,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/dom1c.jpg')
@@ -2226,7 +2229,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/dom1n.jpg')
@@ -2275,7 +2278,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/dom1p.jpg')
@@ -2325,7 +2328,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/dom2c.jpg')
@@ -2375,7 +2378,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/dom3c.jpg')
@@ -2425,7 +2428,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/pom1c.jpg')
@@ -2474,7 +2477,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/pom1n.jpg')
@@ -2523,7 +2526,7 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/pom1p.jpg')
@@ -2572,8 +2575,21 @@ for i in range(4):
 
 handles,labels = ax[0,0].get_legend_handles_labels()
 ax[1,3].axis('off')
-ax[1,3].legend(handles,labels,loc='center',frameon=True)
+# ax[1,3].legend(handles,labels,loc='center',frameon=True)
 
 plt.tight_layout()
 plt.savefig(os.getcwd() + '/tests/bfm56/figures/pom1s.jpg')
 plt.close()
+
+rmse_data, nrmse_data = nrmse(bfm56_monthly,globe_monthly)    # 2nd year
+print('-------------------------------------------------')
+print('NRMSE (%)')
+print('-------------------------------------------------')
+for i in range(0,len(globe_monthly)):
+    print(nrmse_data[i])
+print('-------------------------------------------------')
+print('RMSE')
+print('-------------------------------------------------')
+for i in range(0,len(globe_monthly)):
+    print(rmse_data[i])
+print('-------------------------------------------------')

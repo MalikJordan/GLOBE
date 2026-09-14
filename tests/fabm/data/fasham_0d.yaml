@@ -193,7 +193,7 @@ tracers:
       light_attenuation: 0.
 
       remineralization:
-        remineralization_rate: 0.02
+        remineralization_rate: {n: 0.02}
 
       sedimentation:
         sinking: True

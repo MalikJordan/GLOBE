@@ -2,6 +2,25 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+def nrmse(check,comp):
+    
+    avg = np.zeros(len(check))
+    dif = np.zeros(len(check))
+    rms = np.zeros(len(check))
+    max = np.zeros(len(check))
+    std = np.zeros(len(check))
+    for i in range(0,len(check)):
+        avg[i] = np.abs(np.mean(check[i,:]))
+        dif[i] = np.max(check[i,:]) - np.min(check[i,:])
+        rms[i] = np.power( np.mean( np.power( check[i,:]-comp[i,:], 2 ) )   ,0.5)
+        max[i] = np.max(check[i,:])
+        std[i] = np.std(check[i,:])
+    # nrmse = 100*rms/avg    
+    # nrmse = 100*rms/max
+    nrmse = 100*rms/(std + 1.E-20)
+
+    return rms, nrmse
+
 folder = os.getcwd() + '/tests/npzd'
 
 # ----------------------------------------------------------------------------------------------------
@@ -9,7 +28,8 @@ folder = os.getcwd() + '/tests/npzd'
 # ----------------------------------------------------------------------------------------------------
 # Get GLOBE Data --------------------------------------------------------------------
 # Load solution
-path = os.getcwd() + "/tests/npzd/data/concentration_npzd.npz"
+# path = os.getcwd() + "/tests/npzd/data/concentration_npzd.npz"
+path = os.getcwd() + "/concentration_npzd_0914.npz"
 solution = np.load(path, allow_pickle=True)
 conc = solution["daily"]
 
@@ -127,7 +147,7 @@ axs[3].set_xlabel("Time [month]")
 axs[3].set_xticks(xticks,xlabel)
 
 handles, labels = axs[0].get_legend_handles_labels()
-fig.legend(handles,labels, loc='lower center', ncol=2)
+# fig.legend(handles,labels, loc='lower center', ncol=2)
 
 
 # fig, axs = plt.subplots(2,2,figsize=(8,8), sharex=True)
@@ -179,3 +199,29 @@ error[2,:] = 100 * (Z - zoo) / (Z + 1.E-20)
 error[3,:] = 100 * (D - pom) / (D + 1.E-20)
 print(np.max(error))
 x=1
+
+check = np.zeros((4,len(N)))
+comp = np.zeros((4,len(N)))
+check[0] = N
+check[1] = P
+check[2] = Z
+check[3] = D
+comp[0] = no3
+comp[1] = phyto
+comp[2] = zoo
+comp[3] = pom
+
+rmse_data, nrmse_data = nrmse(check,comp)
+fields = ['no3', 'phy', 'zoo', 'pon']
+
+print('-------------------------------------------------')
+print('NRMSE (%)')
+print('-------------------------------------------------')
+for i in range(0,len(fields)):
+    print(fields[i], '--', nrmse_data[i])
+print('-------------------------------------------------')
+print('RMSE')
+print('-------------------------------------------------')
+for i in range(0,len(fields)):
+    print(fields[i], '--', rmse_data[i])
+print('-------------------------------------------------')

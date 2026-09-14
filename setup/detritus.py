@@ -74,19 +74,73 @@ class Detritus():
                 self.loss_params.append(temp)
 
 
+        # # Remineralization
+        # if "remineralization" in tracer["parameters"]:
+        #     self.remineralization_ids = List.empty_list(unicode_type)
+        #     self.remineralization_params = []
+
+        #     if "convert_o2" in tracer["parameters"]["remineralization"]:
+        #         # If conversion given as a Fraction string (ex: '1/2' instead of 0.5), convert to float
+        #         if isinstance(tracer["parameters"]["remineralization"]["convert_o2"],str):
+        #             tracer["parameters"]["remineralization"]["convert_o2"] = np.float64(Fraction(tracer["parameters"]["remineralization"]["convert_o2"]))
+
+        #     for key,val in tracer["parameters"]["remineralization"].items():
+        #         self.remineralization_ids.append(key)
+        #         self.remineralization_params.append(val)
+
+
+        # # Remineralization
+        # if "remineralization" in tracer["parameters"]:
+        #     self.remineralization_ids = List.empty_list(unicode_type)
+        #     self.remineralization_params = List.empty_list(types.ListType(float64))
+
+        #     # Create numeric keys for constituents {c: 1., n: 2., p: 3., si: 4.}
+        #     remineralize = List.empty_list(float64)
+        #     for const in tracer["parameters"]["remineralization"]["remineralize"]:
+        #         if const == "c":    remineralize.append(1.)
+        #         elif const == "n":  remineralize.append(2.)
+        #         elif const == "p":  remineralize.append(3.)
+        #         elif const == "si": remineralize.append(4.)
+
+        #     remineralization_rate = List.empty_list(float64)
+        #     for rate in tracer["parameters"]["remineralization"]["remineralization_rate"]:
+        #         remineralization_rate.append(rate)
+
+        #     if "convert_o2" in tracer["parameters"]["remineralization"]:
+        #         # If conversion given as a Fraction string (ex: '1/2' instead of 0.5), convert to float
+        #         if isinstance(tracer["parameters"]["remineralization"]["convert_o2"],str):
+        #             tracer["parameters"]["remineralization"]["convert_o2"] = np.float64(Fraction(tracer["parameters"]["remineralization"]["convert_o2"]))
+
+        #     # for key,val in tracer["parameters"]["remineralization"].items():
+        #     #     self.remineralization_ids.append(key)
+        #     #     self.remineralization_params.append(val)
+
+        #     self.remineralization_ids.append("remineralize")
+        #     self.remineralization_params.append(remineralize)
+        #     self.remineralization_ids.append("remineralization_rate")
+        #     self.remineralization_params.append(remineralization_rate)
+        #     if "convert_o2" in tracer["parameters"]["remineralization"]:
+        #         self.remineralization_ids.append("convert_o2")
+        #         self.remineralization_params.append(List(tracer["parameters"]["remineralization"]["convert_o2"]))
+
+
         # Remineralization
         if "remineralization" in tracer["parameters"]:
             self.remineralization_ids = List.empty_list(unicode_type)
-            self.remineralization_params = []
+            self.remineralization_params = List.empty_list(float64)
+
+            for key,val in tracer["parameters"]["remineralization"]["remineralization_rate"].items():
+                self.remineralization_ids.append(key)
+                self.remineralization_params.append(np.float64(tracer["parameters"]["remineralization"]["remineralization_rate"][key]))
 
             if "convert_o2" in tracer["parameters"]["remineralization"]:
                 # If conversion given as a Fraction string (ex: '1/2' instead of 0.5), convert to float
                 if isinstance(tracer["parameters"]["remineralization"]["convert_o2"],str):
                     tracer["parameters"]["remineralization"]["convert_o2"] = np.float64(Fraction(tracer["parameters"]["remineralization"]["convert_o2"]))
 
-            for key,val in tracer["parameters"]["remineralization"].items():
-                self.remineralization_ids.append(key)
-                self.remineralization_params.append(val)
+                self.remineralization_ids.append("convert_o2")
+                self.remineralization_params.append(tracer["parameters"]["remineralization"]["convert_o2"])
+
 
         # Sedimentation
         if "sedimentation" in tracer["parameters"] and tracer["parameters"]["sedimentation"]["sinking"] == True:
@@ -217,7 +271,8 @@ class Detritus():
             c, p, ec, ep, ic, ip = tracer_elements(base_element, reac, tracers)
             
             if reac["type"] == "dissolution":       self.dissolution(c, p, ec, ep, ic, ip, self.dissolution_ids, self.dissolution_params, self.temp_regulation_factor, conc, d_dt, tracer_map, self.composition)
-            if reac["type"] == "remineralization":  self.remineralization(c, p, ec, ep, ic, ip, self.remineralization_ids, self.remineralization_params, conc, d_dt, tracer_map)
+            # if reac["type"] == "remineralization":  self.remineralization(c, p, ec, ep, ic, ip, self.remineralization_ids, self.remineralization_params, conc, d_dt, tracer_map)
+            if reac["type"] == "remineralization":  self.remineralization(c, p, ec, ep, ic, ip, self.remineralization_ids, self.remineralization_params, conc, d_dt, tracer_map, self.composition)
     
     
     @staticmethod
@@ -291,15 +346,14 @@ class Detritus():
 
     @staticmethod
     @njit
-    def remineralization(c, p, ec, ep, ic, ip, remineralization_ids, remineralization_params, conc, d_dt, tracer_map):
+    def remineralization(c, p, ec, ep, ic, ip, remineralization_ids, remineralization_params, conc, d_dt, tracer_map, composition):
 
         # Extract parameter indices
-        remin_rate = remineralization_ids.index("remineralization_rate")
         convert = False
         if "convert_o2" in remineralization_ids:
             convert = True
             convert_o2 = remineralization_ids.index("convert_o2")
-        
+
         # Extract dict
         if len(c) > 1 and "o2" in c:
         # Remineralization of carbon also affects oxygen (sink)
@@ -319,9 +373,12 @@ class Detritus():
         else:
             prod = p[0]
             elem_p = ep[prod]   # element produced
+
+        # Extract remineralization rate for chemical constituent
+        remineralization_rate_index = remineralization_ids.index(composition[ind_c])
         
         # Calculate remineralization rate
-        remineralization = (remineralization_params[remin_rate]) * tc
+        remineralization = remineralization_params[        remineralization_rate_index] * tc
 
         # Update d_dt
         for i in range(len(elem_c)):
@@ -330,8 +387,117 @@ class Detritus():
         if "o2" in c:
             if convert: d_dt[tracer_map["o2"][0]] -= remineralization * remineralization_params[convert_o2]
             else:   d_dt[tracer_map["o2"][0]] -= remineralization
-        
+
         if not p:    pass
         else:
             for j in range(len(elem_p)):
                 d_dt[tracer_map[prod][j]] += elem_p[j] * remineralization
+
+    # @staticmethod
+    # @njit
+    # def remineralization(c, p, ec, ep, ic, ip, remineralization_ids, remineralization_params, conc, d_dt, tracer_map, composition):
+    
+    #     # Extract parameter indices
+    #     remin_consts = remineralization_ids.index("remineralize")
+    #     remin_rate = remineralization_ids.index("remineralization_rate")
+    #     convert = False
+    #     if "convert_o2" in remineralization_ids:
+    #         convert = True
+    #         convert_o2 = remineralization_ids.index("convert_o2")
+    
+    #     # Extract dict
+    #     if len(c) > 1 and "o2" in c:
+    #     # Remineralization of carbon also affects oxygen (sink)
+    #         for t in c:
+    #             if t == "o2":   pass
+    #             else:
+    #                 cons = t
+    #                 break
+    #     else:   cons = c[0]
+    #     elem_c = ec[cons]   # element consumed
+    #     ind_c = list(elem_c).index(1.)  # index of element
+    
+    #     # Get concentration of remineralized nutrient in organic matter pool
+    #     tc = conc[tracer_map[cons][ind_c]]
+
+    #     # Get element
+    #     # {c: 1., n: 2., p: 3., si: 4.}
+    #     if composition[ind_c] == "c":       element = 1.
+    #     elif composition[ind_c] == "n":     element = 2.
+    #     elif composition[ind_c] == "p":     element = 3.
+    #     elif composition[ind_c] == "si":    element = 4.
+    
+    #     if not p:    pass
+    #     else:
+    #         prod = p[0]
+    #         elem_p = ep[prod]   # element produced
+
+    #     # Extract remineralization rate for chemical constituent
+    #     constituents = remineralization_params[remin_consts]
+    #     index = constituents.index(element)
+    #     remineralization_rate = remineralization_params[remin_rate][index]
+
+    
+    #     # Calculate remineralization rate
+    #     remineralization = remineralization_rate * tc
+    
+    #     # Update d_dt
+    #     for i in range(len(elem_c)):
+    #         d_dt[tracer_map[cons][i]] -= elem_c[i] * remineralization
+    
+    #     if "o2" in c:
+    #         if convert: d_dt[tracer_map["o2"][0]] -= remineralization * remineralization_params[convert_o2][0]
+    #         else:   d_dt[tracer_map["o2"][0]] -= remineralization
+    
+    #     if not p:    pass
+    #     else:
+    #         for j in range(len(elem_p)):
+    #             d_dt[tracer_map[prod][j]] += elem_p[j] * remineralization
+
+
+        # @staticmethod
+        # @njit
+        # def remineralization(c, p, ec, ep, ic, ip, remineralization_ids, remineralization_params, conc, d_dt, tracer_map):
+
+        #     # Extract parameter indices
+        #     remin_rate = remineralization_ids.index("remineralization_rate")
+        #     convert = False
+        #     if "convert_o2" in remineralization_ids:
+        #         convert = True
+        #         convert_o2 = remineralization_ids.index("convert_o2")
+
+        #     # Extract dict
+        #     if len(c) > 1 and "o2" in c:
+        #     # Remineralization of carbon also affects oxygen (sink)
+        #         for t in c:
+        #             if t == "o2":   pass
+        #             else:
+        #                 cons = t
+        #                 break
+        #     else:   cons = c[0]
+        #     elem_c = ec[cons]   # element consumed
+        #     ind_c = list(elem_c).index(1.)  # index of element
+
+        #     # Get concentration of remineralized nutrient in organic matter pool
+        #     tc = conc[tracer_map[cons][ind_c]]
+
+        #     if not p:    pass
+        #     else:
+        #         prod = p[0]
+        #         elem_p = ep[prod]   # element produced
+
+        #     # Calculate remineralization rate
+        #     remineralization = (remineralization_params[remin_rate]) * tc
+
+        #     # Update d_dt
+        #     for i in range(len(elem_c)):
+        #         d_dt[tracer_map[cons][i]] -= elem_c[i] * remineralization
+
+        #     if "o2" in c:
+        #         if convert: d_dt[tracer_map["o2"][0]] -= remineralization * remineralization_params[convert_o2]
+        #         else:   d_dt[tracer_map["o2"][0]] -= remineralization
+
+        #     if not p:    pass
+        #     else:
+        #         for j in range(len(elem_p)):
+        #             d_dt[tracer_map[prod][j]] += elem_p[j] * remineralization

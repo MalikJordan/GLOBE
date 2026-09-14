@@ -1095,7 +1095,8 @@ tracers:
       light_attenuation: 0.0                # [m^2 / mg C]
 
       remineralization:
-        remineralization_rate: 0.05         # [1/d]
+        remineralization_rate: {c: 0.05, n: 0.05, p: 0.05}          # [1/d]
+        # remineralization_rate: 0.05         # [1/d]
         convert_o2: 1/12                    # [mmol 02 / mg C]
 
       sedimentation:
@@ -1115,7 +1116,8 @@ tracers:
         dissolution_rate: {si: 0.02}
 
       remineralization:
-        remineralization_rate: 0.1          # [1/d]
+        remineralization_rate: {c: 0.1, n: 0.1, p: 0.1}          # [1/d]
+        # remineralization_rate: 0.1          # [1/d]
         convert_o2: 1/12                    # [mmol 02 / mg C]
         
       sedimentation:

@@ -240,7 +240,9 @@ tracers:
       light_attenuation: 0.0                # [m^2 / mg C]
 
       remineralization:
-        remineralization_rate: 0.3          # [1/d]
+        remineralize: [c,n,p]
+        remineralization_rate: [0.3,0.3,0.25]
+        # remineralization_rate: 0.3          # [1/d]
         convert_o2: 1/12                    # [mmol 02 / mg C]
 
   pom1:
@@ -252,7 +254,8 @@ tracers:
       light_attenuation: 1.0E-04            # [m^2 / mg C]
 
       remineralization:
-        remineralization_rate: 0.3          # [1/d]
+        remineralization_rate: {c: 0.3, n: 0.3, p: 0.3}
+        # remineralization_rate: 0.3          # [1/d]
         convert_o2: 1/12                    # [mmol 02 / mg C]
 
 # -------------------------------------------------------------------------------------------------

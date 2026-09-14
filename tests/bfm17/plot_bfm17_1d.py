@@ -13,13 +13,16 @@ def nrmse(check,comp):
     dif = np.zeros(len(check))
     rms = np.zeros(len(check))
     max = np.zeros(len(check))
+    std = np.zeros(len(check))
     for i in range(0,len(check)):
         avg[i] = np.abs(np.mean(check[i,:,:]))
         dif[i] = np.max(check[i,:,:]) - np.min(check[i,:,:])
         rms[i] = np.power( np.mean( np.power( check[i,:,:]-comp[i,:,:], 2 ) )   ,0.5)
         max[i] = np.max(check[i,:,:])
+        std[i] = np.std(check[i,:,:])
     # nrmse = 100*rms/avg    
-    nrmse = 100*rms/max
+    # nrmse = 100*rms/max
+    nrmse = 100*rms/(std + 1.E-20)
 
     return rms, nrmse
 
@@ -1208,3 +1211,25 @@ ax.set_title('BFM17 - POM Phosphorus')
 plt.tight_layout(h_pad=0.75, w_pad=0.75)
 plt.savefig(os.getcwd() + '/tests/bfm17/figures/pom-1d.jpg')
 
+
+error = np.zeros((17,150,1800))
+for i in range(1800):
+    error[0,:,i] = 100 * (data_fortran[0,:,i] - bfm17_daily[0,:,i]) / (data_fortran[0,:,i] + 1.E-20)
+    error[1,:,i] = 100 * (data_fortran[1,:,i] - bfm17_daily[1,:,i]) / (data_fortran[1,:,i] + 1.E-20)
+    error[2,:,i] = 100 * (data_fortran[2,:,i] - bfm17_daily[2,:,i]) / (data_fortran[2,:,i] + 1.E-20)
+    error[3,:,i] = 100 * (data_fortran[3,:,i] - bfm17_daily[3,:,i]) / (data_fortran[3,:,i] + 1.E-20)
+    error[4,:,i] = 100 * (data_fortran[4,:,i] - bfm17_daily[4,:,i]) / (data_fortran[4,:,i] + 1.E-20)
+    error[5,:,i] = 100 * (data_fortran[5,:,i] - bfm17_daily[5,:,i]) / (data_fortran[5,:,i] + 1.E-20)
+    error[6,:,i] = 100 * (data_fortran[6,:,i] - bfm17_daily[6,:,i]) / (data_fortran[6,:,i] + 1.E-20)
+    error[7,:,i] = 100 * (data_fortran[7,:,i] - bfm17_daily[7,:,i]) / (data_fortran[7,:,i] + 1.E-20)
+    error[8,:,i] = 100 * (data_fortran[8,:,i] - bfm17_daily[8,:,i]) / (data_fortran[8,:,i] + 1.E-20)
+    error[9,:,i] = 100 * (data_fortran[9,:,i] - bfm17_daily[9,:,i]) / (data_fortran[9,:,i] + 1.E-20)
+    error[10,:,i] = 100 * (data_fortran[10,:,i] - bfm17_daily[10,:,i]) / (data_fortran[10,:,i] + 1.E-20)
+    error[11,:,i] = 100 * (data_fortran[11,:,i] - bfm17_daily[11,:,i]) / (data_fortran[11,:,i] + 1.E-20)
+    error[12,:,i] = 100 * (data_fortran[12,:,i] - bfm17_daily[12,:,i]) / (data_fortran[12,:,i] + 1.E-20)
+    error[13,:,i] = 100 * (data_fortran[13,:,i] - bfm17_daily[13,:,i]) / (data_fortran[13,:,i] + 1.E-20)
+    error[14,:,i] = 100 * (data_fortran[14,:,i] - bfm17_daily[14,:,i]) / (data_fortran[14,:,i] + 1.E-20)
+    error[15,:,i] = 100 * (data_fortran[15,:,i] - bfm17_daily[15,:,i]) / (data_fortran[15,:,i] + 1.E-20)
+    error[16,:,i] = 100 * (data_fortran[16,:,i] - bfm17_daily[16,:,i]) / (data_fortran[16,:,i] + 1.E-20)
+    
+print(np.max(error))

@@ -107,9 +107,9 @@ initial_conditions:
       
   mesozoo2:
     composition:                            # element : initial concentration (from data file)
-      c: 10.
-      n: {c: 0.0126}
-      p: {c: 7.862E-04}
+      c: 0.
+      n: 0.
+      p: 0.
 
   # mesozoo2:
   #   composition:                            # element : initial concentration (from data file)

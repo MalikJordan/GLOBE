@@ -6,18 +6,18 @@ import numpy as np
 import os
 
 # Extract GLOBE data
-globe_path = os.getcwd() + '/concentration_bfm17-5yr-0907.npz'
+globe_path = os.getcwd() + '/tests/bfm17/data/concentration_bfm17_1d.npz'
 model = np.load(globe_path, allow_pickle=True)
 daily = model["daily"]
 monthly = model["monthly"]
 
-npp_path = os.getcwd() + '/npp_bfm17-5yr-0907.npz'
+npp_path = os.getcwd() + '/tests/bfm17/data/npp_bfm17_1d.npz'
 npp = np.load(npp_path, allow_pickle=True)
 npp_daily = npp["daily"]
 npp_monthly = npp["monthly"]
 
 # Tracer Indices
-path = os.getcwd() + '/tracer_indices_bfm17-5yr.npz'
+path = os.getcwd() + '/tests/bfm17/data/tracer_indices_bfm17_1d.npz'
 indices = np.load(path)
 tracer_indices = {}
 for file in indices.files:
@@ -125,8 +125,10 @@ bmap = brewer2mpl.get_map('Paired', 'qualitative', 10)
 colors = bmap.mpl_colors
 # ---------------------------------------------------------------------------------------------------------------------------------
 # Titles
-title_globe = ['(a) Chl-a','(b) Oxygen','(c) Nitrate','(d) Phosphate','(e) PON','(f) NPP']
-title_bfm17 = ['(h) Chl-a','(i) Oxygen','(j) Nitrate','(k) Phosphate','(l) PON','(m) NPP']
+# title_globe = ['(a) Chl-a','(b) Oxygen','(c) Nitrate','(d) Phosphate','(e) PON','(f) NPP']
+# title_bfm17 = ['(h) Chl-a','(i) Oxygen','(j) Nitrate','(k) Phosphate','(l) PON','(m) NPP']
+title_globe = ['(a)','(b)','(c)','(d) ','(e)','(f)']
+title_bfm17 = ['(g)','(h)','(i)','(j)','(k)','(l)']
 # ---------------------------------------------------------------------------------------------------------------------------------
 # Colorbar Limits
 clow   = [0,180,0,0,0.1,0]
@@ -134,13 +136,14 @@ chigh  = [0.225,235,2.5,0.075,0.405,2.0]
 # ---------------------------------------------------------------------------------------------------------------------------------
 # Field Plots  
     
-fig,axes = plt.subplots(4,3,figsize=[16,15])
+fig,axes = plt.subplots(4,3,figsize=[14,16])
 for i in range(0,6):
     plt.subplot(4,3,i+1)
     plt.imshow(globe_monthly[i,:,:],extent=[0,12,150,0],aspect='auto',cmap='jet')
     ax = plt.gca()
-    plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['J','M','M','J','S','N'])
-    plt.xlabel('Month',fontsize=14)
+    plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['','','','','',''])
+    # plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['J','M','M','J','S','N'])
+    # plt.xlabel('Month',fontsize=14)
     if i%3 == 0:
         plt.yticks([0,50,100,150])
         plt.ylabel('Depth (m)',fontsize=14)
@@ -156,14 +159,17 @@ for i in range(6,12):
     plt.subplot(4,3,i+1)
     plt.imshow(bfm17_monthly[i-6,:,:],extent=[0,12,150,0],aspect='auto',cmap='jet')
     ax = plt.gca()
-    plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['J','M','M','J','S','N'])
-    plt.xlabel('Month',fontsize=14)
     plt.yticks([0,50,100,150])
     if i%3 == 0:
         plt.yticks([0,50,100,150])
         plt.ylabel('Depth (m)',fontsize=14)
     else:
         plt.yticks([0,50,100,150],[])
+    if i>8:
+        plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['J','M','M','J','S','N'])
+        plt.xlabel('Month',fontsize=14)
+    else:
+        plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['','','','','',''])    
     plt.title(title_bfm17[i-6],fontsize=20)
     plt.clim(clow[i-6],chigh[i-6]) 
     divider = make_axes_locatable(ax)

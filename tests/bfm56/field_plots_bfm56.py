@@ -174,8 +174,10 @@ bmap = brewer2mpl.get_map('Paired', 'qualitative', 10)
 colors = bmap.mpl_colors
 # ---------------------------------------------------------------------------------------------------------------------------------
 # Titles
-title_globe = ['(a) Chl-a','(b) Oxygen','(c) Nitrate','(d) Phosphate','(e) PON','(f) NPP','(g) DIC']
-title_bfm56 = ['(h) Chl-a','(i) Oxygen','(j) Nitrate','(k) Phosphate','(l) PON','(m) NPP','(n) DIC']
+# title_globe = ['(a) Chl-a','(b) Oxygen','(c) Nitrate','(d) Phosphate','(e) PON','(f) NPP','(g) DIC']
+# title_bfm56 = ['(h) Chl-a','(i) Oxygen','(j) Nitrate','(k) Phosphate','(l) PON','(m) NPP','(n) DIC']
+title_globe = ['(a)','(b)','(c)','(d)','(e)','(f)','(g)']
+title_bfm56 = ['(h)','(i)','(j)','(k)','(l)','(m)','(n)']
 title = ['(a) Chl-a','(b) Oxygen','(c) Nitrate','(d) Phosphate','(e) Chl-a','(f) Oxygen','(g) Nitrate','(h) Phoshate','(i) PON','(j) NPP','(k) DIC','(l) PON','(m) NPP','(n) DIC']
 # ---------------------------------------------------------------------------------------------------------------------------------
 # Colorbar Limits
@@ -189,8 +191,9 @@ for i in range(0,7):
     plt.subplot(4,4,i+1)
     plt.imshow(globe_monthly[i,:,:],extent=[0,12,150,0],aspect='auto',cmap='jet')
     ax = plt.gca()
-    plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['J','M','M','J','S','N'])
-    plt.xlabel('Month',fontsize=14)
+    plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['','','','','',''])
+    # plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['J','M','M','J','S','N'])
+    # plt.xlabel('Month',fontsize=14)
     if i%4 == 0:
         plt.yticks([0,50,100,150])
         plt.ylabel('Depth (m)',fontsize=14)
@@ -206,14 +209,17 @@ for i in range(7,14):
     plt.subplot(4,4,i+2)
     plt.imshow(bfm56_monthly[i-7,:,:],extent=[0,12,150,0],aspect='auto',cmap='jet')
     ax = plt.gca()
-    plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['J','M','M','J','S','N'])
-    plt.xlabel('Month',fontsize=14)
     plt.yticks([0,50,100,150])
     if i%4 == 3:
         plt.yticks([0,50,100,150])
         plt.ylabel('Depth (m)',fontsize=14)
     else:
         plt.yticks([0,50,100,150],[])
+    if i>10:
+        plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['J','M','M','J','S','N'])
+        plt.xlabel('Month',fontsize=14)
+    else:
+            plt.xticks([0.5,2.5,4.5,6.5,8.5,10.5], ['','','','','',''])
     plt.title(title_bfm56[i-7],fontsize=20)
     plt.clim(clow[i-7],chigh[i-7]) 
     divider = make_axes_locatable(ax)

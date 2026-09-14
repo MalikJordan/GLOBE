@@ -10,6 +10,25 @@ project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 from functions.seasonal_cycling import get_temperature, get_salinity, get_sunlight
 
+def nrmse(check,comp):
+    
+    avg = np.zeros(len(check))
+    dif = np.zeros(len(check))
+    rms = np.zeros(len(check))
+    max = np.zeros(len(check))
+    std = np.zeros(len(check))
+    for i in range(0,len(check)):
+        avg[i] = np.abs(np.mean(check[i,:]))
+        dif[i] = np.max(check[i,:]) - np.min(check[i,:])
+        rms[i] = np.power( np.mean( np.power( check[i,:]-comp[i,:], 2 ) )   ,0.5)
+        max[i] = np.max(check[i,:])
+        std[i] = np.std(check[i,:])
+    # nrmse = 100*rms/avg    
+    # nrmse = 100*rms/max
+    nrmse = 100*rms/(std + 1.E-20)
+
+    return rms, nrmse
+
 # # Create envirnmental data file for fasham with constant temperature, salinity, and shortwave radiation
 # # Hourly time series for one year
 # time = pd.date_range(
@@ -230,7 +249,7 @@ axs[1,2].set_xticks(xticks,xlabel)
 
 handles,labels = axs[0,0].get_legend_handles_labels()
 axs[1,3].axis('off')
-axs[1,3].legend(handles,labels,loc='center',frameon=True)
+# axs[1,3].legend(handles,labels,loc='center',frameon=True)
 
 folder = os.getcwd() + '/tests/fabm'
 fig.tight_layout()
@@ -242,3 +261,17 @@ error = np.zeros_like(fasham_daily)
 error = 100 * (fasham_daily[:,:360] - globe_daily[:,0,:360]) / (fasham_daily[:360] + 1.E-20)
 print(np.max(error))
 
+rmse_data, nrmse_data = nrmse(fasham_daily,globe_daily[:,0])
+fields = ['no3', 'nh4', 'bac', 'phy', 'zoo', 'dom', 'pom']
+
+print('-------------------------------------------------')
+print('NRMSE (%)')
+print('-------------------------------------------------')
+for i in range(0,len(fields)):
+    print(fields[i], '--', nrmse_data[i])
+print('-------------------------------------------------')
+print('RMSE')
+print('-------------------------------------------------')
+for i in range(0,len(fields)):
+    print(fields[i], '--', rmse_data[i])
+print('-------------------------------------------------')
