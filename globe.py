@@ -83,12 +83,12 @@ start = time.perf_counter()
 
 # Import physical model
 # file = 'physical_bfm17_1d.yaml'
-file = 'physical_bfm56.yaml'
+file = 'tests/bfm56/data/physical_bfm56.yaml'
 file_path = os.getcwd() + '/' + file
 physical = import_physical_model(file_path)
 
 # file = 'bfm17_1d.yaml'
-file = 'bfm56.yaml'
+file = 'tests/bfm56/data/bfm56.yaml'
 file_path = os.getcwd() + '/' + file
 base_element, reactions, tracers = import_bgc_model(file_path, physical)
 

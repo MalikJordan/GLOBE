@@ -111,7 +111,7 @@ time_array = physical["simulation"]["time"]
 temperature = np.zeros(num_layers,dtype=np.float64)
 salinity = np.zeros(num_layers,dtype=np.float64)
 mixed_layer_depth = np.zeros(num_layers,dtype=np.float64)
-surfacer_PAR = 0.
+surface_PAR = 0.
 wind = np.zeros(num_layers,dtype=np.float64)
 
 # Counters
@@ -135,20 +135,20 @@ for iter in range(0,iters-1):
         temperature[0] = forcing_data["temperature"]
         salinity[0] = forcing_data["salinity"]
         mixed_layer_depth[0] = forcing_data["mld"]
-        surfacer_PAR = forcing_data["sunlight"]
+        surface_PAR = forcing_data["sunlight"]
         wind[0] = forcing_data["wind"]
     elif forcing == "seasonal":
         temperature[0] = get_temperature(time_array[iter], forcing_data["winter_temp"], forcing_data["summer_temp"], forcing_data["temp_excursion"])
         salinity[0] = get_salinity(time_array[iter], forcing_data["winter_salt"], forcing_data["summer_salt"])
         mixed_layer_depth[0] = get_mixed_layer_depth(time_array[iter],forcing_data["winter_mld"], forcing_data["summer_mld"])
-        surfacer_PAR = get_sunlight(time_array[iter],forcing_data["winter_sun"], forcing_data["summer_sun"], physical["environment"]["latitude"])
+        surface_PAR = get_sunlight(time_array[iter],forcing_data["winter_sun"], forcing_data["summer_sun"], physical["environment"]["latitude"])
         wind[0] = get_wind(time_array[iter], forcing_data["winter_wind"], forcing_data["summer_wind"])
     density = density_profile(configuration, num_layers, column_depth/2, 0., temperature, salinity)     # Calculate density in center of cell (column_depth/2)
 
     # Calculate bgc rates
-    d_dt = bgc_rate_eqns(iter, configuration, base_element, concentration[...,iter], d_dt, physical["environment"]["light_attenuation_water"], temperature, salinity, density, z, dz, surfacer_PAR, wind, tracer_map, tracer_type, tracers, sinking)
+    d_dt = bgc_rate_eqns(iter, configuration, base_element, concentration[...,iter], d_dt, physical["environment"]["light_attenuation_water"], temperature, salinity, density, z, dz, surface_PAR, wind, tracer_map, tracer_type, tracers, sinking)
 
-    if surfacer_PAR > 0:
+    if surface_PAR > 0:
         x=1
     if iter > 55:
         x=1
