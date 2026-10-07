@@ -1,25 +1,67 @@
-reduction:
-  title: average phytoplankton concentration
+title: average chlorophyll concentration
 
-  target: # target tracer constituents for reduction scheme
-    phyto1: [n]
-    phyto2: [n]
-    phyto3: [n]
+error_limit: 50.0
 
-  safe:   # tracers to be retained in reduction, regardless of interaction coefficient
-    no3: [n]
-    nh4: [n]
-    po4: [p]
-    sio4: [si]
-    fe: [fe]
+target: # target tracer constituents for reduction scheme
+  # co2: [c]
+  o2: [o]
+  # phyto1: [chl]
+  # phyto2: [chl]
+  # phyto3: [chl]
+  # phyto4: [chl]
 
-  mode: average     # average, peak, or time_of_peak
-  # "average": average concentration over specified time period
-  # "peak": peak concentration during specified time period
-  # "time_of_peak": time of peak concentration during specified time period
+safe:   # tracers to be retained in reduction, regardless of interaction coefficient
+  no3: [n]
+  nh4: [n]
+  po4: [p]
+  # dom2: [c]
 
-  period: # time period (in days) used in mode
-    start: 730
-    end: 820
+mode: average     # average, peak, or time_of_peak
+# "average": average concentration over specified time period
+# "peak": peak concentration during specified time period
+# "time_of_peak": time of peak concentration during specified time period
+
+time_period: # time period (in days) used in mode
+  start: 720
+  end: 1080
+
+reassign: # ranking of groups from highest to lowest importance
+# initial concentrations of removed tracers will be reassigned to the remaining tracer of similar type with the highest importance
+# ex: if mesozoo2 is removed and microzoo1 is retained, the inital concentration of mesozoo2 will be added to that of microzoo1
+# ex: if phyto2, phyto3, and phyto1 are removed, their initial concentrations will be added to that of phyto4
+  phytoplankton: [phyto2, phyto3, phyto4, phyto1]
+  zooplankton: [microzoo1, microzoo2, mesozoo2, mesozoo1]
+  dissolved: [dom1, dom2, dom3]
 
 
+
+# reduction:
+#   title: average chlorophyll concentration
+
+#   target: # target tracer constituents for reduction scheme
+#     phyto1: [chl]
+#     phyto2: [chl]
+#     phyto3: [chl]
+#     phyto4: [chl]
+
+#   safe:   # tracers to be retained in reduction, regardless of interaction coefficient
+#     no3: [n]
+#     nh4: [n]
+#     po4: [p]
+
+#   mode: average     # average, peak, or time_of_peak
+#   # "average": average concentration over specified time period
+#   # "peak": peak concentration during specified time period
+#   # "time_of_peak": time of peak concentration during specified time period
+
+#   time_period: # time period (in days) used in mode
+#     start: 730
+#     end: 820
+
+#   reassign: # ranking of groups from highest to lowest importance
+#   # initial concentrations of removed tracers will be reassigned to the remaining tracer of similar type with the highest importance
+#   # ex: if mesozoo2 is removed and microzoo1 is retained, the inital concentration of mesozoo2 will be added to that of microzoo1
+#   # ex: if phyto2, phyto3, and phyto1 are removed, their initial concentrations will be added to that of phyto4
+#     phytoplankton: [phyto2, phyto3, phyto4, phyto1]
+#     zooplankton: [microzoo1, microzoo2, mesozoo2, mesozoo1]
+#     dissolved: [dom1, dom2, dom3]

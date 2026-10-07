@@ -128,8 +128,12 @@ def import_physical_model(file_path):
     # Initialize coordinate system
     # ----------------------------------------------------------------------------------------------------
     # physical["vertical_grid"] = coordinate_system(physical["simulation"]["configuration"],physical["water_column"])
-    if physical["simulation"]["configuration"] == "0d":     physical["vertical_grid"] = coordinate_system(physical["simulation"]["configuration"], physical["water_column"]["num_layers"], physical["water_column"]["column_depth"], 0., 0.)
-    elif physical["simulation"]["configuration"] == "1d":   physical["vertical_grid"] = coordinate_system(physical["simulation"]["configuration"], physical["water_column"]["num_layers"], physical["water_column"]["column_depth"], physical["water_column"]["surf_log"] , physical["water_column"]["bot_log"])
+    if physical["simulation"]["configuration"] == "0d":     
+        physical["vertical_grid"] = coordinate_system(physical["simulation"]["configuration"], physical["water_column"]["num_layers"], physical["water_column"]["column_depth"], 0., 0.)
+        physical["water_column"]["num_boxes"] = physical["water_column"]["num_layers"]  # single box of surface layer
+    elif physical["simulation"]["configuration"] == "1d":   
+        physical["vertical_grid"] = coordinate_system(physical["simulation"]["configuration"], physical["water_column"]["num_layers"], physical["water_column"]["column_depth"], physical["water_column"]["surf_log"] , physical["water_column"]["bot_log"])
+        physical["water_column"]["num_boxes"] = physical["water_column"]["num_layers"] - 1  # boxes defined between layers (i.e: top of box[0] = layer[0], bottom of box[0] = layer[1])
 
     # ----------------------------------------------------------------------------------------------------
     # Setup time array
@@ -149,3 +153,11 @@ def import_physical_model(file_path):
     physical["simulation"]["months"] = int(np.ceil(physical["simulation"]["days"]/30))
     
     return physical
+
+
+def import_reduction(file_path):
+
+    # Open file containing physical data
+    with open(file_path, 'r') as f:     reduction = yaml.full_load(f)
+    
+    return reduction

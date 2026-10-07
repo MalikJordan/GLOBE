@@ -247,17 +247,28 @@ class Detritus():
             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
 
+        for i in range(len(self.reactions)-1, -1, -1):
             # Delete "loss" reactions if this tracer is produced
-            if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
-
+            if ( self.reactions[i]["type"] == "loss" ) and ( abbrev in self.reactions[i]["produced"].keys() ):    
+                self.reactions.pop(i)
+                continue
             # Delete "remineralization" reactions if this tracer is produced
-            if ( reac["type"] == "remineralization" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
+            if ( self.reactions[i]["type"] == "remineralization" ) and ( abbrev in self.reactions[i]["produced"].keys() ):    
+                self.reactions.pop(i)
+                continue
+            # Delete "dissolution" reactions if this tracer is produced
+            if ( self.reactions[i]["type"] == "dissolution" ) and ( abbrev in self.reactions[i]["produced"].keys() ):    
+                self.reactions.pop(i)
+                continue
+            # Delete all other reactions
+            if self.reactions[i]["type"] not in ["dissolution","remineralization","loss"]:   
+                self.reactions.pop(i)
+                continue
+            # # Delete "grazing" reactions if this tracer is consumed
+            # if ( reac["type"] == "grazing" ) and ( abbrev in consumed.keys() ): self.reactions.pop()
 
-            # Delete "grazing" reactions if this tracer is consumed
-            if ( reac["type"] == "grazing" ) and ( abbrev in consumed.keys() ): self.reactions.pop()
-
-            # Delete "uptake" reactions if this tracer is consumed
-            if ( reac["type"] == "uptake" ) and ( abbrev in consumed.keys() ): self.reactions.pop()
+            # # Delete "uptake" reactions if this tracer is consumed
+            # if ( reac["type"] == "uptake" ) and ( abbrev in consumed.keys() ): self.reactions.pop()
         
 
     def detritus(self, base_element, temperature, conc, d_dt, tracer_map, tracers):

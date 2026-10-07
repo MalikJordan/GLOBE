@@ -199,11 +199,46 @@ class Inorganic():
             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
 
-            # Delete "loss" reactions if this tracer is produced
-            if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
+        # for reac in reactions:
+        #     if len(self.reactions) > 0:
+        #         # Delete "loss" reactions if this tracer is produced
+        #         if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
 
+        #         # Delete "uptake" reactions if this tracer is consumed
+        #         if ( reac["type"] == "uptake" ) and ( abbrev in consumed.keys() ):  self.reactions.pop()
+
+        #         # Delete tracer-specific reactions from additional tracers
+        #         if ( reac["type"] == "denitrification" ) and ( abbrev != "no3" ):   self.reactions.pop()
+        #         if ( reac["type"] == "nitrification" ) and ( abbrev != "nh4" ):     self.reactions.pop()
+        #         if ( reac["type"] == "reoxidation" ) and ( abbrev != "hs" ):        self.reactions.pop()
+        #         if ( reac["type"] == "respiration" ):   self.reactions.pop()
+        #         if ( reac["type"] == "gross_primary_production" ):  self.reactions.pop()
+
+        
+        for i in range(len(self.reactions)-1, -1, -1):
+            # Delete "loss" reactions if this tracer is produced
+            if ( self.reactions[i]["type"] == "loss" ) and ( abbrev in self.reactions[i]["produced"].keys() ):    
+                self.reactions.pop(i)
+                continue
             # Delete "uptake" reactions if this tracer is consumed
-            if ( reac["type"] == "uptake" ) and ( abbrev in consumed.keys() ): self.reactions.pop()
+            if ( self.reactions[i]["type"] == "uptake" ) and ( abbrev in self.reactions[i]["consumed"].keys() ):  
+                self.reactions.pop(i)
+                continue
+            # Delete tracer-specific reactions from additional tracers
+            if ( self.reactions[i]["type"] == "denitrification" ) and ( abbrev != "no3" ):   
+                self.reactions.pop(i)
+                continue
+            if ( self.reactions[i]["type"] == "nitrification" ) and ( abbrev != "nh4" ):     
+                self.reactions.pop(i)
+                continue
+            if ( self.reactions[i]["type"] == "reoxidation" ) and ( abbrev != "hs" ):        
+                self.reactions.pop(i)
+                continue
+            # Delete all other non-IO reactions
+            if self.reactions[i]["type"] not in ["denitrification","loss","nitrification","reaeration","reoxidation","co2_flux"]:
+                self.reactions.pop(i)
+                continue
+
    
     
     def inorg(self, configuration, bact_limitation_factor, conc, d_dt, tracer_map, z, dz, temperature, salinity, density, wind):
@@ -432,7 +467,8 @@ class Inorganic():
 
         # Get concentrations
         dic = conc[tracer_map["co2"][0]][0]
-        ta = conc[tracer_map["ta"][0]][0]
+        if "ta" in tracer_map:  ta = conc[tracer_map["ta"][0]][0]
+        else:   ta = np.zeros_like(dic)
 
         # Calculate Schmidt number, ratio between the kinematic viscosity and the molecular diffusivity of carbon dioxide
         schmidt_number = (air_sea_flux_params[c1] - air_sea_flux_params[c2]*temperature + air_sea_flux_params[c3]*(temperature**2) - air_sea_flux_params[c4]*(temperature**3))

@@ -723,11 +723,15 @@ class Phytoplankton():
             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
 
+        for i in range(len(self.reactions)-1, -1, -1):
             # Delete "loss" reactions if this tracer is produced
-            if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
-
+            if ( self.reactions[i]["type"] == "loss" ) and ( abbrev in self.reactions[i]["produced"].keys() ):    
+                self.reactions.pop(i)
+                continue
             # Delete "grazing" reactions if this tracer is consumed
-            if ( reac["type"] == "grazing" ) and ( abbrev in consumed.keys() ): self.reactions.pop()
+            if ( self.reactions[i]["type"] == "grazing" ) and ( abbrev in self.reactions[i]["consumed"].keys() ): 
+                self.reactions.pop(i)
+                continue
 
         # Reorder uptake reactions in case of coupled uptake
         for i in range(len(self.reactions)):
@@ -808,7 +812,8 @@ class Phytoplankton():
 
         # Calculate net primary production
         base_index = self.composition.index(base_element)
-        self.npp[:,iter] = self.net_primary_production(conc[tracer_map[self.abbrev][base_index]], self.exu, self.lys, self.psn, self.rsp)
+        # self.npp[:,iter] = self.net_primary_production(conc[tracer_map[self.abbrev][base_index]], self.exu, self.lys, self.psn, self.rsp)
+        npp = self.net_primary_production(conc[tracer_map[self.abbrev][base_index]], self.exu, self.lys, self.psn, self.rsp)
 
         # Calculate remaining rates
         for reac in self.reactions:
@@ -825,11 +830,12 @@ class Phytoplankton():
                 # if c[0] == "no3" or c[0] == "nh4":  nh4_inhibited = self.nutrient_limitation["no3"]["nh4_inhibited"] 
                 if c[0] == "no3" or c[0] == "nh4":  nh4_inhibited = self.nutrient_limitation[c[0]]["nh4_inhibited"] 
                 else:   nh4_inhibited = False  
-                # self.upt[c[0]] = self.uptake(self.abbrev, base_element, c, p, ec, ep, ic, self.uptake_ids, self.uptake_params, self.upt, self.coupled_uptake, self.cell_quota_ids, self.cell_quota_max, self.cell_quota_opt, self.temp_regulation_factor, self.nutrient_limitation_factor, nh4_inhibited, self.npp[...,iter], basal_respiration, self.psn, conc, conc_ratio, d_dt, tracer_map, self.composition)
-                self.upt[c[0]] = self.uptake(self.abbrev, base_element, c, p, ec, ep, ic, self.uptake_ids, self.uptake_params, self.upt, self.coupled_uptake, self.cell_quota_ids, self.cell_quota_max, self.cell_quota_opt, self.temp_regulation_factor, self.nutrient_limitation_factor, self.nutrient_colimitation_factor, nh4_inhibited, self.npp[...,iter], basal_respiration, self.psn, max_photo_rate, conc, conc_ratio, d_dt, tracer_map, self.composition)
+                # self.upt[c[0]] = self.uptake(self.abbrev, base_element, c, p, ec, ep, ic, self.uptake_ids, self.uptake_params, self.upt, self.coupled_uptake, self.cell_quota_ids, self.cell_quota_max, self.cell_quota_opt, self.temp_regulation_factor, self.nutrient_limitation_factor, self.nutrient_colimitation_factor, nh4_inhibited, self.npp[...,iter], basal_respiration, self.psn, max_photo_rate, conc, conc_ratio, d_dt, tracer_map, self.composition)
+                self.upt[c[0]] = self.uptake(self.abbrev, base_element, c, p, ec, ep, ic, self.uptake_ids, self.uptake_params, self.upt, self.coupled_uptake, self.cell_quota_ids, self.cell_quota_max, self.cell_quota_opt, self.temp_regulation_factor, self.nutrient_limitation_factor, self.nutrient_colimitation_factor, nh4_inhibited, npp, basal_respiration, self.psn, max_photo_rate, conc, conc_ratio, d_dt, tracer_map, self.composition)
 
         # Update net primary production to only store "primary_production - respiration"
-        self.npp[:,iter] = (self.psn - self.rsp) * conc[tracer_map[self.abbrev][base_index]]
+        # self.npp[:,iter] = (self.psn - self.rsp) * conc[tracer_map[self.abbrev][base_index]]
+        npp = (self.psn - self.rsp) * conc[tracer_map[self.abbrev][base_index]]
 
 
     def add_nutrient(self, nutrients):
@@ -849,6 +855,21 @@ class Phytoplankton():
         """
 
         fN = List.empty_list(float64[:])
+        for key in list(self.nutrient_limitation.keys()):
+            if key != "colimitation" and key != "include":
+                if key not in list(tracers.keys()):
+                    # Delete removed nutrient from nutrient limitation ditionary
+                    del self.nutrient_limitation[key]
+        
+                    # Set minimum value for limitation factor
+                    lim = List.empty_list(float64[:])
+                    lim.append(1.E-20 * np.ones_like(conc_ratio[tracer_map[self.abbrev][0]]))
+                    self.nutrient_limitation_factor[key] = lim
+        
+                    # Remove from colimitation
+                    if key in self.nutrient_limitation["include"]:  self.nutrient_limitation["include"].pop(self.nutrient_limitation["include"].index(key))
+                    continue
+                
         for key in self.nutrient_limitation:
             if key != "colimitation" and key != "include":
                 # Get nutrient chemical constituent

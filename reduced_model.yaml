@@ -1,0 +1,678 @@
+base_element: c
+tracers:
+  o2:
+    long_name: oxygen
+    type: inorganic
+    composition:
+    - o
+    parameters:
+      temperature_regulation:
+        temp_limited: false
+      surface_flux: true
+      reaeration:
+        d: 0.31
+        k1: 1953.4
+        k2: 128.0
+        k3: 3.9918
+        k4: 0.050091
+        schmidt: 660.0
+        saturation_conversion: ideal_gas
+  po4:
+    long_name: phosphate
+    type: inorganic
+    composition:
+    - p
+    parameters:
+      temperature_regulation:
+        temp_limited: false
+  no3:
+    long_name: nitrate
+    type: inorganic
+    composition:
+    - n
+    parameters:
+      temperature_regulation:
+        temp_limited: true
+        function: q10
+        coefficient: 2.0
+        base_temp: 20.0
+      denitrification:
+        anoxic_mineralization_rate: 1.0
+        denitrification_rate: 0.35
+  nh4:
+    long_name: ammonium
+    type: inorganic
+    composition:
+    - n
+    parameters:
+      temperature_regulation:
+        temp_limited: true
+        function: q10
+        coefficient: 2.0
+        base_temp: 20.0
+      nitrification:
+        half_sat_oxygen: 10.0
+        nitrification_rate: 0.01
+        convert_o2: 2.0
+  bac1:
+    long_name: bacterioplankton
+    type: bacteria
+    composition:
+    - c
+    - n
+    - p
+    parameters:
+      cell_quota:
+        min:
+          c: 1.0
+          n: 0.0167
+          p: 0.00185
+        opt:
+          c: 1.0
+          n: 0.0167
+          p: 0.00185
+      oxygen_inhibition:
+        oxygen_limited: true
+        half_sat: 30.0
+        exponent: 3.0
+      temperature_regulation:
+        temp_limited: true
+        function: q10
+        coefficient: 2.95
+        base_temp: 20.0
+      om_partition:
+        dom1:
+          c: 0.6
+          n: 0.72
+          p: 0.832
+        pom1:
+          c: 0.4
+          n: 0.28
+          p: 0.168
+      excretion:
+        dom2:
+          option: relaxation
+          relaxation_timescale: 1.0
+        dom3:
+          option: activity
+          activity_respiration_frac: 0.6
+          excretion_rate: 0.0
+      mortality:
+        mortality_rate:
+          linear: 0.1
+          quadratic: 0.0
+        temp_limitation:
+          linear: true
+          quadratic: false
+      respiration:
+        activity_respiration_frac: 0.6
+        anoxic_respiration_frac: 0.2
+        basal_respiration_rate: 0.01
+        convert_o2: 1/12
+        convert_hs: 1/24
+      uptake:
+        potential_rich:
+          dom1: 0.3
+          dom2: 0.0
+          pom1: 0.01
+        potential_poor:
+          dom1: 0.0
+          dom2: 0.0
+          pom1: 0.0
+        max_growth_rate: 8.38
+        substrate_correction: false
+        option: potential
+      uptake_release:
+        nh4:
+          half_sat: 5.0
+          relaxation_timescale: 1.0
+        po4:
+          half_sat: 1.0
+          relaxation_timescale: 1.0
+  phyto2:
+    long_name: nanoflagellates
+    type: phytoplankton
+    composition:
+    - c
+    - n
+    - p
+    - chl
+    parameters:
+      cell_quota:
+        max:
+          c: 1.0
+          n: 0.0126
+          p: 0.000786
+          chl: 0.016
+        min:
+          c: 1.0
+          n: 0.00687
+          p: 0.000429
+          chl: 0.016
+        opt:
+          c: 1.0
+          n: 0.0126
+          p: 0.000786
+          chl: 0.016
+      nutrient_limitation:
+        colimitation: minimum
+        include:
+        - no3
+        - po4
+        no3:
+          type: internal
+          function: droop
+          nh4_inhibited: true
+        nh4:
+          type: external
+          function: monod
+          half_sat: 1.5
+        po4:
+          type: internal
+          function: droop
+      sedimentation:
+        sinking: true
+        background_sinking_rate: 0.0
+        max_sinking_rate: 0.5
+        burial_velocity: 0.0
+        sinking_threshold: 0.75
+      temperature_regulation:
+        temp_limited: true
+        function: q10
+        coefficient: 2.0
+        base_temp: 20.0
+      exudation:
+        method: photosynthesis
+        excreted_fraction: 0.05
+        include_activity: true
+        include_nutrient_stress: true
+      growth:
+        light_limitation: platt
+        light_location: integrated
+        light_attenuation: 0.03
+        max_photo_rate: 1.6
+        chl_quota: 0.016
+        chl_relax_rate: 0.0
+        initial_PI_slope: 1.52e-05
+        eps_PAR: 0.4
+        convert_o2: 1/12
+        optimal_Epar_Ek: 0.0
+        silicate_limitation: false
+      lysis:
+        method: cell_quota
+        extra_lysis_rate: 0.0
+        half_sat_stress_lysis: 0.1
+        half_sat_extra_lysis: 0.0
+        max_stress_lysis_rate: 0.05
+        apportioning_factor:
+          dom1:
+          - c
+          - n
+          - p
+          pom1:
+          - c
+          - n
+          - p
+      respiration:
+        activity_respiration_frac: 0.05
+        basal_respiration_rate: 0.05
+        convert_o2: 1/12
+      uptake:
+        no3:
+          basis: nutrient
+          strategy: independent
+          form: affinity
+          half_sat_nh4_preference: 1.5
+          luxury_storage: 1.0
+          specific_affinity: 0.025
+        nh4:
+          basis: nutrient
+          strategy: independent
+          form: affinity
+          half_sat_nh4_preference: 1.5
+          luxury_storage: 1.0
+          specific_affinity: 0.025
+        po4:
+          basis: nutrient
+          strategy: independent
+          form: affinity
+          luxury_storage: 1.0
+          specific_affinity: 0.0025
+  microzoo1:
+    long_name: microzooplankton
+    type: zooplankton
+    composition:
+    - c
+    - n
+    - p
+    parameters:
+      cell_quota:
+        opt:
+          c: 1.0
+          n: 0.01258
+          p: 0.0007862
+      temperature_regulation:
+        temp_limited: true
+        function: q10
+        coefficient: 2.0
+        base_temp: 20.0
+      oxygen_inhibition:
+        oxygen_limited: true
+        half_sat: 0.5
+        exponent: 1.0
+      om_partition:
+        dom1:
+          c: 0.6
+          n: 0.72
+          p: 0.832
+        pom1:
+          c: 0.4
+          n: 0.28
+          p: 0.168
+      efficiency:
+        assimilation: 0.5
+        ingestion: 0.25
+      egestion:
+        unassimilated:
+        - c
+      excretion:
+        destination:
+          n: nh4
+          p: po4
+        function:
+          n: activity
+          p: activity
+      grazing:
+        grazing_preferences:
+          bac1: 0.1
+          phyto2: 1.0
+          microzoo1: 1.0
+        function: holling-2
+        feeding_threshold: 50.0
+        max_grazing_rate: 2.0
+        half_sat_grazing: 200.0
+        feeding_model: half_saturation
+      mortality:
+        mortality_rate:
+          linear: 1.0e-06
+          quadratic: 0.0
+          oxygen: 0.25
+        temp_limitation:
+          linear: false
+          quadratic: false
+          oxygen: false
+      respiration:
+        respiration_rate: 0.02
+        convert_o2: 1/12
+  dom1:
+    long_name: labile dissolved organic matter
+    type: detritus
+    form: dissolved
+    composition:
+    - c
+    - n
+    - p
+    parameters:
+      light_attenuation: 0.0
+      remineralization:
+        remineralization_rate:
+          c: 0.05
+        convert_o2: 1/12
+      sedimentation:
+        sinking: false
+        background_sinking_rate: 0.0
+        burial_velocity: 0.0
+  dom2:
+    long_name: semi-labile dissolved organic matter
+    type: detritus
+    form: dissolved
+    composition:
+    - c
+    parameters:
+      light_attenuation: 0.0
+      remineralization:
+        remineralization_rate:
+          c: 0.05
+        convert_o2: 1/12
+      sedimentation:
+        sinking: false
+        background_sinking_rate: 0.0
+        burial_velocity: 0.0
+  pom1:
+    long_name: particulate organic matter
+    type: detritus
+    form: particulate
+    composition:
+    - c
+    - n
+    - p
+    - si
+    parameters:
+      light_attenuation: 0.0001
+      dissolution:
+        dissolution_rate:
+          si: 0.02
+      remineralization:
+        remineralization_rate:
+          c: 0.1
+          n: 0.1
+          p: 0.1
+        convert_o2: 1/12
+      sedimentation:
+        sinking: true
+        background_sinking_rate: 1.0
+        burial_velocity: 1.0
+      temperature_regulation:
+        temp_limited: true
+        function: q10
+        coefficient: 1.49
+        base_temp: 20.0
+  co2:
+    long_name: carbon dioxide
+    type: inorganic
+    composition:
+    - c
+    parameters:
+      temperature_regulation:
+        temp_limited: false
+      surface_flux: true
+      air_sea_flux:
+        atmospheric_pco2: 370.0
+        d: 0.31
+        c1: 2073.1
+        c2: 125.62
+        c3: 3.6276
+        c4: 0.043219
+        schmidt: 660.0
+        pH: 8.12
+        OCMIP_accuracy: 1.0e-10
+        OCMIP_max_iters: 100.0
+        OCMIP_max_delta_pH: 0.3
+reactions:
+- type: reaeration
+  consumed:
+  produced:
+    o2:
+    - o
+- type: denitrification
+  consumed:
+    no3:
+    - n
+  produced:
+- type: nitrification
+  consumed:
+    nh4:
+    - n
+    o2:
+    - o
+  produced:
+    no3:
+    - n
+- type: uptake
+  consumed:
+    dom1:
+    - c
+    - n
+    - p
+  produced:
+    bac1:
+    - c
+    - n
+    - p
+- type: uptake
+  consumed:
+    dom2:
+    - c
+  produced:
+    bac1:
+    - c
+- type: uptake
+  consumed:
+    pom1:
+    - c
+    - n
+    - p
+  produced:
+    bac1:
+    - c
+    - n
+    - p
+- type: excretion
+  consumed:
+    bac1:
+    - c
+  produced:
+    dom2:
+    - c
+- type: mortality
+  consumed:
+    bac1:
+    - c
+    - n
+    - p
+  produced:
+    dom1:
+    - c
+    - n
+    - p
+- type: mortality
+  consumed:
+    bac1:
+    - c
+    - n
+    - p
+  produced:
+    pom1:
+    - c
+    - n
+    - p
+- type: respiration
+  consumed:
+    bac1:
+    - c
+    o2:
+    - o
+  produced:
+    co2:
+    - c
+- type: uptake_release
+  consumed:
+    bac1:
+    - n
+  produced:
+    nh4:
+    - n
+- type: uptake_release
+  consumed:
+    bac1:
+    - p
+  produced:
+    po4:
+    - p
+- type: photosynthesis
+  consumed:
+    phyto2:
+    - c
+  produced:
+- type: uptake
+  consumed:
+    no3:
+    - n
+  produced:
+    phyto2:
+    - n
+    dom1:
+    - n
+- type: uptake
+  consumed:
+    nh4:
+    - n
+  produced:
+    phyto2:
+    - n
+    dom1:
+    - n
+- type: uptake
+  consumed:
+    po4:
+    - p
+  produced:
+    phyto2:
+    - p
+    dom1:
+    - p
+- type: gross_primary_production
+  consumed:
+    co2:
+    - c
+  produced:
+    phyto2:
+    - c
+    o2:
+    - o
+- type: exudation
+  consumed:
+    phyto2:
+    - c
+  produced:
+    dom1:
+    - c
+- type: respiration
+  consumed:
+    phyto2:
+    - c
+    o2:
+    - o
+  produced:
+    co2:
+    - c
+- type: chlorophyll_synthesis
+  consumed:
+  produced:
+    phyto2:
+    - chl
+- type: lysis
+  consumed:
+    phyto2:
+    - c
+    - n
+    - p
+  produced:
+    dom1:
+    - c
+    - n
+    - p
+- type: lysis
+  consumed:
+    phyto2:
+    - c
+    - n
+    - p
+  produced:
+    pom1:
+    - c
+    - n
+    - p
+- type: sedimentation
+  consumed:
+    phyto2:
+    - c
+    - n
+    - p
+    - chl
+  produced:
+- type: grazing
+  consumed:
+    bac1:
+    - c
+    - n
+    - p
+  produced:
+    microzoo1:
+    - c
+    - n
+    - p
+- type: grazing
+  consumed:
+    phyto2:
+    - c
+    - n
+    - p
+    - chl
+  produced:
+    microzoo1:
+    - c
+    - n
+    - p
+- type: respiration
+  consumed:
+    microzoo1:
+    - c
+    o2:
+    - o
+  produced:
+    co2:
+    - c
+- type: excretion
+  consumed:
+    microzoo1:
+    - n
+  produced:
+    nh4:
+    - n
+- type: excretion
+  consumed:
+    microzoo1:
+    - p
+  produced:
+    po4:
+    - p
+- type: egestion
+  consumed:
+    microzoo1:
+    - c
+    - n
+    - p
+  produced:
+    dom1:
+    - c
+    - n
+    - p
+- type: egestion
+  consumed:
+    microzoo1:
+    - c
+    - n
+    - p
+  produced:
+    pom1:
+    - c
+    - n
+    - p
+- type: mortality
+  consumed:
+    microzoo1:
+    - c
+    - n
+    - p
+  produced:
+    dom1:
+    - c
+    - n
+    - p
+- type: mortality
+  consumed:
+    microzoo1:
+    - c
+    - n
+    - p
+  produced:
+    pom1:
+    - c
+    - n
+    - p
+- type: co2_flux
+  consumed:
+  produced:
+    co2:
+    - c

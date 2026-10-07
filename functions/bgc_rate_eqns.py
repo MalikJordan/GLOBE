@@ -1,6 +1,6 @@
 import numpy as np
 from functions.other_functions import concentration_ratio, light_attenuation
-from functions.seasonal_cycling import get_mixed_layer_depth, get_salinity, get_sunlight, get_temperature, get_wind
+from functions.seasonal_cycling import get_mixed_layer_depth, get_salinity, get_sunlight, get_temperature, get_wind, calculate_density
 from pom.calculations import density_profile
 np.set_printoptions(precision=20)
 
@@ -37,81 +37,98 @@ def bgc_rate_eqns(iter, configuration, base_element, conc, d_dt, light_attenuati
     return d_dt
 
 
-def reduced_bgc_rate_eqns(time, base_element, conc, tracer_map, tracer_type, tracers, physical):
+def reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names, dic_matrix):
 
     # Extract physical variables
-    num_layers = physical["water_column"]["num_layers"]                 # number of layers in water column [-]
-    column_depth = physical["water_column"]["column_depth"]             # water column depth [m]
-    z = physical["vertical_grid"]["z"]                                  # vertical grid [m]
-    dz = physical["vertical_grid"]["dz"]                                # vertical spacing [m]
-    light_attenuation_water = physical["environment"]["light_attenuation_water"]       # light attenuation coefficient for water
+    num_boxes = physical["num_boxes"]           # number of boxes in water column [-]
+    column_depth = physical["column_depth"]     # water column depth [m]
+    # z = physical["z"]                           # vertical grid [m]
+    # dz = physical["dz"]                         # vertical spacing [m]
+    z = physical["z"]                           # vertical grid [m]
+    dz = physical["dz"]                         # vertical spacing [m]
+    light_attenuation_water = physical["light_attenuation_water"]   # light attenuation coefficient for water
 
-    configuration = physical["simulation"]["configuration"]
-    forcing = physical["environment"]["forcing"]
-    forcing_data = physical["environment"]["forcing_data"]
+    configuration = physical["configuration"]
+    forcing = physical["forcing"]
+    forcing_data = physical["forcing_data"]
 
-    # Define iteration for phytoplankton net primary production storage
-    iter = int(np.floor(time/physical["simulation"]["dt"]))
+    # Define iteration for phytoplankton net primary production storage, set to 0 because it doesn't have an effect on reduction output
+    # iter = int(np.floor(time/physical["dt"]))
+    iter = 0
+
+    # Unravel concentration matrix
+    conc = conc.reshape((num_tracers,num_boxes))
    
     # Create arrays for temperature and salinity if 1D simulation
     if configuration == "1d":
+        if dic_matrix:
+            z = physical["dz"][:-1] * column_depth                          # vertical grid [m]
+            dz = physical["dz"][:-1]                         # vertical spacing [m]
+        else:
+            z = physical["dz"] * column_depth                          # vertical grid [m]
+            dz = physical["dz"]                         # vertical spacing [m]
+            
         # Initialize physical variables
-        temperature = np.zeros(num_layers-1,dtype=np.float64)
-        salinity = np.zeros(num_layers-1,dtype=np.float64)
-        mixed_layer_depth = np.zeros(num_layers-1,dtype=np.float64)
+        temp = np.zeros(num_boxes,dtype=np.float64)
+        sal = np.zeros(num_boxes,dtype=np.float64)
+        mld = np.zeros(num_boxes,dtype=np.float64)
         surface_PAR = 0.
         wind = 0.
     
         # Calculate physical variables at current time
         if forcing == "constant":
-            temp = forcing_data["temperature"] * np.ones(num_layers-1)
-            sal = forcing_data["salinity"] * np.ones(num_layers-1)
+            temp = forcing_data["temperature"] * np.ones(num_boxes)
+            sal = forcing_data["salinity"] * np.ones(num_boxes)
             surface_PAR = forcing_data["sunlight"]
             wind = forcing_data["wind"]
 
         elif forcing == "seasonal":
             # Temperature
-            t_win = np.linspace(forcing_data["winter_temp"], 0.8*forcing_data["winter_temp"], num_layers-1)     # (surface_value, bottom_value, steps)
-            t_sum = np.linspace(forcing_data["summer_temp"], 0.8*forcing_data["summer_temp"], num_layers-1)     # (surface_value, bottom_value, steps)
+            t_win = np.linspace(forcing_data["winter_temp"], 0.8*forcing_data["winter_temp"], num_boxes)     # (surface_value, bottom_value, steps)
+            t_sum = np.linspace(forcing_data["summer_temp"], 0.8*forcing_data["summer_temp"], num_boxes)     # (surface_value, bottom_value, steps)
             temp = get_temperature(time, t_win, t_sum, forcing_data["temp_excursion"])
             
             # Salinity
-            s_win = np.linspace(0.95*forcing_data["winter_salt"], forcing_data["winter_salt"], num_layers-1)    # (surface_value, bottom_value, steps)
-            s_sum = np.linspace(0.95*forcing_data["summer_temp"], forcing_data["summer_salt"], num_layers-1)    # (surface_value, bottom_value, steps)
+            s_win = np.linspace(0.95*forcing_data["winter_salt"], forcing_data["winter_salt"], num_boxes)    # (surface_value, bottom_value, steps)
+            s_sum = np.linspace(0.95*forcing_data["summer_temp"], forcing_data["summer_salt"], num_boxes)    # (surface_value, bottom_value, steps)
             sal = get_salinity(time, s_win, s_sum)
 
             # Shortwave irradiance flux
-            surface_PAR = get_sunlight(time,forcing_data["winter_sun"], forcing_data["summer_sun"], physical["environment"]["latitude"])
+            surface_PAR = get_sunlight(time,forcing_data["winter_sun"], forcing_data["summer_sun"], physical["latitude"])
 
             # Wind speed
             wind = get_wind(time, forcing_data["winter_wind"], forcing_data["summer_wind"])
 
-        dens = density_profile(configuration, num_layers-1, column_depth/2, 0., temp, sal)     # Calculate density in center of cell (column_depth/2)
+        # dens = density_profile(configuration, len(z), column_depth, dz, temp, sal)
+        dens = calculate_density(temp, sal, z)
+
+        # Clip physical variables
 
     elif configuration == "0d":
         # Initialize physical variables
-        temperature = np.zeros(num_layers,dtype=np.float64)
-        salinity = np.zeros(num_layers,dtype=np.float64)
-        mixed_layer_depth = np.zeros(num_layers,dtype=np.float64)
+        temp = np.zeros(num_boxes,dtype=np.float64)
+        sal = np.zeros(num_boxes,dtype=np.float64)
+        mld = np.zeros(num_boxes,dtype=np.float64)
         surface_PAR = 0.
         wind = 0.
 
         # Calculate physical variables at current time
         if forcing == "constant":
-            temperature[0] = forcing_data["temperature"]
-            salinity[0] = forcing_data["salinity"]
-            mixed_layer_depth[0] = forcing_data["mld"]
+            temp[0] = forcing_data["temperature"]
+            sal[0] = forcing_data["salinity"]
+            mld[0] = forcing_data["mld"]
             surface_PAR = forcing_data["sunlight"]
-            wind[0] = forcing_data["wind"]
+            wind = forcing_data["wind"]
 
         elif forcing == "seasonal":
-            temperature[0] = get_temperature(time, forcing_data["winter_temp"], forcing_data["summer_temp"], forcing_data["temp_excursion"])
-            salinity[0] = get_salinity(time, forcing_data["winter_salt"], forcing_data["summer_salt"])
-            mixed_layer_depth[0] = get_mixed_layer_depth(time,forcing_data["winter_mld"], forcing_data["summer_mld"])
-            surface_PAR = get_sunlight(time,forcing_data["winter_sun"], forcing_data["summer_sun"], physical["environment"]["latitude"])
-            wind[0] = get_wind(time, forcing_data["winter_wind"], forcing_data["summer_wind"])
+            temp[0] = get_temperature(time, forcing_data["winter_temp"], forcing_data["summer_temp"], forcing_data["temp_excursion"])
+            sal[0] = get_salinity(time, forcing_data["winter_salt"], forcing_data["summer_salt"])
+            mld[0] = get_mixed_layer_depth(time,forcing_data["winter_mld"], forcing_data["summer_mld"])
+            surface_PAR = get_sunlight(time,forcing_data["winter_sun"], forcing_data["summer_sun"], physical["latitude"])
+            wind = get_wind(time, forcing_data["winter_wind"], forcing_data["summer_wind"])
 
-        dens = density_profile(configuration, num_layers, column_depth/2, 0., temperature, salinity)     # Calculate density in center of cell (column_depth/2)
+        # dens = density_profile(configuration, num_boxes, column_depth/2, 0., temp, sal)     # Calculate density in center of cell (column_depth/2)
+        dens = calculate_density(temp, sal, z)
 
     # Initialize d_dt and sinking arrays
     d_dt = np.zeros_like(conc)
@@ -128,21 +145,42 @@ def reduced_bgc_rate_eqns(time, base_element, conc, tracer_map, tracer_type, tra
     
     # Calculate bacteria rates (need to do this first to get bact_limitation factor for denitrification)
     for key in tracers:
-        if tracers[key].type == "bacteria":
+        if tracers[key].type == "bacteria" and key not in removed_tracer_names:
             bact_limitation_factor += tracers[key].bac(base_element, temp, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers)
     
     # Calculate other bgc rates
     for key in tracers:
-        if tracers[key].type == "detritus":
+        if tracers[key].type == "detritus" and key not in removed_tracer_names:
             tracers[key].detritus(base_element, temp, conc, d_dt, tracer_map, tracers)
-        elif tracers[key].type == "inorganic": 
+        elif tracers[key].type == "inorganic" and key not in removed_tracer_names: 
             tracers[key].inorg(configuration, bact_limitation_factor, conc, d_dt, tracer_map, z, dz, temp, sal, dens, wind)
-        elif tracers[key].type == "phytoplankton":
+        elif tracers[key].type == "phytoplankton" and key not in removed_tracer_names:
             tracers[key].phyto(configuration, iter, base_element, temp, z, dz, k_PAR, surface_PAR, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers, sinking)
-        elif tracers[key].type == "zooplankton": 
+        elif tracers[key].type == "zooplankton" and key not in removed_tracer_names: 
             tracers[key].zoo(iter, base_element, temp, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers)
+
+    for i in range(0,len(d_dt)):
+        if i not in indices_to_retain:  d_dt[i,...] = 0.
+    # # Calculate bacteria rates (need to do this first to get bact_limitation factor for denitrification)
+    # for key in tracers:
+    #     if tracers[key].type == "bacteria":
+    #         bact_limitation_factor += tracers[key].bac(base_element, temp, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers)
+
+    # # Calculate other bgc rates
+    # for key in tracers:
+    #     if tracers[key].type == "detritus":
+    #         tracers[key].detritus(base_element, temp, conc, d_dt, tracer_map, tracers)
+    #     elif tracers[key].type == "inorganic": 
+    #         tracers[key].inorg(configuration, bact_limitation_factor, conc, d_dt, tracer_map, z, dz, temp, sal, dens, wind)
+    #     elif tracers[key].type == "phytoplankton":
+    #         tracers[key].phyto(configuration, iter, base_element, temp, z, dz, k_PAR, surface_PAR, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers, sinking)
+    #     elif tracers[key].type == "zooplankton": 
+    #         tracers[key].zoo(iter, base_element, temp, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers)
     
     # Convert rates fro 1/d to 1/s
     d_dt /= 86400.
+
+    # Collapse d_dt matrix
+    d_dt = d_dt.ravel()
     
     return d_dt

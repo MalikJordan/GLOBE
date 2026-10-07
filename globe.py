@@ -5,7 +5,8 @@ import yaml
 from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
-from setup.initialize import import_bgc_model, import_physical_model
+from setup.other_functions import create_function_inputs, trim_yaml
+from setup.initialize import import_bgc_model, import_physical_model, import_reduction
 from functions.seasonal_cycling import get_mixed_layer_depth, get_salinity, get_sunlight, get_temperature, get_wind
 from functions.bgc_rate_eqns import bgc_rate_eqns
 from functions.calculate_averages import average
@@ -13,62 +14,13 @@ from pom.calculations import density_profile, kinetic_energy_profile, temperatur
 from pom.forcing import forcing_manager
 from pom.initialize import initialize_pom
 from pom.coupling import pom_bgc_1d
+from reduction.modified_DRGEP import modified_DRGEP, reduced_model_configuration
 np.set_printoptions(precision=20)
 
-def create_function_inputs(iters, tracers):
-    """
-    Definition: Takes tracer dictionary and creates lists, arrays, or typed.Dicts for numba calculations
-
-    :return: concentration (array), sinking velocities (array), tracer map (typed.Dict), tracer types (list)
-    """
-
-    # Create list of concentrations
-    initial_concentration = []
-
-    # Create typed.Dict of tracer indices in concentration
-    tracer_map = Dict.empty(key_type=types.unicode_type, value_type=types.ListType(types.int64))
-    
-    # Create list of trcaer types
-    tracer_type = []   # used in vertical diffusivity calculations
-
-    # Create list of sinking velocities for each tracer
-    sinking = []
-
-    index = 0   # counting number for tracer indices
-    for trac in tracers:
-        num_constituents = len(tracers[trac].composition)   # number of constituents in tracer
-
-        lst = List.empty_list(types.int64)  # empty typed.List to store elements for tracer constituents
-        for i in range(index,index+num_constituents):  lst.append(np.int64(i))  # fill list
-        tracer_map[trac] = lst  # identify tracer constituents with their own index
-
-        for i in range(num_constituents):
-            # add concentration to matrix
-            initial_concentration.append(tracers[trac].initial_conc[i,...])    # add concentration to matrix
-
-            # add tracer type to list
-            if tracers[trac].type == "detritus":    tracer_type.append(tracers[trac].form)     # need to distinguish particulate/dissolved form
-            else:   tracer_type.append(tracers[trac].type)     # just the type
-
-            # add sinking velocity to list
-            if hasattr(tracers[trac],"sinking_velocity"):   sinking.append(tracers[trac].sinking_velocity)
-            else:   sinking.append(np.zeros(tracers[trac].initial_conc.shape[1]))
-
-            # add tracer type to list
-            index += 1  # update index
-
-    initial_concentration = np.array(initial_concentration,dtype=np.float64)    # convert concentration from list to array
-    concentration = np.zeros((initial_concentration.shape[0],initial_concentration.shape[1],iters),dtype=np.float64)
-    concentration[:,:,0] = initial_concentration.copy()
-    sinking = np.array(sinking,dtype=np.float64)    # convert sinking from list to array
-
-    return concentration, sinking, tracer_map, tracer_type
-
-
-start = time.perf_counter()
 # ----------------------------------------------------------------------------------------------------
 # Import and initialize model
 # ----------------------------------------------------------------------------------------------------
+print('Initializing model...')
 # check_file = False
 # first_check = True
 # while not check_file:
@@ -84,15 +36,17 @@ start = time.perf_counter()
 # Import physical model
 # file = 'physical_bfm17_1d.yaml'
 file = 'tests/bfm56/data/physical_bfm56.yaml'
-file_path = os.getcwd() + '/' + file
-physical = import_physical_model(file_path)
+physical_file_path = os.getcwd() + '/' + file
+physical = import_physical_model(physical_file_path)
 
 # file = 'bfm17_1d.yaml'
 file = 'tests/bfm56/data/bfm56.yaml'
-file_path = os.getcwd() + '/' + file
-base_element, reactions, tracers = import_bgc_model(file_path, physical)
+model_file_path = os.getcwd() + '/' + file
+base_element, reactions, tracers = import_bgc_model(model_file_path, physical)
 
 concentration, sinking, tracer_map, tracer_type = create_function_inputs(physical["simulation"]["iters"],tracers)
+
+print('Model initialization complete.\n')
 
 # ----------------------------------------------------------------------------------------------------
 # Extract commonly used variables to avoid repetitive dictionary unpacking (unchanged through simulation)
@@ -113,9 +67,86 @@ lambda_w = physical["environment"]["light_attenuation_water"]       # light atte
 configuration = physical["simulation"]["configuration"]
 
 # ----------------------------------------------------------------------------------------------------
+# Reduce model (if necessary)
+# ----------------------------------------------------------------------------------------------------
+if physical["simulation"]["reduce"] == True:
+    print('Beginning model reduction...')
+    with open(os.getcwd() + '/reduction.yaml', 'r') as f:
+        reduction_scheme = yaml.full_load(f)
+
+    # # If model is forced using 'pom1d', apply seasonal cycling for reduction
+    # reduction_physical = physical.copy()
+    # reduction_physical["environment"] = physical["environment"].copy()
+    # if reduction_physical["environment"]["forcing"] == "pom1d":
+    #     reduction_physical["environment"]["forcing"] = "seasonal"
+    #     reduction_physical["environment"]["forcing_data"] = {
+    #         "summer_mld": 10.0,
+    #         "winter_mld": 40.0,
+    #         "summer_salt": 36.5,
+    #         "winter_salt": 37.,
+    #         "summer_sun": 300.0,
+    #         "winter_sun": 20.0,
+    #         "summer_temp": 30.,
+    #         "winter_temp": 10.,
+    #         "temp_excursion": 1.,
+    #         "summer_wind": 2.,
+    #         "winter_wind": 6.
+    #     }
+
+    # # Reduce model
+    # reduction, error_limit = modified_DRGEP(concentration[...,0].copy(), reduction_scheme, base_element, reduction_physical, tracer_map, tracer_type, tracers)
+
+    # error_data = reduction['error_data'][-2:]
+    # if error_data[-1] > error_limit:    model = -2
+    # else:   model = -1
+
+    # # Extract data
+    # tracers_removed = reduction["tracers_removed_data"][model]
+    # tracer_names = reduction["tracer_names"]
+    
+
+    # # Reconfigure model
+    # tracers, reassigned_conc = reduced_model_configuration(tracer_names, tracers_removed, concentration[...,0].copy(), tracer_map, tracers, reduction_scheme["reassign"])
+    # concentration, sinking, tracer_map, tracer_type = create_function_inputs(physical["simulation"]["iters"],tracers)
+    # print('Model reduction complete.\n')
+
+    # BFM40
+    # tracers_removed = ['n2_n', 'sio4_si', 'hs_s', 'mesozoo1_c', 'mesozoo1_n', 'mesozoo1_p', 'mesozoo2_c', 'mesozoo2_n', 'mesozoo2_p', 'ta_eq']
+    # BFM38
+    # tracers_removed = ['n2_n', 'sio4_si', 'hs_s', 'mesozoo1_c', 'mesozoo1_n', 'mesozoo1_p', 'mesozoo2_c', 'mesozoo2_n', 'mesozoo2_p', 'dom2_c', 'dom3_c', 'ta_eq']
+    # BFM37
+    # tracers_removed = ['n2_n', 'sio4_si', 'hs_s', 'mesozoo1_c', 'mesozoo1_n', 'mesozoo1_p', 'mesozoo2_c', 'mesozoo2_n', 'mesozoo2_p', 'dom2_c', 'dom3_c', 'co2_c', 'ta_eq']
+    # BFM24
+    # tracers_removed = ['n2_n', 'sio4_si', 'hs_s', 'phyto1_c', 'phyto1_n', 'phyto1_p', 'phyto1_chl', 'phyto1_si', 'phyto3_c', 'phyto3_n', 'phyto3_p', 'phyto3_chl', 'phyto4_c', 'phyto4_n', 'phyto4_p', 'phyto4_chl', 'mesozoo1_c', 'mesozoo1_n', 'mesozoo1_p', 'mesozoo2_c', 'mesozoo2_n', 'mesozoo2_p', 'microzoo2_c', 'microzoo2_n', 'microzoo2_p', 'ta_eq']
+    # BFM23
+    tracers_removed = ['n2_n', 'sio4_si', 'hs_s', 'phyto1_c', 'phyto1_n', 'phyto1_p', 'phyto1_chl', 'phyto1_si', 'phyto3_c', 'phyto3_n', 'phyto3_p', 'phyto3_chl', 'phyto4_c', 'phyto4_n', 'phyto4_p', 'phyto4_chl', 'mesozoo1_c', 'mesozoo1_n', 'mesozoo1_p', 'mesozoo2_c', 'mesozoo2_n', 'mesozoo2_p', 'microzoo2_c', 'microzoo2_n', 'microzoo2_p', 'dom3_c', 'ta_eq']
+    # BFM22
+    # tracers_removed = ['n2_n', 'sio4_si', 'hs_s', 'phyto1_c', 'phyto1_n', 'phyto1_p', 'phyto1_chl', 'phyto1_si', 'phyto3_c', 'phyto3_n', 'phyto3_p', 'phyto3_chl', 'phyto4_c', 'phyto4_n', 'phyto4_p', 'phyto4_chl', 'mesozoo1_c', 'mesozoo1_n', 'mesozoo1_p', 'mesozoo2_c', 'mesozoo2_n', 'mesozoo2_p', 'microzoo2_c', 'microzoo2_n', 'microzoo2_p', 'dom2_c', 'dom3_c', 'ta_eq']
+
+    tracer_names = ['o2_o', 'po4_p', 'no3_n', 'nh4_n', 'n2_n', 'sio4_si', 'hs_s', 'bac1_c', 'bac1_n', 'bac1_p', 'phyto1_c', 'phyto1_n', 'phyto1_p', 'phyto1_chl', 'phyto1_si', 'phyto2_c', 'phyto2_n', 'phyto2_p', 'phyto2_chl', 'phyto3_c', 'phyto3_n', 'phyto3_p', 'phyto3_chl', 'phyto4_c', 'phyto4_n', 'phyto4_p', 'phyto4_chl', 'mesozoo1_c', 'mesozoo1_n', 'mesozoo1_p', 'mesozoo2_c', 'mesozoo2_n', 'mesozoo2_p', 'microzoo1_c', 'microzoo1_n', 'microzoo1_p', 'microzoo2_c', 'microzoo2_n', 'microzoo2_p', 'dom1_c', 'dom1_n', 'dom1_p', 'dom2_c', 'dom3_c', 'pom1_c', 'pom1_n', 'pom1_p', 'pom1_si', 'co2_c', 'ta_eq']
+    reduced_tracers, reassigned_conc = reduced_model_configuration(tracer_names, tracers_removed, concentration[...,0].copy(), tracer_map, tracers, reduction_scheme["reassign"])
+
+    trim_yaml(model_file_path, tracers_removed, reduced_tracers)
+
+    # Initialize reduced model
+    base_element, reactions, tracers = import_bgc_model(os.getcwd() + '/reduced_model.yaml', physical)
+    concentration, sinking, tracer_map, tracer_type = create_function_inputs(physical["simulation"]["iters"],tracers)
+    # concentration[...,0] = reassigned_conc
+
+    # tracers = remove_tracer_parameters(tracers, tracers_removed)
+
+
+# ----------------------------------------------------------------------------------------------------
+# Optimize model (if necessary)
+# ----------------------------------------------------------------------------------------------------
+if physical["simulation"]["optimize"] == True:
+    pass
+
+# ----------------------------------------------------------------------------------------------------
 # Initialize POM1D (if necessary)
 # ----------------------------------------------------------------------------------------------------
 if physical["environment"]["forcing"] == "pom1d":
+    print('Initializing environmental forcing...')
     with open(os.getcwd() + '/pom1d.yaml', 'r') as f:
         pom1d = yaml.full_load(f)
 
@@ -170,7 +201,8 @@ if physical["environment"]["forcing"] == "pom1d":
     bot_nut_inp = pom1d["input_files"]["bottom_nutrients"]
     input_files = [wind_inp, rad_inp, heat_inp, ism_inp, surf_sal_inp, sal_inp, sal_IC_inp, temp_inp, temp_IC_inp, w_vel_inp,
                    weddy1_inp, weddy2_inp, surf_nut_inp, bot_nut_inp]
-    
+
+    print('Forcing initialization complete.\n')
 
 # elif physical["environment"]["forcing"] == "seasonal":
 #     seasonal = physical["environment"]["seasonal_cycling"]
@@ -188,6 +220,8 @@ if physical["environment"]["forcing"] == "pom1d":
 # ----------------------------------------------------------------------------------------------------
 # Begin simulation
 # ----------------------------------------------------------------------------------------------------
+start = time.perf_counter()
+print('Beginning simulation...')
 for iter in range(0,iters-1):
 
     # Turbulence closure
@@ -280,39 +314,39 @@ for iter in range(0,iters-1):
                     nrt_o2, nrt_po4, nrt_no3, nrt_nh4, o2b, no3b, ponb_grad, po4b,
                     smoth, umolbgc, nbcbgc, ntp, rcp, 
                     conc_bwd, conc_cur, sinking, tracer_map, tracer_type, tracers)
-    
-# ----------------------------------------------------------------------------------------------------
-# Write outputs to npz file
-# ----------------------------------------------------------------------------------------------------
-npp_exists = False  # initialize writing of npp
-for trac in tracers:
-    if tracers[trac].type == "phytoplankton":
-        if not npp_exists:  # first phytoplankton group
-            npp = tracers[trac].npp
-            npp_exists = True   # npp now exists, update to True to append with npp from later phytoplankton groups
-        else:   # subsequent phytoplankton groups
-            npp += tracers[trac].npp
-
-conc_daily, conc_monthly = average(concentration,physical,'concentration')
-# np.savez('concentration_bfm17-5yr.npz',daily=conc_daily,monthly=conc_monthly)
-# np.savez('concentration_bfm56-5yr.npz',daily=conc_daily,monthly=conc_monthly)
-np.savez('concentration_bfm56-arbitrary_mesozoo2.npz',daily=conc_daily,monthly=conc_monthly)
-if npp_exists:
-    npp_daily, npp_monthly = average(npp,physical,'npp')
-    # np.savez('npp_bfm17-5yr.npz',daily=npp_daily,monthly=npp_monthly)
-    # np.savez('npp_bfm56-5yr.npz',daily=npp_daily,monthly=npp_monthly)
-    np.savez('npp_bfm56-arbitrary_mesozoo2.npz',daily=npp_daily,monthly=npp_monthly)
-
-# np.savez('tracer_indices_bfm17-5yr.npz',**tracer_map)
-# np.savez('tracer_indices_bfm56-5yr.npz',**tracer_map)
-np.savez('tracer_indices_bfm56-arbitrary_mesozoo2.npz',**tracer_map)
 
 
 # ----------------------------------------------------------------------------------------------------
 # Simulation complete
 # ----------------------------------------------------------------------------------------------------
-print('Simulation complete.')
+print('Simulation complete.\n')
 elapsed = time.perf_counter() - start
 hours, remainder = divmod(elapsed, 3600)
 minutes, seconds = divmod(remainder, 60)
 print(f"Walltime: {int(hours):02d}:{int(minutes):02d}:{seconds:09.6f}")
+    
+# ----------------------------------------------------------------------------------------------------
+# Write outputs to npz file
+# ----------------------------------------------------------------------------------------------------
+print('Writing outputs...')
+# npp_exists = False  # initialize writing of npp
+# for trac in tracers:
+#     if tracers[trac].type == "phytoplankton":
+#         if not npp_exists:  # first phytoplankton group
+#             npp = tracers[trac].npp
+#             npp_exists = True   # npp now exists, update to True to append with npp from later phytoplankton groups
+#         else:   # subsequent phytoplankton groups
+#             npp += tracers[trac].npp
+
+# if npp_exists:
+#     npp_daily, npp_monthly = average(npp,physical,'npp')
+#     np.savez('npp_bfm56.npz',daily=npp_daily,monthly=npp_monthly)
+
+conc_daily, conc_monthly = average(concentration,physical,'concentration')
+np.savez('concentration.npz',daily=conc_daily,monthly=conc_monthly)
+
+np.savez('tracer_indices.npz',**tracer_map)
+
+print('Output writing complete.\n')
+
+

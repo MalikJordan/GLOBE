@@ -416,12 +416,15 @@ class Bacteria():
             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
 
+        for i in range(len(self.reactions)-1, -1, -1):
             # Delete "loss" reactions if this tracer is produced
-            if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
-
+            if ( self.reactions[i]["type"] == "loss" ) and ( abbrev in self.reactions[i]["produced"].keys() ):
+                self.reactions.pop(i)
+                continue
             # Delete "grazing" reactions if this tracer is consumed
-            if ( reac["type"] == "grazing" ) and ( abbrev in consumed.keys() ): self.reactions.pop()
-
+            if ( self.reactions[i]["type"] == "grazing" ) and ( abbrev in self.reactions[i]["consumed"].keys() ):
+                self.reactions.pop(i)
+                continue
         # Reorder uptake reactions in case of coupled uptake
         for i in range(len(self.reactions)):
             if self.reactions[i]["type"] == "uptake":
@@ -447,6 +450,9 @@ class Bacteria():
 
         # Zero out variables
         for nut in self.upt:                                # Uptake
+            if nut not in list(tracers.keys()): 
+                del self.upt[nut]
+                continue
             self.upt[nut] = np.zeros_like(conc[0],dtype=np.float64)
         
         # Calculate oxygen limitation factor (if necessary)
@@ -462,6 +468,12 @@ class Bacteria():
 
         # Calculate potential uptake (if necessary)
         if self.uptake_option == "potential":
+            # Additional check for potential removed pools after reduction scheme
+            for key,val in self.uptake_potential_poor.items():
+                if key not in list(tracers.keys()): 
+                    del self.uptake_potential_poor[key]
+                    del self.uptake_potential_rich[key]
+
             actual_uptake, realized_uptake, base_uptake = self.calculate_realized_uptake(base_element, self.max_growth_rate, conc, conc_ratio, tracer_map, tracers)
         else:
             actual_uptake = np.zeros_like(conc[tracer_map[self.abbrev][0]])

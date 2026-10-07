@@ -1,8 +1,10 @@
 simulation:
   dt: 360.            # time step [s]
-  # days: 1805           # days in simulation [d]
-  days: 35           # days in simulation [d]
+  days: 1805           # days in simulation [d]
+  # days: 35           # days in simulation [d]
   configuration: 1d   # Options: 0d or 1d
+  reduce: True        # boolean to apply reduction strategy
+  optimize: False     # boolean to apply parameter optimization
 
 water_column:
   column_depth: 150.  # depth [m]

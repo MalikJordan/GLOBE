@@ -367,12 +367,16 @@ class Zooplankton():
             if ( abbrev in consumed.keys() ) or ( abbrev in produced.keys() ):
                 self.reactions.append(reac)
 
+        for i in range(len(self.reactions)-1, -1, -1):
             # Delete "loss" reactions if this tracer is produced
-            if ( reac["type"] == "loss" ) and ( abbrev in produced.keys() ):    self.reactions.pop()
-
+            if ( self.reactions[i]["type"] == "loss" ) and ( abbrev in self.reactions[i]["produced"].keys() ):    
+                self.reactions.pop(i)
+                continue
             # Delete "grazing" reactions if this tracer is consumed
-            if ( reac["type"] == "grazing" ) and ( abbrev in consumed.keys() ): self.reactions.pop()
-        
+            if ( self.reactions[i]["type"] == "grazing" ) and ( abbrev in self.reactions[i]["consumed"].keys() ): 
+                self.reactions.pop(i)
+                continue
+
         # Reorder reactions (grazing needs to appear first)
         self.reactions = [item for item in self.reactions if item["type"] == "respiration"] + [item for item in self.reactions if item["type"] != "respiration"]
         self.reactions = [item for item in self.reactions if item["type"] == "grazing"] + [item for item in self.reactions if item["type"] != "grazing"]
@@ -392,7 +396,14 @@ class Zooplankton():
   
 
     def zoo(self, iter, base_element, temperature, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers):
-        
+
+        # Delete grazing preferences for prey removed in reduction scheme
+        for prey in list(self.grazing_preferences.keys()):
+            if prey not in list(tracers.keys()):    
+                del self.grazing_preferences[prey]
+                del self.prey_availability[prey]
+                del self.grazing_rates[prey]
+
         # Zero out grazing rates and total ingestion
         for prey in self.grazing_rates:
             self.grazing_rates[prey] = np.zeros_like(conc[tracer_map[self.abbrev][0]])
