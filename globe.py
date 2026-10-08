@@ -15,6 +15,7 @@ from pom.forcing import forcing_manager
 from pom.initialize import initialize_pom
 from pom.coupling import pom_bgc_1d
 from reduction.modified_DRGEP import modified_DRGEP, reduced_model_configuration
+from reduction.reduce import reduce_bgc_model
 np.set_printoptions(precision=20)
 
 # ----------------------------------------------------------------------------------------------------
@@ -69,6 +70,19 @@ configuration = physical["simulation"]["configuration"]
 # ----------------------------------------------------------------------------------------------------
 # Reduce model (if necessary)
 # ----------------------------------------------------------------------------------------------------
+if physical["simulation"]["reduce"] == True:
+    print('Beginning model reduction...')
+    
+    reduce_bgc_model(model_file_path, physical, base_element, concentration, tracer_map, tracer_type, tracers)
+
+    # Initialize reduced model
+    base_element, reactions, tracers = import_bgc_model(os.getcwd() + '/reduced_model.yaml', physical)
+    concentration, sinking, tracer_map, tracer_type = create_function_inputs(physical["simulation"]["iters"],tracers)
+
+    print("Model reduction complete. Reduced model written to '/reduced_model.yaml'. Reduction data written to '/output.log'.\n")
+    
+
+
 if physical["simulation"]["reduce"] == True:
     print('Beginning model reduction...')
     with open(os.getcwd() + '/reduction.yaml', 'r') as f:

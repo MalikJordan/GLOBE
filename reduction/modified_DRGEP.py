@@ -76,17 +76,29 @@ def slice_concentration(conc, physical):
     sliced_conc = conc[:,indices]
 
     # Create new dictionary for physical variables
+    # sliced_physical = {
+    #     "configuration": physical["simulation"]["configuration"],
+    #     "dt": physical["simulation"]["dt"],
+    #     "forcing": physical["environment"]["forcing"],
+    #     "forcing_data": physical["environment"]["forcing_data"],
+    #     "latitude": physical["environment"]["latitude"],
+    #     "light_attenuation_water": physical["environment"]["light_attenuation_water"],
+    #     "column_depth": physical["water_column"]["column_depth"],
+    #     "num_boxes": len(indices),
+    #     "z": physical["vertical_grid"]["z"][indices],
+    #     "dz": physical["vertical_grid"]["dz"][indices],
+    # }
     sliced_physical = {
-        "configuration": physical["simulation"]["configuration"],
-        "dt": physical["simulation"]["dt"],
-        "forcing": physical["environment"]["forcing"],
-        "forcing_data": physical["environment"]["forcing_data"],
-        "latitude": physical["environment"]["latitude"],
-        "light_attenuation_water": physical["environment"]["light_attenuation_water"],
-        "column_depth": physical["water_column"]["column_depth"],
+        "configuration": physical["configuration"],
+        "dt": physical["dt"],
+        "forcing": physical["forcing"],
+        "forcing_data": physical["forcing_data"],
+        "latitude": physical["latitude"],
+        "light_attenuation_water": physical["light_attenuation_water"],
+        "column_depth": physical["column_depth"],
         "num_boxes": len(indices),
-        "z": physical["vertical_grid"]["z"][indices],
-        "dz": physical["vertical_grid"]["dz"][indices],
+        "z": physical["z"][indices],
+        "dz": physical["dz"][indices],
     }
 
     return sliced_conc, sliced_physical
@@ -110,7 +122,7 @@ def group_overall_interaction_coeffs(overall_interaction_coeffs, tracer_map, tra
     return overall_interaction_coeffs
 
 
-def reduced_model_configuration(tracer_names, tracers_removed, old_conc, old_tracer_map, old_tracers, reassign):
+def reduced_model_configuration(tracer_names, tracers_removed, old_conc, old_tracers):
     """ creates concentration matrix, tracer map, and tracer dictionary for reduced model
         removes tracers and associated reactions of tracers listed in "species_removed"
         reduces concentration matrix and number of functions called in simulation
@@ -122,39 +134,6 @@ def reduced_model_configuration(tracer_names, tracers_removed, old_conc, old_tra
         # Extract tracer name from list of removed species
         tracer,constituent = name.split("_")
         removed_tracer_names.append(tracer)
-
-        # Determine tracer type, use form if type is detritus
-        if old_tracers[tracer].type in ["bacteria","phytoplankton","zooplankton","detritus"]:
-            if old_tracers[tracer].type == "detrirus":  tracer_type = old_tracers[tracer].form
-            else:   tracer_type = old_tracers[tracer].type
-
-            # Parse reassign dictionary
-            if type(reassign) is not type(None):
-                for key,val in reassign.items():
-                    if tracer_type == key and tracer in val:
-                        # Extract compositions and associated indices in concentration matrix
-                        original_composition = old_tracers[tracer].composition      # Composition of tracer being removed
-                        original_indices = old_tracer_map[tracer]                   # Indices of removed tracer in concentration matrix
-
-                        # Index of first tracer that isn't the removed tracer
-                        # ex: val = ["phyto1","phyto2","phyto3","phyto4"] --> if tracer = "phyto1" then index = 1, if tracer != "phyto1" then index = 0
-                        index = next(i for i,name in enumerate(val) if name != tracer)  
-                        reassign_composition = old_tracers[val[index]].composition  # Composition of tracer getting the reassigned concentration
-                        reassign_indices = old_tracer_map[val[index]]               # Indices of reassigned tracer in concentration matrix
-
-                        # Reassign concentrations by chemical constituent
-                        for const in original_composition:
-                            if const in reassign_composition:
-                                # Get constituent index of both tracers
-                                oc_const_index = original_indices[original_composition.index(const)]
-                                rc_const_index = reassign_indices[reassign_composition.index(const)]
-
-                                # Reassign concentration
-                                old_conc[rc_const_index] += old_conc[oc_const_index]
-
-                        # Delete removed tracer from reassign dictionary
-                        reassign[key].remove(tracer)
-                        # val.remove(tracer)
 
     # Remove repeated names
     removed_tracer_names = list(dict.fromkeys(removed_tracer_names))
@@ -233,12 +212,10 @@ def reduced_model_configuration(tracer_names, tracers_removed, old_conc, old_tra
     for i in range(0,len(indices_to_retain)):
         new_conc[i,:] = old_conc[indices_to_retain[i],:]
     
-
-    # return new_conc, new_tracers, new_tracer_map, new_tracer_type, reassign
     return new_tracers, new_conc
 
 
-# def reduced_model_configuration(tracer_names, tracers_removed, old_conc):
+# def reduced_model_configuration(tracer_names, tracers_removed, old_conc, old_tracer_map, old_tracers, reassign):
 #     """ creates concentration matrix, tracer map, and tracer dictionary for reduced model
 #         removes tracers and associated reactions of tracers listed in "species_removed"
 #         reduces concentration matrix and number of functions called in simulation
@@ -251,6 +228,39 @@ def reduced_model_configuration(tracer_names, tracers_removed, old_conc, old_tra
 #         tracer,constituent = name.split("_")
 #         removed_tracer_names.append(tracer)
 
+#         # Determine tracer type, use form if type is detritus
+#         if old_tracers[tracer].type in ["bacteria","phytoplankton","zooplankton","detritus"]:
+#             if old_tracers[tracer].type == "detrirus":  tracer_type = old_tracers[tracer].form
+#             else:   tracer_type = old_tracers[tracer].type
+
+#             # Parse reassign dictionary
+#             if type(reassign) is not type(None):
+#                 for key,val in reassign.items():
+#                     if tracer_type == key and tracer in val:
+#                         # Extract compositions and associated indices in concentration matrix
+#                         original_composition = old_tracers[tracer].composition      # Composition of tracer being removed
+#                         original_indices = old_tracer_map[tracer]                   # Indices of removed tracer in concentration matrix
+
+#                         # Index of first tracer that isn't the removed tracer
+#                         # ex: val = ["phyto1","phyto2","phyto3","phyto4"] --> if tracer = "phyto1" then index = 1, if tracer != "phyto1" then index = 0
+#                         index = next(i for i,name in enumerate(val) if name != tracer)  
+#                         reassign_composition = old_tracers[val[index]].composition  # Composition of tracer getting the reassigned concentration
+#                         reassign_indices = old_tracer_map[val[index]]               # Indices of reassigned tracer in concentration matrix
+
+#                         # Reassign concentrations by chemical constituent
+#                         for const in original_composition:
+#                             if const in reassign_composition:
+#                                 # Get constituent index of both tracers
+#                                 oc_const_index = original_indices[original_composition.index(const)]
+#                                 rc_const_index = reassign_indices[reassign_composition.index(const)]
+
+#                                 # Reassign concentration
+#                                 old_conc[rc_const_index] += old_conc[oc_const_index]
+
+#                         # Delete removed tracer from reassign dictionary
+#                         reassign[key].remove(tracer)
+#                         # val.remove(tracer)
+
 #     # Remove repeated names
 #     removed_tracer_names = list(dict.fromkeys(removed_tracer_names))
     
@@ -259,12 +269,78 @@ def reduced_model_configuration(tracer_names, tracers_removed, old_conc, old_tra
 #     for index in range(0,len(tracer_names)):
 #         if tracer_names[index] not in tracers_removed: indices_to_retain.append(index)
 
-#     new_conc = copy.copy(old_conc)
-#     for index in range(0,new_conc.shape[0]):
-#         if index not in indices_to_retain:  new_conc[index,...] = 0.
+#     # Create new tracer dictionary
+#     new_tracers = copy.copy(old_tracers)
+#     for tracer in removed_tracer_names:
+#         # Remove from tracer dictionary
+#         if tracer in new_tracers:   del new_tracers[tracer]
+
+#     for tracer in list(new_tracers):
+#         for i in range(len(new_tracers[tracer].reactions)-1, -1, -1):
+#             # Create lists of consumed and produced keys
+#             if new_tracers[tracer].reactions[i]["consumed"] is not None:    consumed = list(new_tracers[tracer].reactions[i]["consumed"])
+#             else:   consumed = []   # Empty list if no consumed tracers
+#             if new_tracers[tracer].reactions[i]["produced"] is not None:    produced = list(new_tracers[tracer].reactions[i]["produced"])
+#             else:   produced = []   # Empty list if no produced tracers
+
+#             # Delete removed tracers from consumed list
+#             if any(name in consumed for name in removed_tracer_names):
+#                 for name in consumed:
+#                     if name in removed_tracer_names:    new_tracers[tracer].reactions[i]["consumed"].pop(name, None)
+
+#             # Delete removed tracers from produced list
+#             if any(name in produced for name in removed_tracer_names):
+#                 for name in produced:
+#                     if name in removed_tracer_names:    new_tracers[tracer].reactions[i]["produced"].pop(name, None)
+
+#             # Remove reactions from tracer reaction lists
+#             if type(new_tracers[tracer].reactions[i]["consumed"]) is not type(None) and type(new_tracers[tracer].reactions[i]["produced"]) is not type(None):
+#                 if len(new_tracers[tracer].reactions[i]["consumed"]) == 0 and len(new_tracers[tracer].reactions[i]["produced"]) == 0:   
+#                     new_tracers[tracer].reactions.pop(i)
+            
+#                 elif len(new_tracers[tracer].reactions[i]["consumed"]) == 0 and len(new_tracers[tracer].reactions[i]["produced"]) != 0:
+#                     if new_tracers[tracer].reactions[i]["type"] not in ["chlorophyll_synthesis","co2_flux","gross_primary_production","reaeration"]:   
+#                         new_tracers[tracer].reactions.pop(i)
+            
+#                 elif len(new_tracers[tracer].reactions[i]["consumed"]) != 0 and len(new_tracers[tracer].reactions[i]["produced"]) == 0:
+#                     if new_tracers[tracer].reactions[i]["type"] not in ["denitrification","nitrification","photosynthesis","respiration"]: 
+#                         new_tracers[tracer].reactions.pop(i)
+
+#     # Set empty dicts to 'None'
+#     for tracer in list(new_tracers):
+#         for i in range(len(new_tracers[tracer].reactions)-1, -1, -1):
+#             if isinstance(new_tracers[tracer].reactions[i]["consumed"],dict) and len(new_tracers[tracer].reactions[i]["consumed"]) == 0:
+#                 new_tracers[tracer].reactions[i]["consumed"] = None
+#             if isinstance(new_tracers[tracer].reactions[i]["produced"],dict) and len(new_tracers[tracer].reactions[i]["produced"]) == 0:
+#                 new_tracers[tracer].reactions[i]["produced"] = None
+
+#     # Create new tracer map
+#     new_tracer_map = Dict.empty(key_type=types.unicode_type, value_type=types.ListType(types.int64))
+#     new_tracer_type = []   # used in vertical diffusivity calculations
+#     index = 0
+#     for trac in new_tracers:
+#         num_constituents = len(new_tracers[trac].composition)   # number of constituents in tracer
+        
+#         lst = List.empty_list(types.int64)  # empty typed.List to store elements for tracer constituents
+#         for i in range(index,index+num_constituents):  lst.append(np.int64(i))  # fill list
+#         new_tracer_map[trac] = lst  # identify tracer constituents with their own index
+        
+#         for i in range(num_constituents):
+#             # add tracer type to list
+#             if new_tracers[trac].type == "detritus":    new_tracer_type.append(new_tracers[trac].form)     # need to distinguish particulate/dissolved form
+#             else:   new_tracer_type.append(new_tracers[trac].type)     # just the type
+        
+#             # add tracer type to list
+#             index += 1  # update index
+
+#     # Create new concentration matrix
+#     new_conc = np.zeros((len(indices_to_retain),old_conc.shape[1]))
+#     for i in range(0,len(indices_to_retain)):
+#         new_conc[i,:] = old_conc[indices_to_retain[i],:]
     
 
-#     return new_conc, indices_to_retain, removed_tracer_names
+#     # return new_conc, new_tracers, new_tracer_map, new_tracer_type, reassign
+#     return new_tracers, new_conc
 
 
 def calc_modified_DRGEP_dic(rate_eqn_fcn, conc, t, base_element, physical, tracers, tracer_map, tracer_type):
@@ -280,14 +356,16 @@ def calc_modified_DRGEP_dic(rate_eqn_fcn, conc, t, base_element, physical, trace
     removed_tracer_names = []
 
     # calculate original rate values
-    dc_dt_og = rate_eqn_fcn(t, base_element, conc, num_tracers, physical, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names, True)
+    # dc_dt_og = rate_eqn_fcn(t, base_element, conc, num_tracers, physical, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names, True)
+    dc_dt_og = rate_eqn_fcn(t, base_element, conc, num_tracers, physical, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names)
 
     percent_error_matrix = np.zeros([num_tracers, num_tracers, num_boxes])
 
     for j in range(num_tracers):
         c_new[j,:] = 0.     # zero out concentration of current tracer
         
-        dc_dt_new = rate_eqn_fcn(t, base_element, c_new, num_tracers, physical, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names, True)
+        # dc_dt_new = rate_eqn_fcn(t, base_element, c_new, num_tracers, physical, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names, True)
+        dc_dt_new = rate_eqn_fcn(t, base_element, c_new, num_tracers, physical, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names)
         # new = dc_dt_new
         # og = dc_dt_og
         new = dc_dt_new.reshape((num_tracers,num_boxes))
@@ -345,7 +423,7 @@ def modified_DRGEP(conc, reduction, base_element, physical, tracer_map, tracer_t
 
     # Build dictionary of original model reduction information
     og_reduction_info = configure_reduction_dict(reduction["safe"], reduction["target"], tracer_map, tracers)
-    og_reduction_info["reassign"] = reduction["reassign"]
+    # og_reduction_info["reassign"] = reduction["reassign"]
     og_reduction_info["time_period"] = reduction["time_period"]
     tracer_names = og_reduction_info["tracer_names"]
     target_names = og_reduction_info["target_names"]
@@ -376,21 +454,22 @@ def modified_DRGEP(conc, reduction, base_element, physical, tracer_map, tracer_t
     logging.info('Target species: {}'.format(target_names))
     logging.info('Retained species: {}'.format(safe_names))
 
-    dic_physical = {
-        "configuration": physical["simulation"]["configuration"],
-        "dt": physical["simulation"]["dt"],
-        "forcing": physical["environment"]["forcing"],
-        "forcing_data": physical["environment"]["forcing_data"],
-        "latitude": physical["environment"]["latitude"],
-        "light_attenuation_water": physical["environment"]["light_attenuation_water"],
-        "column_depth": physical["water_column"]["column_depth"],
-        "num_boxes": physical["water_column"]["num_boxes"],
-        "z": physical["vertical_grid"]["z"],
-        "dz": physical["vertical_grid"]["dz"],
-    }
+    # dic_physical = {
+    #     "configuration": physical["simulation"]["configuration"],
+    #     "dt": physical["simulation"]["dt"],
+    #     "forcing": physical["environment"]["forcing"],
+    #     "forcing_data": physical["environment"]["forcing_data"],
+    #     "latitude": physical["environment"]["latitude"],
+    #     "light_attenuation_water": physical["environment"]["light_attenuation_water"],
+    #     "column_depth": physical["water_column"]["column_depth"],
+    #     "num_boxes": physical["water_column"]["num_boxes"],
+    #     "z": physical["vertical_grid"]["z"],
+    #     "dz": physical["vertical_grid"]["dz"],
+    # }
 
     # Get direct interaction coefficients
-    dic_matrix = calc_modified_DRGEP_dic(rate_eqn_fcn, conc, t, base_element, dic_physical, tracers, tracer_map, tracer_type)
+    # dic_matrix = calc_modified_DRGEP_dic(rate_eqn_fcn, conc, t, base_element, dic_physical, tracers, tracer_map, tracer_type)
+    dic_matrix = calc_modified_DRGEP_dic(rate_eqn_fcn, conc, t, base_element, physical, tracers, tracer_map, tracer_type)
 
     # Get overall interaction coefficients
     overall_interaction_coeffs = get_importance_coeffs(tracer_names, target_names, [dic_matrix])
@@ -403,27 +482,27 @@ def modified_DRGEP(conc, reduction, base_element, physical, tracer_map, tracer_t
         sliced_conc, sliced_physical = slice_concentration(conc, physical)
     else:
         sliced_conc = copy.copy(conc)
-        sliced_physical = {
-            "configuration": physical["simulation"]["configuration"],
-            "dt": physical["simulation"]["dt"],
-            "forcing": physical["environment"]["forcing"],
-            "forcing_data": physical["environment"]["forcing_data"],
-            "latitude": physical["environment"]["latitude"],
-            "light_attenuation_water": physical["environment"]["light_attenuation_water"],
-            "column_depth": physical["water_column"]["column_depth"],
-            "num_boxes": physical["water_column"]["num_boxes"],
-            "z": physical["vertical_grid"]["z"],
-            "dz": physical["vertical_grid"]["dz"],
-        }
+        sliced_physical = copy.copy(physical)
+        # sliced_physical = {
+        #     "configuration": physical["simulation"]["configuration"],
+        #     "dt": physical["simulation"]["dt"],
+        #     "forcing": physical["environment"]["forcing"],
+        #     "forcing_data": physical["environment"]["forcing_data"],
+        #     "latitude": physical["environment"]["latitude"],
+        #     "light_attenuation_water": physical["environment"]["light_attenuation_water"],
+        #     "column_depth": physical["water_column"]["column_depth"],
+        #     "num_boxes": physical["water_column"]["num_boxes"],
+        #     "z": physical["vertical_grid"]["z"],
+        #     "dz": physical["vertical_grid"]["dz"],
+        # }
     
     # Run new method
-    # reduction_data = run_modified_DRGEP(overall_interaction_coeffs, error_limit, error_function, species_names, target_names, safe_names, rate_eqn_fcn, t_span, sliced_conc, sliced_physical)
     reduction_data = run_modified_DRGEP(overall_interaction_coeffs, error_limit, error_function, og_reduction_info, t_span, sliced_conc, base_element, sliced_physical, tracers, tracer_map, tracer_type)
 
     return reduction_data, error_limit
 
 
-def reduce_modified_DRGEP(error_function, last_error, tracer_names, target_names, safe_names, threshold, overall_interaction_coeffs, last_num_tracers, solution_full_model, solution_reduced_model, t_span, time_period, base_element, c0, tracers, tracer_map, tracer_type, physical, reassign):
+def reduce_modified_DRGEP(error_function, last_error, tracer_names, target_names, safe_names, threshold, overall_interaction_coeffs, last_num_tracers, solution_full_model, solution_reduced_model, t_span, time_period, base_element, c0, tracers, tracer_map, tracer_type, physical):
     """ calculates the number of species and error for a given threshold value
     """
 
@@ -431,10 +510,6 @@ def reduce_modified_DRGEP(error_function, last_error, tracer_names, target_names
     tracers_removed = []
     for tracer,coeff in overall_interaction_coeffs.items():
         if coeff < threshold and tracer not in safe_names:   tracers_removed.append(tracer)
-
-    # # Update configuration for reduced model
-    # c0, tracers, tracer_map, tracer_type, reassign = reduced_model_configuration(tracer_names, tracers_removed, c0, tracer_map, tracers, reassign)
-    # c0, indices_to_retain, removed_tracer_names = reduced_model_configuration(tracer_names, tracers_removed, c0)
 
     # Reassign concentrations of removed tracers and split tracer names/constituents
     removed_tracer_names = []
@@ -464,10 +539,9 @@ def reduce_modified_DRGEP(error_function, last_error, tracer_names, target_names
        # For the reduced model, call function to get error
         error, solution_reduced_model = error_function(t_span, time_period, base_element, physical, tracer_names, target_names, solution_full_model, c0, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names)
 
-    return error, num_tracers, tracers_removed, solution_reduced_model, c0, tracers, tracer_map, tracer_type, reassign, indices_to_retain, removed_tracer_names
+    return error, num_tracers, tracers_removed, solution_reduced_model, c0, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names
 
 
-# def run_modified_DRGEP(overall_interaction_coeffs, error_limit, error_function, species_names, species_targets, species_safe, rate_eqn_fcn, t_span, c0, base_element, physical, tracer_map, tracer_type, tracers):
 def run_modified_DRGEP(overall_interaction_coeffs, error_limit, error_function, og_reduction_info, t_span, c0_full, base_element, physical, tracers_full, tracer_map_full, tracer_type_full):
     
     """ Iterates through different threshold values to find a reduced model that meets error criteria
@@ -496,7 +570,8 @@ def run_modified_DRGEP(overall_interaction_coeffs, error_limit, error_function, 
     num_tracers = c0_full.shape[0]
     indices_to_retain = np.arange(num_tracers)
     removed_tracer_names = []
-    solution_full_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, tracers_full, tracer_map_full, tracer_type_full, indices_to_retain, removed_tracer_names, False), t_span, c0_full.ravel(), method='RK23')#, max_step=physical["dt"])
+    # solution_full_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, tracers_full, tracer_map_full, tracer_type_full, indices_to_retain, removed_tracer_names, False), t_span, c0_full.ravel(), method='RK23')#, max_step=physical["dt"])
+    solution_full_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, tracers_full, tracer_map_full, tracer_type_full, indices_to_retain, removed_tracer_names), t_span, c0_full.ravel(), method='RK23')#, max_step=physical["dt"])
 
     first = True
     error_current = 0.0
@@ -510,11 +585,10 @@ def run_modified_DRGEP(overall_interaction_coeffs, error_limit, error_function, 
             tracers = tracers_full
             tracer_map = tracer_map_full
             tracer_type = tracer_type_full
-            reassign = og_reduction_info["reassign"]
             indices_to_retain = []
             removed_tracer_names = []
-        error_current, num_tracers, species_removed, solution_reduced_model, c0, tracers, tracer_map, tracer_type, reassign, indices_to_retain, removed_tracer_names = reduce_modified_DRGEP(error_function, error_current, tracer_names, target_names, safe_names, threshold, overall_interaction_coeffs, num_tracers, 
-                                                                                                                                                                         solution_full_model, solution_reduced_model, t_span, og_reduction_info["time_period"], base_element, c0, tracers, tracer_map, tracer_type, physical, reassign)
+        error_current, num_tracers, species_removed, solution_reduced_model, c0, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names = reduce_modified_DRGEP(error_function, error_current, tracer_names, target_names, safe_names, threshold, overall_interaction_coeffs, num_tracers, 
+                                                                                                                                                                         solution_full_model, solution_reduced_model, t_span, og_reduction_info["time_period"], base_element, c0, tracers, tracer_map, tracer_type, physical)
 
         # reduce threshold if past error limit on first iteration
         if first and error_current > error_limit:
@@ -553,8 +627,8 @@ def run_modified_DRGEP(overall_interaction_coeffs, error_limit, error_function, 
 
     if error_current > error_limit:
         threshold -= (2 * threshold_increment)
-        error_current, num_tracers, species_removed, solution_reduced_model, c0, tracers, tracer_map, tracer_type, reassign, indices_to_retain, removed_tracer_names = reduce_modified_DRGEP(error_function, error_current, tracer_names, target_names, safe_names, threshold, overall_interaction_coeffs, num_tracers, 
-                                                                                                                                                                         solution_full_model, solution_reduced_model, t_span, og_reduction_info["time_period"], base_element, c0, tracers, tracer_map, tracer_type, physical, reassign)
+        error_current, num_tracers, species_removed, solution_reduced_model, c0, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names = reduce_modified_DRGEP(error_function, error_current, tracer_names, target_names, safe_names, threshold, overall_interaction_coeffs, num_tracers, 
+                                                                                                                                                                         solution_full_model, solution_reduced_model, t_span, og_reduction_info["time_period"], base_element, c0, tracers, tracer_map, tracer_type, physical)
     
     if error_data[-1] > error_limit:
         model = -2

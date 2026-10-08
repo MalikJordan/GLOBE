@@ -18,7 +18,8 @@ def average(t_span, time_period, base_element, physical, tracer_names, target_na
     
     num_boxes = c0_reduced.shape[1]     # number of boxes in water column
     
-    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names, False), 
+    # solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names, False), 
+    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names), 
                                  t_span, c0_reduced.ravel(), method='RK23')#, max_step=physical["dt"])
     
     # Determine start and end time for slicing
@@ -97,7 +98,8 @@ def peak(t_span, time_period, base_element, physical, tracer_names, target_names
 
     num_boxes = c0_reduced.shape[1]     # number of boxes in water column
 
-    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names, False), 
+    # solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names, False), 
+    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names), 
                                  t_span, c0_reduced.ravel(), method='RK23')#, max_step=physical["dt"])
     
     # Determine start and end time for slicing
@@ -176,7 +178,8 @@ def time_of_peak(t_span, time_period, base_element, physical, tracer_names, targ
     
     num_boxes = c0_reduced.shape[1]     # number of boxes in water column
     
-    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names, False), 
+    # solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names, False), 
+    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names), 
                                  t_span, c0_reduced.ravel(), method='RK23')#, max_step=physical["dt"])
     
     # Determine start and end time for slicing

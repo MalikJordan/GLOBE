@@ -1,7 +1,6 @@
 import numpy as np
 from functions.other_functions import concentration_ratio, light_attenuation
 from functions.seasonal_cycling import get_mixed_layer_depth, get_salinity, get_sunlight, get_temperature, get_wind, calculate_density
-from pom.calculations import density_profile
 np.set_printoptions(precision=20)
 
 def bgc_rate_eqns(iter, configuration, base_element, conc, d_dt, light_attenuation_water, temp, sal, dens, z, dz, surface_PAR, wind, tracer_map, tracer_type, tracers, sinking):
@@ -37,13 +36,12 @@ def bgc_rate_eqns(iter, configuration, base_element, conc, d_dt, light_attenuati
     return d_dt
 
 
-def reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names, dic_matrix):
-
+# def reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names, dic_matrix):
+def reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names):
+    
     # Extract physical variables
     num_boxes = physical["num_boxes"]           # number of boxes in water column [-]
     column_depth = physical["column_depth"]     # water column depth [m]
-    # z = physical["z"]                           # vertical grid [m]
-    # dz = physical["dz"]                         # vertical spacing [m]
     z = physical["z"]                           # vertical grid [m]
     dz = physical["dz"]                         # vertical spacing [m]
     light_attenuation_water = physical["light_attenuation_water"]   # light attenuation coefficient for water
@@ -61,12 +59,15 @@ def reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, trace
    
     # Create arrays for temperature and salinity if 1D simulation
     if configuration == "1d":
-        if dic_matrix:
-            z = physical["dz"][:-1] * column_depth                          # vertical grid [m]
-            dz = physical["dz"][:-1]                         # vertical spacing [m]
-        else:
-            z = physical["dz"] * column_depth                          # vertical grid [m]
-            dz = physical["dz"]                         # vertical spacing [m]
+        # if dic_matrix:
+        #     z = physical["dz"][:-1] * column_depth                          # vertical grid [m]
+        #     dz = physical["dz"][:-1]                         # vertical spacing [m]
+        # else:
+        #     z = physical["dz"] * column_depth                          # vertical grid [m]
+        #     dz = physical["dz"]                         # vertical spacing [m]
+
+        z = physical["dz"] * column_depth                          # vertical grid [m]
+        dz = physical["dz"]                         # vertical spacing [m]
             
         # Initialize physical variables
         temp = np.zeros(num_boxes,dtype=np.float64)
@@ -99,7 +100,6 @@ def reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, trace
             # Wind speed
             wind = get_wind(time, forcing_data["winter_wind"], forcing_data["summer_wind"])
 
-        # dens = density_profile(configuration, len(z), column_depth, dz, temp, sal)
         dens = calculate_density(temp, sal, z)
 
         # Clip physical variables
@@ -127,7 +127,6 @@ def reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, trace
             surface_PAR = get_sunlight(time,forcing_data["winter_sun"], forcing_data["summer_sun"], physical["latitude"])
             wind = get_wind(time, forcing_data["winter_wind"], forcing_data["summer_wind"])
 
-        # dens = density_profile(configuration, num_boxes, column_depth/2, 0., temp, sal)     # Calculate density in center of cell (column_depth/2)
         dens = calculate_density(temp, sal, z)
 
     # Initialize d_dt and sinking arrays
