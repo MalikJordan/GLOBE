@@ -456,12 +456,15 @@ class Bacteria():
             self.upt[nut] = np.zeros_like(conc[0],dtype=np.float64)
         
         # Calculate oxygen limitation factor (if necessary)
-        if self.oxygen_limited:
+        if self.oxygen_limited and "o2" in tracers:
             # Optional minimum concentration for aerobic/anerobic operations
             if "min_o2" in self.oxy_inhib_ids:  o2 = np.maximum(conc[tracer_map["o2"][0]] , self.oxy_inhib_params[self.oxy_inhib_ids.index("min_o2")] * np.ones_like(conc[tracer_map["o2"][0]]))
             else:   o2 = conc[tracer_map["o2"][0]]
             self.oxy_limitation_factor = monod(o2, self.oxy_inhib_params[self.oxy_inhib_ids.index("half_sat")], self.oxy_inhib_params[self.oxy_inhib_ids.index("exponent")])
-
+        else:
+            o2 = np.zeros_like(conc[tracer_map[self.abbrev][0]])
+            self.oxy_limitation_factor = monod(o2, self.oxy_inhib_params[self.oxy_inhib_ids.index("half_sat")], self.oxy_inhib_params[self.oxy_inhib_ids.index("exponent")])
+        
         # Calculate temp regulation factor (if necessary)
         if self.temp_limited:
             self.temp_regulation_factor = temperature_dependence(temperature, self.temp_reg_ids, self.temp_reg_params)

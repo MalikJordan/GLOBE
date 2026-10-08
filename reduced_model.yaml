@@ -403,8 +403,6 @@ reactions:
   consumed:
     nh4:
     - n
-    o2:
-    - o
   produced:
     no3:
     - n
@@ -426,17 +424,6 @@ reactions:
   produced:
     bac1:
     - c
-- type: uptake
-  consumed:
-    pom1:
-    - c
-    - n
-    - p
-  produced:
-    bac1:
-    - c
-    - n
-    - p
 - type: excretion
   consumed:
     bac1:
@@ -455,23 +442,10 @@ reactions:
     - c
     - n
     - p
-- type: mortality
-  consumed:
-    bac1:
-    - c
-    - n
-    - p
-  produced:
-    pom1:
-    - c
-    - n
-    - p
 - type: respiration
   consumed:
     bac1:
     - c
-    o2:
-    - o
   produced:
     co2:
     - c
@@ -592,18 +566,6 @@ reactions:
     - c
     - n
     - p
-- type: grazing
-  consumed:
-    phyto2:
-    - c
-    - n
-    - p
-    - chl
-  produced:
-    microzoo1:
-    - c
-    - n
-    - p
 - type: respiration
   consumed:
     microzoo1:
@@ -638,17 +600,6 @@ reactions:
     - c
     - n
     - p
-- type: egestion
-  consumed:
-    microzoo1:
-    - c
-    - n
-    - p
-  produced:
-    pom1:
-    - c
-    - n
-    - p
 - type: mortality
   consumed:
     microzoo1:
@@ -657,17 +608,6 @@ reactions:
     - p
   produced:
     dom1:
-    - c
-    - n
-    - p
-- type: mortality
-  consumed:
-    microzoo1:
-    - c
-    - n
-    - p
-  produced:
-    pom1:
     - c
     - n
     - p

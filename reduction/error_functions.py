@@ -10,16 +10,17 @@ def num_tracers(tracer_map):
     return total
 
 
-def average(t_span, time_period, base_element, physical, tracer_names, target_names, solution_full_model, c0_reduced, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names):
+# def average(t_span, time_period, base_element, physical, tracer_names, target_names, solution_full_model, c0_reduced, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names):
+def average(t_span, time_period, base_element, physical, tracer_names, target_names, solution_full_model, c0_reduced, tracers_reduced, tracer_map_reduced, tracer_type_reduced, removed_tracer_names):
     """ calculates error in the time of peak concentration of target tracer (sum of targets if multiple are provided)
     """
     num_tracers_full = len(tracer_names)
     num_tracers_reduced = num_tracers(tracer_map_reduced)
     
     num_boxes = c0_reduced.shape[1]     # number of boxes in water column
-    
+    # indices_to_retain = np.arange(num_tracers_reduced)
     # solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names, False), 
-    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names), 
+    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, removed_tracer_names), 
                                  t_span, c0_reduced.ravel(), method='RK23')#, max_step=physical["dt"])
     
     # Determine start and end time for slicing
@@ -61,11 +62,14 @@ def average(t_span, time_period, base_element, physical, tracer_names, target_na
         tracer,constituent = name.split("_")
     
         # Index in solution_reduced_model
-        if tracer in tracer_map_reduced:
-            if name in target_names:
-                # Index of target constituent in target tracer
-                const_index = tracers_reduced[tracer].composition.index(constituent)
-                target_indices_reduced.append(tracer_map_reduced[tracer][const_index])
+        if name in target_names:
+            const_index = tracers_reduced[tracer].composition.index(constituent)
+            target_indices_reduced.append(tracer_map_reduced[tracer][const_index])
+        # if tracer in tracer_map_reduced:
+        #     if name in target_names:
+        #         # Index of target constituent in target tracer
+        #         const_index = tracers_reduced[tracer].composition.index(constituent)
+        #         target_indices_reduced.append(tracer_map_reduced[tracer][const_index])
     
     # Extract concentration over the time period
     target_quality_full = np.zeros((len(target_indices_full),num_boxes,(index_t_max_full-index_t_min_full)))                # shape = (num_targets, num_boxes, time)
@@ -90,7 +94,8 @@ def average(t_span, time_period, base_element, physical, tracer_names, target_na
     return error, solution_reduced_model
 
 
-def peak(t_span, time_period, base_element, physical, tracer_names, target_names, solution_full_model, c0_reduced, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names):
+# def peak(t_span, time_period, base_element, physical, tracer_names, target_names, solution_full_model, c0_reduced, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names):
+def peak(t_span, time_period, base_element, physical, tracer_names, target_names, solution_full_model, c0_reduced, tracers_reduced, tracer_map_reduced, tracer_type_reduced, removed_tracer_names):
     """ calculates error in the peak concentration of target tracer (sum of targets if multiple are provided)
     """
     num_tracers_full = len(tracer_names)
@@ -99,7 +104,7 @@ def peak(t_span, time_period, base_element, physical, tracer_names, target_names
     num_boxes = c0_reduced.shape[1]     # number of boxes in water column
 
     # solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names, False), 
-    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names), 
+    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, removed_tracer_names), 
                                  t_span, c0_reduced.ravel(), method='RK23')#, max_step=physical["dt"])
     
     # Determine start and end time for slicing
@@ -141,11 +146,14 @@ def peak(t_span, time_period, base_element, physical, tracer_names, target_names
         tracer,constituent = name.split("_")
     
         # Index in solution_reduced_model
-        if tracer in tracer_map_reduced:
-            if name in target_names:
-                # Index of target constituent in target tracer
-                const_index = tracers_reduced[tracer].composition.index(constituent)
-                target_indices_reduced.append(tracer_map_reduced[tracer][const_index])
+        if name in target_names:
+            const_index = tracers_reduced[tracer].composition.index(constituent)
+            target_indices_reduced.append(tracer_map_reduced[tracer][const_index])
+        # if tracer in tracer_map_reduced:
+        #     if name in target_names:
+        #         # Index of target constituent in target tracer
+        #         const_index = tracers_reduced[tracer].composition.index(constituent)
+        #         target_indices_reduced.append(tracer_map_reduced[tracer][const_index])
 
     # Extract concentration over the time period
     target_quality_full = np.zeros((len(target_indices_full),num_boxes,(index_t_max_full-index_t_min_full)))                # shape = (num_targets, num_boxes, time)
@@ -170,7 +178,8 @@ def peak(t_span, time_period, base_element, physical, tracer_names, target_names
     return error, solution_reduced_model
 
 
-def time_of_peak(t_span, time_period, base_element, physical, tracer_names, target_names, solution_full_model, c0_reduced, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names):
+# def time_of_peak(t_span, time_period, base_element, physical, tracer_names, target_names, solution_full_model, c0_reduced, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names):
+def time_of_peak(t_span, time_period, base_element, physical, tracer_names, target_names, solution_full_model, c0_reduced, tracers_reduced, tracer_map_reduced, tracer_type_reduced, removed_tracer_names):
     """ calculates error in the time of peak concentration of target tracer (sum of targets if multiple are provided)
     """
     num_tracers_full = len(tracer_names)
@@ -179,7 +188,7 @@ def time_of_peak(t_span, time_period, base_element, physical, tracer_names, targ
     num_boxes = c0_reduced.shape[1]     # number of boxes in water column
     
     # solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names, False), 
-    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, indices_to_retain, removed_tracer_names), 
+    solution_reduced_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers_reduced, physical, tracers_reduced, tracer_map_reduced, tracer_type_reduced, removed_tracer_names), 
                                  t_span, c0_reduced.ravel(), method='RK23')#, max_step=physical["dt"])
     
     # Determine start and end time for slicing
@@ -221,11 +230,14 @@ def time_of_peak(t_span, time_period, base_element, physical, tracer_names, targ
         tracer,constituent = name.split("_")
     
         # Index in solution_reduced_model
-        if tracer in tracer_map_reduced:
-            if name in target_names:
-                # Index of target constituent in target tracer
-                const_index = tracers_reduced[tracer].composition.index(constituent)
-                target_indices_reduced.append(tracer_map_reduced[tracer][const_index])
+        if name in target_names:
+            const_index = tracers_reduced[tracer].composition.index(constituent)
+            target_indices_reduced.append(tracer_map_reduced[tracer][const_index])
+        # if tracer in tracer_map_reduced:
+        #     if name in target_names:
+        #         # Index of target constituent in target tracer
+        #         const_index = tracers_reduced[tracer].composition.index(constituent)
+        #         target_indices_reduced.append(tracer_map_reduced[tracer][const_index])
     
     # Extract concentration over the time period
     target_quality_full = np.zeros((len(target_indices_full),num_boxes,(index_t_max_full-index_t_min_full)))                # shape = (num_targets, num_boxes, time)

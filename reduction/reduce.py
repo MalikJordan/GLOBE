@@ -6,7 +6,9 @@ from reduction.modified_DRGEP import modified_DRGEP, reduced_model_configuration
 
 
 def reduce_bgc_model(model_file_path, physical, base_element, concentration, tracer_map, tracer_type, tracers):
-    print('Beginning model reduction...')
+    """
+    Definition:: handles reduction scheme and rewrites YAML input file with reduced model configuration
+    """
     with open(os.getcwd() + '/reduction.yaml', 'r') as f:
         reduction_scheme = yaml.full_load(f)
 
@@ -73,6 +75,6 @@ def reduce_bgc_model(model_file_path, physical, base_element, concentration, tra
 
     # Reconfigure model
     tracer_names = ['o2_o', 'po4_p', 'no3_n', 'nh4_n', 'n2_n', 'sio4_si', 'hs_s', 'bac1_c', 'bac1_n', 'bac1_p', 'phyto1_c', 'phyto1_n', 'phyto1_p', 'phyto1_chl', 'phyto1_si', 'phyto2_c', 'phyto2_n', 'phyto2_p', 'phyto2_chl', 'phyto3_c', 'phyto3_n', 'phyto3_p', 'phyto3_chl', 'phyto4_c', 'phyto4_n', 'phyto4_p', 'phyto4_chl', 'mesozoo1_c', 'mesozoo1_n', 'mesozoo1_p', 'mesozoo2_c', 'mesozoo2_n', 'mesozoo2_p', 'microzoo1_c', 'microzoo1_n', 'microzoo1_p', 'microzoo2_c', 'microzoo2_n', 'microzoo2_p', 'dom1_c', 'dom1_n', 'dom1_p', 'dom2_c', 'dom3_c', 'pom1_c', 'pom1_n', 'pom1_p', 'pom1_si', 'co2_c', 'ta_eq']
-    reduced_tracers, conc = reduced_model_configuration(tracer_names, tracers_removed, concentration[...,0].copy(), tracers)
-
+    reduced_conc, reduced_tracers, reduced_tracer_map, reduced_tracer_type = reduced_model_configuration(tracer_names, tracers_removed, concentration[...,0].copy(), tracers)
+    
     trim_yaml(model_file_path, tracers_removed, reduced_tracers)
