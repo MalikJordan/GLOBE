@@ -440,7 +440,7 @@ def modified_DRGEP(conc, reduction, base_element, physical, tracer_map, tracer_t
 
     # Time span for integration
     # t_span = [0,86400*365*10]
-    t_span = [0,86400*365*3]
+    t_span = [0,86400*365*2]
 
     # Time at which the DIC values are obtained
     t = 86400*365*7
@@ -606,7 +606,7 @@ def run_modified_DRGEP(overall_interaction_coeffs, error_limit, error_function, 
 
     # start with detailed (starting) model
     num_tracers = c0_full.shape[0]
-    indices_to_retain = np.arange(num_tracers)
+    # indices_to_retain = np.arange(num_tracers)
     removed_tracer_names = []
     # solution_full_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, tracers_full, tracer_map_full, tracer_type_full, indices_to_retain, removed_tracer_names, False), t_span, c0_full.ravel(), method='RK23')#, max_step=physical["dt"])
     solution_full_model = solve_ivp(lambda time, conc: reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, tracers_full, tracer_map_full, tracer_type_full, removed_tracer_names), t_span, c0_full.ravel(), method='RK23')#, max_step=physical["dt"])
@@ -629,7 +629,7 @@ def run_modified_DRGEP(overall_interaction_coeffs, error_limit, error_function, 
         #                                                                                                                                                                  solution_full_model, solution_reduced_model, t_span, og_reduction_info["time_period"], base_element, c0, tracers, tracer_map, tracer_type, physical)
 
         error_current, num_tracers, species_removed, solution_reduced_model, c0, tracers, tracer_map, tracer_type, removed_tracer_names = reduce_modified_DRGEP(error_function, c0_full, error_current, tracer_names, target_names, safe_names, threshold, overall_interaction_coeffs, num_tracers, 
-                                                                                                                                                                solution_full_model, solution_reduced_model, t_span, og_reduction_info["time_period"], base_element, c0, tracers, physical)
+                                                                                                                                                                solution_full_model, solution_reduced_model, t_span, og_reduction_info["time_period"], base_element, c0, tracers_full, physical)
         
         # reduce threshold if past error limit on first iteration
         if first and error_current > error_limit:
@@ -672,7 +672,7 @@ def run_modified_DRGEP(overall_interaction_coeffs, error_limit, error_function, 
         #                                                                                                                                                                  solution_full_model, solution_reduced_model, t_span, og_reduction_info["time_period"], base_element, c0, tracers, tracer_map, tracer_type, physical)
 
         error_current, num_tracers, species_removed, solution_reduced_model, c0, tracers, tracer_map, tracer_type, removed_tracer_names = reduce_modified_DRGEP(error_function, c0_full, error_current, tracer_names, target_names, safe_names, threshold, overall_interaction_coeffs, num_tracers, 
-                                                                                                                                                                solution_full_model, solution_reduced_model, t_span, og_reduction_info["time_period"], base_element, c0, tracers, physical)
+                                                                                                                                                                solution_full_model, solution_reduced_model, t_span, og_reduction_info["time_period"], base_element, c0, tracers_full, physical)
         
     if error_data[-1] > error_limit:
         model = -2

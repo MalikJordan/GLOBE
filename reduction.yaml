@@ -17,8 +17,8 @@ mode: average     # average, peak, or time_of_peak
 # "time_of_peak": time of peak concentration during specified time period
 
 time_period: # time period (in days) used in mode
-  start: 720
-  end: 1080
+  start: 360
+  end: 720
 
 # reassign: # ranking of groups from highest to lowest importance
 # # initial concentrations of removed tracers will be reassigned to the remaining tracer of similar type with the highest importance
