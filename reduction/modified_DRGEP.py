@@ -2,7 +2,7 @@ import copy
 import logging
 import numpy as np
 from setup.other_functions import create_function_inputs
-from functions.bgc_rate_eqns import reduced_bgc_rate_eqns
+from bgc_functions.bgc_rate_eqns import reduced_bgc_rate_eqns
 import reduction.error_functions as error_functions
 from reduction.pyMARS_DRGEP_functions import get_importance_coeffs
 from scipy.integrate import solve_ivp

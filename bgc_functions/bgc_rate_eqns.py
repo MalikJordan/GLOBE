@@ -1,6 +1,6 @@
 import numpy as np
-from functions.other_functions import concentration_ratio, light_attenuation
-from functions.seasonal_cycling import get_mixed_layer_depth, get_salinity, get_sunlight, get_temperature, get_wind, calculate_density
+from bgc_functions.other_functions import concentration_ratio, light_attenuation
+from bgc_functions.seasonal_cycling import get_mixed_layer_depth, get_salinity, get_sunlight, get_temperature, get_wind, calculate_density
 np.set_printoptions(precision=20)
 
 def bgc_rate_eqns(iter, configuration, base_element, conc, d_dt, light_attenuation_water, temp, sal, dens, z, dz, surface_PAR, wind, tracer_map, tracer_type, tracers, sinking):

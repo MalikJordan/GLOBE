@@ -4,8 +4,8 @@ import numpy as np
 from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
-from functions.seasonal_cycling import *
-from functions.other_functions import irradiance, light_limitation, max_growth_rate, monod, temperature_dependence, tracer_elements, switch
+from bgc_functions.seasonal_cycling import *
+from bgc_functions.other_functions import irradiance, light_limitation, max_growth_rate, monod, temperature_dependence, tracer_elements, switch
 from fractions import Fraction
 np.set_printoptions(precision=20)
 class Phytoplankton():

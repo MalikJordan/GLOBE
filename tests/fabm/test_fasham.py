@@ -8,7 +8,7 @@ from pathlib import Path
 
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
-from functions.seasonal_cycling import get_temperature, get_salinity, get_sunlight
+from bgc_functions.seasonal_cycling import get_temperature, get_salinity, get_sunlight
 
 def nrmse(check,comp):
     

@@ -6,11 +6,13 @@ from setup.initialize import import_bgc_model
 from reduction.modified_DRGEP import modified_DRGEP, reduced_model_configuration
 
 
-def reduce_bgc_model(model_file_path, physical, base_element, concentration, tracer_map, tracer_type, tracers):
+def reduce_bgc_model(base_element, concentration, sinking, tracers, tracer_map, tracer_type, physical):
     """
     Definition:: handles reduction scheme and rewrites YAML input file with reduced model configuration
     """
-    
+
+    model_file_path = os.getcwd() + '/model.yaml'
+
     if physical["simulation"]["reduce"] == True:
         print('Beginning model reduction...')
 

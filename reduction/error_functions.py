@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 from scipy.integrate import solve_ivp
-from functions.bgc_rate_eqns import reduced_bgc_rate_eqns
+from bgc_functions.bgc_rate_eqns import reduced_bgc_rate_eqns
 
 def num_tracers(tracer_map):
 

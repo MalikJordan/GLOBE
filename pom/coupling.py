@@ -3,7 +3,7 @@ from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
 from pom.calculations import temperature_and_salinity_profiles
-from functions.bgc_rate_eqns import bgc_rate_eqns
+from bgc_functions.bgc_rate_eqns import bgc_rate_eqns
 np.set_printoptions(precision=20)
 
 def pom_bgc_1d(iter, configuration, base_element, light_attenuation_water, temperature, salinity, density, inorganic_suspended_matter, shortwave_radiation,

@@ -4,7 +4,7 @@ import numpy as np
 from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
-from functions.other_functions import monod, string_to_float, temperature_dependence, tracer_elements
+from bgc_functions.other_functions import monod, string_to_float, temperature_dependence, tracer_elements
 from fractions import Fraction
 np.set_printoptions(precision=20)
 class Zooplankton():

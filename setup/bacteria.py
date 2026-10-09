@@ -4,8 +4,8 @@ import numpy as np
 from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
-from functions.seasonal_cycling import *
-from functions.other_functions import monod, nutrient_limitation, tracer_elements, temperature_dependence, switch
+from bgc_functions.seasonal_cycling import *
+from bgc_functions.other_functions import monod, nutrient_limitation, tracer_elements, temperature_dependence, switch
 from fractions import Fraction
 np.set_printoptions(precision=20)
 class Bacteria():

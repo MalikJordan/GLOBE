@@ -6,10 +6,10 @@ from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
 from setup.initialize import import_bgc_model, import_physical_model
-from functions.seasonal_cycling import get_mixed_layer_depth, get_salinity, get_sunlight, get_temperature, get_wind
-from functions.bgc_rate_eqns import bgc_rate_eqns
-from functions.calculate_averages import average
-from functions.other_functions import concentration_ratio, light_attenuation
+from bgc_functions.seasonal_cycling import get_mixed_layer_depth, get_salinity, get_sunlight, get_temperature, get_wind
+from bgc_functions.bgc_rate_eqns import bgc_rate_eqns
+from bgc_functions.calculate_averages import average
+from bgc_functions.other_functions import concentration_ratio, light_attenuation
 from pom.calculations import density_profile
 np.set_printoptions(precision=20)
 

@@ -4,8 +4,8 @@ import numpy as np
 from numba import njit, types
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
-from functions.seasonal_cycling import *
-from functions.other_functions import nutrient_limitation, temperature_dependence, switch, calculate_acidity,find_roots_of_f_TA, monod
+from bgc_functions.seasonal_cycling import *
+from bgc_functions.other_functions import nutrient_limitation, temperature_dependence, switch, calculate_acidity,find_roots_of_f_TA, monod
 from fractions import Fraction
 np.set_printoptions(precision=20)
 class Inorganic():
