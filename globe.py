@@ -2,8 +2,8 @@ import numpy as np
 from globe_functions.simulation import simulate
 from globe_functions.initialize import initialize_model
 from globe_functions.reduce import reduce_bgc_model
+from globe_functions.optimize import optimize_bgc_model
 np.set_printoptions(precision=20)
-
 
 def main():
     # ----------------------------------------------------------------------------------------------------
@@ -19,12 +19,12 @@ def main():
     # ----------------------------------------------------------------------------------------------------
     # Optimize model parameters (if necessary)
     # ----------------------------------------------------------------------------------------------------
+    base_element, concentration, sinking, tracers, tracer_map, tracer_type, physical = optimize_bgc_model(base_element, concentration, sinking, tracers, tracer_map, tracer_type, physical)
 
     # ----------------------------------------------------------------------------------------------------
     # Begin simulation
     # ----------------------------------------------------------------------------------------------------
     simulate(base_element, concentration, sinking, tracers, tracer_map, tracer_type, physical)
-
 
 
 if __name__ == "__main__":

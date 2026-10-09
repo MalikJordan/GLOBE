@@ -134,72 +134,117 @@ def build_variables(params, vars_config=None):  # keep vars_config to potentiall
     
     return "\n".join(lines) + "\n\n"
 
-def extract_parameters(parameter_set, prefix=""):
+# def extract_parameters(parameter_set, prefix=""):
 
-    params = [] # Create empty list to store parameters
+#     params = [] # Create empty list to store parameters
 
-    for key,value in parameter_set.items(): # Parse through parameter_set dictionary
-        new_key = f"{prefix}.{key}" if prefix else key  # Define new key in case it contains additional levels
+#     for key,value in parameter_set.items(): # Parse through parameter_set dictionary
+#         new_key = f"{prefix}.{key}" if prefix else key  # Define new key in case it contains additional levels
 
-        # Check if this is a parameter leaf
-        if isinstance(value, dict) and all(k in value for k in ["lower", "initial", "upper"]):
-        # Only contains "lower", "initial", and "upper" == parameter --> add to list of parameters
-            params.append({
-                "name": new_key,
-                "lower": value["lower"],
-                "initial": value["initial"],
-                "upper": value["upper"]
-            })
-        elif isinstance(value, dict):
-        # Contains additional 
-            params.extend(extract_parameters(value, new_key))
+#         # Check if this is a parameter leaf
+#         if isinstance(value, dict) and all(k in value for k in ["lower", "initial", "upper"]):
+#         # Only contains "lower", "initial", and "upper" == parameter --> add to list of parameters
+#             params.append({
+#                 "name": new_key,
+#                 "lower": value["lower"],
+#                 "initial": value["initial"],
+#                 "upper": value["upper"]
+#             })
+#         elif isinstance(value, dict):
+#         # Contains additional 
+#             params.extend(extract_parameters(value, new_key))
 
-    return params
+#     return params
+
+def extract_parameters(model, dakota_configuration):
+    """
+    Definition:: extracts all numeric parameters for every tracer
+    """
+    parameters = {}
+    for tracer_name, tracer in model.items():
+        tracer_parameters = tracer.get("parameters",{})
+        parameters.update(flatten_parameters(tracer_parameters,tracer_name))
+
+    # Retain all parameter types but only optimize numeric values
+    numeric_parameters = {name: value for name,value in parameters.items() if isinstance(value,(int,float)) and not isinstance(value,bool)}
+
+    # Calculate bounds using constant values from Dakota YAML file
+    lower = dakota_configuration["parameter_bounds"]["lower"]
+    upper = dakota_configuration["parameter_bounds"]["upper"]
+    bounds = {}
+
+    for name,value in numeric_parameters.items():
+        lower_value = value * lower
+        upper_value = value * upper
+
+        if lower_value > upper_value:   lower_value,upper_value = upper_value,lower_value
+        # if lower_value == upper_value:  raise ValueError(f"Parameter '{name}' has identical bounds. A nonzero range is required.")
+
+        bounds[name] = {
+            "initial": value,
+            "lower": lower_value,
+            "upper": upper_value
+        }
+
+    return parameters, numeric_parameters, bounds
+
+def flatten_parameters(data,prefix=""):
+    """
+    Definition:: flattens nested dictionaries into dotted parameter paths
+    """
+    parameters = {}
+    for name,value in data.items():
+        path = f"{prefix}.{name}" if prefix else name
+
+        if isinstance(value,dict):  parameters.update(flatten_parameters(value,path))
+        else:   parameters[path] = value
+
+    return parameters
 
 
-def generate_dakota_input(yaml_file, output_file="dakota.in"):
+# def generate_dakota_input(yaml_file, output_file="dakota.in"):
 
-    with open(yaml_file, "r") as f:
-        config = yaml.safe_load(f)
+#     with open(yaml_file, "r") as f:
+#         config = yaml.safe_load(f)
 
-    dakota_config = config.get("dakota", {})
-    params_config = config.get("parameters", {})
+#     dakota_config = config.get("dakota", {})
+#     params_config = config.get("parameters", {})
 
-    param_list = extract_parameters(params_config)
+#     param_list = extract_parameters(params_config)
 
-    text = ""
-    text += build_environment(dakota_config.get("environment", {}))
-    text += build_method(dakota_config.get("method", {}))
-    text += build_model(dakota_config.get("model", {}))
-    text += build_variables(param_list, dakota_config.get("variables", {}))
-    text += build_interface(dakota_config.get("interface", {}))
-    text += build_response(dakota_config.get("responses", {}))
+#     text = ""
+#     text += build_environment(dakota_config.get("environment", {}))
+#     text += build_method(dakota_config.get("method", {}))
+#     text += build_model(dakota_config.get("model", {}))
+#     text += build_variables(param_list, dakota_config.get("variables", {}))
+#     text += build_interface(dakota_config.get("interface", {}))
+#     text += build_response(dakota_config.get("responses", {}))
     
-    with open(output_file, "w") as f:
-        f.write(text)
+#     with open(output_file, "w") as f:
+#         f.write(text)
 
-    return param_list
+#     return param_list
 
 
-# METHOD_MAP = {
-#     "sampling": 1,
-#     "moga": 2,
-#     "ngsa2": 3,
-#     "nlpql_sqp": 4,
-#     "bayes_calibration": 5
-# }
-# with open("dakota.yaml", "r") as f:
-#     config = yaml.safe_load(f)
+# # METHOD_MAP = {
+# #     "sampling": 1,
+# #     "moga": 2,
+# #     "ngsa2": 3,
+# #     "nlpql_sqp": 4,
+# #     "bayes_calibration": 5
+# # }
+# # with open("dakota.yaml", "r") as f:
+# #     config = yaml.safe_load(f)
 
-# param_list = extract_parameters(config["parameters"])
+# # param_list = extract_parameters(config["parameters"])
 
-# num_params = len(param_list)
-# print("Number of continuous variables:", num_params)
+# # num_params = len(param_list)
+# # print("Number of continuous variables:", num_params)
 
-# dakota_vars_block = build_variables(param_list)
+# # dakota_vars_block = build_variables(param_list)
 
-# with open("dakota.in", "w") as f:
-#     f.write(dakota_vars_block)
+# # with open("dakota.in", "w") as f:
+# #     f.write(dakota_vars_block)
 
-generate_dakota_input("dakota.yaml")
-x=1
+# generate_dakota_input("dakota.yaml")
+# x=1

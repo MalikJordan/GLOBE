@@ -22,6 +22,9 @@ dakota:
     gradients: False
     hessians: False
 
+parameter_bounds:
+  lower: 0.1
+  upper: 10.
 
 parameters:
 # -------------------------------------------------------------------------------------------------
