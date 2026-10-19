@@ -20,7 +20,7 @@ def pom_bgc_1d(iter, configuration, base_element, light_attenuation_water, tempe
     temp, sal, dens, ism, z, dz, surface_PAR, weddy, wgen, wind = bgc_physical(temperature, salinity, density, inorganic_suspended_matter, vertical_spacing, column_depth, shortwave_radiation, water_specific_heat_times_density, w_eddy_velocity, w_gen, wind_speed_zonal, wind_speed_meridional)
 
     # Calculate rate of change
-    d_dt = bgc_rate_eqns(iter, configuration, base_element, conc_cur, d_dt, light_attenuation_water, temp, sal, dens, z, dz, surface_PAR, wind, tracer_map, tracer_type, tracers, sinking)
+    d_dt, npp = bgc_rate_eqns(iter, configuration, base_element, conc_cur, d_dt, light_attenuation_water, temp, sal, dens, z, dz, surface_PAR, wind, tracer_map, tracer_type, tracers, sinking)
     
     if "o2" in tracers: d_o2surf = tracers["o2"].surf_flux
     else:   d_o2surf = np.float64(0.)
@@ -29,7 +29,7 @@ def pom_bgc_1d(iter, configuration, base_element, light_attenuation_water, tempe
                             nrt_o2, nrt_po4, nrt_no3, nrt_nh4, d_o2surf, o2b, no3b, ponb_grad, po4b,
                             vertical_grid, vertical_spacing, vertical_spacing_staggered, vertical_spacing_reciprocal, umolbgc, nbcbgc, ntp, shortwave_radiation, dif_trac)
 
-    return conc_bwd, conc_cur
+    return conc_bwd, conc_cur, npp
 
 
 @njit

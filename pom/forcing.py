@@ -109,7 +109,7 @@ def forcing_manager(iter, dt, num_layers, pom1d, counters, month1, month2):
             output_file.write('\n')
             output_file.close()
 
-        print('month_counter = ',counters[3])
+        # print('month_counter = ',counters[3])
         counters[3] += 1    # month counter
         
         # Reset the interpolator

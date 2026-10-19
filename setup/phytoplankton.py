@@ -837,6 +837,8 @@ class Phytoplankton():
         # self.npp[:,iter] = (self.psn - self.rsp) * conc[tracer_map[self.abbrev][base_index]]
         npp = (self.psn - self.rsp) * conc[tracer_map[self.abbrev][base_index]]
 
+        return npp
+
 
     def add_nutrient(self, nutrients):
         """

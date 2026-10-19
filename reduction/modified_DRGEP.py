@@ -448,7 +448,7 @@ def modified_DRGEP(conc, reduction, base_element, physical, tracer_map, tracer_t
     # Log input data to file
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
-    logging.basicConfig(filename='output.log', level=logging.INFO)
+    logging.basicConfig(filename='reduction_output.log', level=logging.INFO)
     logging.info(100 * '-')
     logging.info('Scenario: {}'.format(scenario))
     logging.info('Error function: {}'.format(error_function))

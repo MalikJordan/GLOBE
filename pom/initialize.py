@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from pathlib import Path
 from numba.types import float64, unicode_type
 from numba.typed import Dict, List
 np.set_printoptions(precision=20)
@@ -44,8 +45,10 @@ def initialize_pom(num_layers, temperature_IC, salinity_IC):
     temp_bflx = np.float64(0.)                                      # Bottom flux
 
     # Read initial conditions
-    temp_cur = np.fromfile(os.getcwd() + temperature_IC)
-    temp_bwd = np.fromfile(os.getcwd() + temperature_IC)
+    # temp_cur = np.fromfile(os.getcwd() + temperature_IC)
+    # temp_bwd = np.fromfile(os.getcwd() + temperature_IC)
+    temp_cur = np.fromfile(Path.cwd() / temperature_IC.removeprefix("/"))
+    temp_bwd = np.fromfile(Path.cwd() / temperature_IC.removeprefix("/"))
 
     # Salinity ---------------------------------------------------------------
     sal_cur = np.zeros(num_layers,dtype=np.float64)                # Current
@@ -58,8 +61,10 @@ def initialize_pom(num_layers, temperature_IC, salinity_IC):
     sal_bflx = np.float64(0.)                                      # Bottom flux
 
     # Read initial conditions
-    sal_cur = np.fromfile(os.getcwd() + salinity_IC)
-    sal_bwd = np.fromfile(os.getcwd() + salinity_IC)
+    # sal_cur = np.fromfile(os.getcwd() + salinity_IC)
+    # sal_bwd = np.fromfile(os.getcwd() + salinity_IC)
+    sal_cur = np.fromfile(Path.cwd() / salinity_IC.removeprefix("/"))
+    sal_bwd = np.fromfile(Path.cwd() / salinity_IC.removeprefix("/"))
     
     # Nutrients ---------------------------------------------------------------
     # Surface
@@ -144,7 +149,8 @@ def read_pom_inputs(num_layers, pom1d, month):
     array_length = 13   # months (D-J-F-M-A-M-J-J-A-S-O-N-D)
     
     # Wind speed
-    wind_speed_data = np.fromfile(os.getcwd() + pom1d["input_files"]["wind_stress"])
+    # wind_speed_data = np.fromfile(os.getcwd() + pom1d["input_files"]["wind_stress"])
+    wind_speed_data = np.fromfile(Path.cwd() / pom1d["input_files"]["wind_stress"].removeprefix("/"))
     wsu   = np.zeros(array_length)
     wsv   = np.zeros(array_length)
     for i in range(0,array_length):
@@ -152,8 +158,10 @@ def read_pom_inputs(num_layers, pom1d, month):
         wsv[i] = wind_speed_data[2*i + 1]
 
     # SOlar radiation, shortwave radiation, and heat flux
-    solar_radiation = np.fromfile(os.getcwd() + pom1d["input_files"]["shortwave_solar_radiation"])
-    heat_flux_loss_data = np.fromfile(os.getcwd() + pom1d["input_files"]["heat_flux_loss"])
+    # solar_radiation = np.fromfile(os.getcwd() + pom1d["input_files"]["shortwave_solar_radiation"])
+    # heat_flux_loss_data = np.fromfile(os.getcwd() + pom1d["input_files"]["heat_flux_loss"])
+    solar_radiation = np.fromfile(Path.cwd() / pom1d["input_files"]["shortwave_solar_radiation"].removeprefix("/"))
+    heat_flux_loss_data = np.fromfile(Path.cwd() / pom1d["input_files"]["heat_flux_loss"].removeprefix("/"))
     swrad = np.zeros(array_length)
     wtsurf = np.zeros(array_length)
     qcorr = np.zeros(array_length)
@@ -163,44 +171,52 @@ def read_pom_inputs(num_layers, pom1d, month):
         qcorr[i]  = heat_flux_loss_data[3*i + 2]
 
     # Inorganic suspended matter
-    inorganic_suspended_matter_data = np.fromfile(os.getcwd() + pom1d["input_files"]["inorganic_suspended_matter"])
+    # inorganic_suspended_matter_data = np.fromfile(os.getcwd() + pom1d["input_files"]["inorganic_suspended_matter"])
+    inorganic_suspended_matter_data = np.fromfile(Path.cwd() / pom1d["input_files"]["inorganic_suspended_matter"].removeprefix("/"))
     ism   = np.zeros((num_layers,array_length))
     for i in range(0,array_length):
         for x in range(0, num_layers):
             ism[x,i] = inorganic_suspended_matter_data[num_layers * i + x]
 
     # Surface salinity
-    surface_salinity = np.fromfile(os.getcwd() + pom1d["input_files"]["surface_salinity"])
+    # surface_salinity = np.fromfile(os.getcwd() + pom1d["input_files"]["surface_salinity"])
+    surface_salinity = np.fromfile(Path.cwd() / pom1d["input_files"]["surface_salinity"].removeprefix("/"))
 
     # Salinity climatology (diagnostic mode)
-    salinity_vertical_profile_data = np.fromfile(os.getcwd() + pom1d["input_files"]["salinity"])
+    # salinity_vertical_profile_data = np.fromfile(os.getcwd() + pom1d["input_files"]["salinity"])
+    salinity_vertical_profile_data = np.fromfile(Path.cwd() / pom1d["input_files"]["salinity"].removeprefix("/"))
     sclim = np.zeros((num_layers,array_length))
     for i in range(0,array_length):
         for x in range(0, num_layers):
             sclim[x,i] = salinity_vertical_profile_data[num_layers * i + x]
 
     # Salinity IC
-    salinity = np.fromfile(os.getcwd() + pom1d["input_files"]["salinity_IC"])
+    # salinity = np.fromfile(os.getcwd() + pom1d["input_files"]["salinity_IC"])
+    salinity = np.fromfile(Path.cwd() / pom1d["input_files"]["salinity_IC"].removeprefix("/"))
 
     # Temperature climatology (diagnostic mode)
-    temperature_vertical_profile_data = np.fromfile(os.getcwd() + pom1d["input_files"]["temperature"])
+    # temperature_vertical_profile_data = np.fromfile(os.getcwd() + pom1d["input_files"]["temperature"])
+    temperature_vertical_profile_data = np.fromfile(Path.cwd() / pom1d["input_files"]["temperature"].removeprefix("/"))
     tclim = np.zeros((num_layers,array_length))
     for i in range(0,array_length):
         for x in range(0, num_layers):
             tclim[x,i] = temperature_vertical_profile_data[num_layers * i + x]
 
     # Temperature IC
-    temperature = np.fromfile(os.getcwd() + pom1d["input_files"]["temperature_IC"])
+    # temperature = np.fromfile(os.getcwd() + pom1d["input_files"]["temperature_IC"])
+    temperature = np.fromfile(Path.cwd() / pom1d["input_files"]["temperature_IC"].removeprefix("/"))
 
     # General circulation w velocity climatology
-    general_circulation_w_velocity_data = np.fromfile(os.getcwd() + pom1d["input_files"]["w_velocity"])
+    # general_circulation_w_velocity_data = np.fromfile(os.getcwd() + pom1d["input_files"]["w_velocity"])
+    general_circulation_w_velocity_data = np.fromfile(Path.cwd() / pom1d["input_files"]["w_velocity"].removeprefix("/"))
     wclim  = np.zeros((num_layers,array_length))
     for i in range(0,array_length):
         for x in range(0, num_layers):
             wclim[x,i] = general_circulation_w_velocity_data[num_layers * i + x]
 
     # Intermittant eddy w velocity 1
-    intermediate_eddy_w_velocity_1_data = np.fromfile(os.getcwd() + pom1d["input_files"]["eddy_w_velocity_1"])
+    # intermediate_eddy_w_velocity_1_data = np.fromfile(os.getcwd() + pom1d["input_files"]["eddy_w_velocity_1"])
+    intermediate_eddy_w_velocity_1_data = np.fromfile(Path.cwd() / pom1d["input_files"]["eddy_w_velocity_1"].removeprefix("/"))
     weddy1  = np.zeros((num_layers,array_length))
     for i in range(0,array_length):
         for x in range(0, num_layers):
@@ -208,14 +224,16 @@ def read_pom_inputs(num_layers, pom1d, month):
 
 
     # Intermittant eddy w velocity 2
-    intermediate_eddy_w_velocity_2_data = np.fromfile(os.getcwd() + pom1d["input_files"]["eddy_w_velocity_2"])
+    # intermediate_eddy_w_velocity_2_data = np.fromfile(os.getcwd() + pom1d["input_files"]["eddy_w_velocity_2"])
+    intermediate_eddy_w_velocity_2_data = np.fromfile(Path.cwd() / pom1d["input_files"]["eddy_w_velocity_2"].removeprefix("/"))
     weddy2  = np.zeros((num_layers,array_length))
     for i in range(0,array_length):
         for x in range(0, num_layers):
             weddy2[x,i] = intermediate_eddy_w_velocity_2_data[num_layers * i + x]
 
     # Surface nutrients
-    surface_nutrients_data  = np.fromfile(os.getcwd() + pom1d["input_files"]["surface_nutrients"])
+    # surface_nutrients_data  = np.fromfile(os.getcwd() + pom1d["input_files"]["surface_nutrients"])
+    surface_nutrients_data  = np.fromfile(Path.cwd() / pom1d["input_files"]["surface_nutrients"].removeprefix("/"))
     no3s  = np.zeros(array_length)
     nh4s  = np.zeros(array_length)
     po4s  = np.zeros(array_length)
@@ -227,7 +245,8 @@ def read_pom_inputs(num_layers, pom1d, month):
         sio4s[i] = surface_nutrients_data[4*i + 3]
 
     # Bottom nutrients
-    bottom_nutrients_data = np.fromfile(os.getcwd() + pom1d["input_files"]["bottom_nutrients"])
+    # bottom_nutrients_data = np.fromfile(os.getcwd() + pom1d["input_files"]["bottom_nutrients"])
+    bottom_nutrients_data = np.fromfile(Path.cwd() / pom1d["input_files"]["bottom_nutrients"].removeprefix("/"))
     o2b   = np.zeros(array_length)
     no3b  = np.zeros(array_length)
     po4b  = np.zeros(array_length)

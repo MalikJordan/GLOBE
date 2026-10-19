@@ -314,10 +314,6 @@ tracers:
     - p
     parameters:
       light_attenuation: 0.0
-      remineralization:
-        remineralization_rate:
-          c: 0.05
-        convert_o2: 1/12
       sedimentation:
         sinking: false
         background_sinking_rate: 0.0
@@ -330,10 +326,6 @@ tracers:
     - c
     parameters:
       light_attenuation: 0.0
-      remineralization:
-        remineralization_rate:
-          c: 0.05
-        convert_o2: 1/12
       sedimentation:
         sinking: false
         background_sinking_rate: 0.0
@@ -352,12 +344,6 @@ tracers:
       dissolution:
         dissolution_rate:
           si: 0.02
-      remineralization:
-        remineralization_rate:
-          c: 0.1
-          n: 0.1
-          p: 0.1
-        convert_o2: 1/12
       sedimentation:
         sinking: true
         background_sinking_rate: 1.0
@@ -587,6 +573,18 @@ reactions:
     - c
     - n
     - p
+  produced:
+    microzoo1:
+    - c
+    - n
+    - p
+- type: grazing
+  consumed:
+    phyto2:
+    - c
+    - n
+    - p
+    - chl
   produced:
     microzoo1:
     - c

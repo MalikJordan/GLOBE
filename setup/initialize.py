@@ -10,11 +10,71 @@ from setup.inorganic import Inorganic
 from setup.phytoplankton import Phytoplankton
 from setup.zooplankton import Zooplankton
 
-@njit
+# @njit
+# def coordinate_system(configuration, num_layers, column_depth, surf_log, bot_log):
+    
+#     # Create empty dictionary for vertical grid parameters
+#     vertical_grid = Dict.empty(key_type=unicode_type, value_type=float64[:])
+
+#     # Create coordinate system
+#     if configuration == "0d":
+#         vertical_grid["dz"] = np.array([column_depth], dtype=np.float64)
+#         vertical_grid["z"] = np.array([column_depth/2], dtype=np.float64)
+
+#     elif configuration == "1d":
+#         # Initialize vertical coordinate system arrays
+#         l = np.ones(num_layers, dtype=np.float64)       # length scale
+#         z = np.zeros(num_layers, dtype=np.float64)      # vertical coordinates
+#         zz = np.zeros(num_layers, dtype=np.float64)     # staggered vertical coordinates
+#         dz = np.zeros(num_layers, dtype=np.float64)     # vertical spacing
+#         dzz = np.zeros(num_layers, dtype=np.float64)    # staggered vertical spacing
+#         dzr = np.zeros(num_layers, dtype=np.float64)    # reciprocal of vertical spacing
+
+#         # Calculate initial spacing
+#         surface_logspace_layers = surf_log - 2.
+#         bottom_logspace_layers = num_layers - bot_log - 1.
+
+#         layers = (bot_log - surf_log) + 4.
+        
+#         initial_spacing = 2. / layers / np.exp(0.693147 * (surface_logspace_layers))
+
+#         dzz[0] = -0.5 * initial_spacing
+
+#         # Set vertical coordinates
+#         for i in range(1, int(surf_log)-1):
+#             z[i-1] = -initial_spacing * 2**(i-2)
+#             zz[i-1] = -initial_spacing * 2**(i-1.5)
+
+#         for i in range(int(surf_log)-1, num_layers+1):
+#             z[i-1] = -(i - surface_logspace_layers) / layers
+#             zz[i-1] = -(i - surface_logspace_layers + 0.5) / layers
+        
+#         # Set vertical spacing
+#         dz[:-1] = z[:-1] - z[1:]
+#         dzz[:-1] = zz[:-1] - zz[1:]
+
+#         dz[-1] = 1.E-06     # Small value to avoid division by zero for dzr
+#         dzr = 1. / dz       # Take reciprocal
+#         dz[-1] = 0.         # Correct dz value
+
+#         # Set length scale
+#         l[0] = 0.
+#         l[-1] = 0.
+
+#         vertical_grid["l"] = l
+#         vertical_grid["z"] = z
+#         vertical_grid["zz"] = zz
+#         vertical_grid["dz"] = dz
+#         vertical_grid["dzz"] = dzz
+#         vertical_grid["dzr"] = dzr
+
+#     return vertical_grid
+
+
 def coordinate_system(configuration, num_layers, column_depth, surf_log, bot_log):
     
     # Create empty dictionary for vertical grid parameters
-    vertical_grid = Dict.empty(key_type=unicode_type, value_type=float64[:])
+    vertical_grid = {}
 
     # Create coordinate system
     if configuration == "0d":
@@ -71,14 +131,15 @@ def coordinate_system(configuration, num_layers, column_depth, surf_log, bot_log
     return vertical_grid
 
 
-def import_bgc_model(file_path, physical):
-
-    # Open file containing bgc data
-    with open(file_path, 'r') as f:
-        model_info = yaml.full_load(f)
-        base_element = model_info["base_element"]
-        model = model_info["tracers"]
-        reactions = model_info["reactions"]
+def import_bgc_model(base_element, model, reactions, physical):
+# def import_bgc_model(file_path, physical):
+    
+    # # Open file containing bgc data
+    # with open(file_path, 'r') as f:
+    #     model_info = yaml.full_load(f)
+    #     base_element = model_info["base_element"]
+    #     model = model_info["tracers"]
+    #     reactions = model_info["reactions"]
 
     # ----------------------------------------------------------------------------------------------------
     # Read model tracers
@@ -116,7 +177,8 @@ def import_bgc_model(file_path, physical):
             
             tracers[name].add_nutrient(list(key["consumed"].keys()))
 
-    return base_element, reactions, tracers
+    return tracers
+    # return base_element, reactions, tracers
 
 
 def import_physical_model(file_path):

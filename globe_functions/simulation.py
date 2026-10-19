@@ -2,16 +2,20 @@ import os
 import time
 import numpy as np
 import yaml
+from pathlib import Path
 from bgc_functions.calculate_averages import average
 from pom.forcing import forcing_manager
 from pom.initialize import initialize_pom
 from pom.calculations import density_profile, kinetic_energy_profile, temperature_and_salinity_profiles, zonal_velocity_profile, meridional_velocity_profile
 from pom.coupling import pom_bgc_1d
 
-def simulate(base_element, concentration, sinking, tracers, tracer_map, tracer_type, physical):
+def run_simulation(base_element, concentration, sinking, tracers, tracer_map, tracer_type, physical):
     """
     Definition:: handles timestepping of biophysical model
     """
+    # Initialize parameter for net primary productivity
+    npp = np.zeros_like(concentration[0,...])
+
     # ----------------------------------------------------------------------------------------------------
     # Extract commonly used variables to avoid repetitive dictionary unpacking (unchanged through simulation)
     # ----------------------------------------------------------------------------------------------------
@@ -34,8 +38,9 @@ def simulate(base_element, concentration, sinking, tracers, tracer_map, tracer_t
     # Initialize POM1D (if necessary)
     # ----------------------------------------------------------------------------------------------------
     if physical["environment"]["forcing"] == "pom1d":
-        print('Initializing environmental forcing...')
-        with open(os.getcwd() + '/pom1d.yaml', 'r') as f:
+        # print('Initializing environmental forcing...')
+        # with open(os.getcwd() + '/pom1d.yaml', 'r') as f:
+        with open(Path.cwd() / 'pom1d.yaml', 'r') as f:
             pom1d = yaml.full_load(f)
 
         dif_trac, dif_mom, dif_ke, ke_cur, ke_bwd, ke_fwd, kel_cur, kel_bwd, kel_fwd, \
@@ -90,15 +95,15 @@ def simulate(base_element, concentration, sinking, tracers, tracer_map, tracer_t
         input_files = [wind_inp, rad_inp, heat_inp, ism_inp, surf_sal_inp, sal_inp, sal_IC_inp, temp_inp, temp_IC_inp, w_vel_inp,
                     weddy1_inp, weddy2_inp, surf_nut_inp, bot_nut_inp]
 
-        print('Forcing initialization complete.\n')
+        # print('Forcing initialization complete.\n')
 
 
 
     # ----------------------------------------------------------------------------------------------------
     # Begin simulation
     # ----------------------------------------------------------------------------------------------------
-    start = time.perf_counter()
-    print('Beginning simulation...')
+    # start = time.perf_counter()
+    # print('Beginning simulation...')
     for iter in range(0,iters-1):
 
         # Turbulence closure
@@ -185,7 +190,7 @@ def simulate(base_element, concentration, sinking, tracers, tracer_map, tracer_t
         if iter == 0:   conc_bwd = concentration[...,iter].copy()   # Initialize backward time step at first iteration
         else:           conc_bwd = concentration[...,iter-1].copy()
             
-        concentration[...,iter], concentration[...,iter+1] = \
+        concentration[...,iter], concentration[...,iter+1], npp[...,iter] = \
             pom_bgc_1d(iter, configuration, base_element, lambda_w, temp_bwd, sal_bwd, density, ism, swrad, weddy, wgen, wsu, wsv, dif_trac,
                         dt2, num_layers, z, dz, dzz, dzr, column_depth, 
                         nrt_o2, nrt_po4, nrt_no3, nrt_nh4, o2b, no3b, ponb_grad, po4b,
@@ -196,33 +201,44 @@ def simulate(base_element, concentration, sinking, tracers, tracer_map, tracer_t
     # ----------------------------------------------------------------------------------------------------
     # Simulation complete
     # ----------------------------------------------------------------------------------------------------
-    print('Simulation complete.\n')
-    elapsed = time.perf_counter() - start
-    hours, remainder = divmod(elapsed, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    print(f"Walltime: {int(hours):02d}:{int(minutes):02d}:{seconds:09.6f}")
+    # print('Simulation complete.\n')
+    # elapsed = time.perf_counter() - start
+    # hours, remainder = divmod(elapsed, 3600)
+    # minutes, seconds = divmod(remainder, 60)
+    # print(f"Walltime: {int(hours):02d}:{int(minutes):02d}:{seconds:09.6f}")
 
-
-    # ----------------------------------------------------------------------------------------------------
-    # Write outputs to npz file
-    # ----------------------------------------------------------------------------------------------------
-    print('Writing outputs...')
-    # npp_exists = False  # initialize writing of npp
-    # for trac in tracers:
-    #     if tracers[trac].type == "phytoplankton":
-    #         if not npp_exists:  # first phytoplankton group
-    #             npp = tracers[trac].npp
-    #             npp_exists = True   # npp now exists, update to True to append with npp from later phytoplankton groups
-    #         else:   # subsequent phytoplankton groups
-    #             npp += tracers[trac].npp
-
-    # if npp_exists:
-    #     npp_daily, npp_monthly = average(npp,physical,'npp')
-    #     np.savez('npp_bfm56.npz',daily=npp_daily,monthly=npp_monthly)
-
+    # Return daily and monthly averages for tracer concentrations and net primary productivity
+    npp_daily, npp_monthly = average(npp,physical,'npp')
     conc_daily, conc_monthly = average(concentration,physical,'concentration')
-    np.savez('concentration.npz',daily=conc_daily,monthly=conc_monthly)
 
-    np.savez('tracer_indices.npz',**tracer_map)
 
-    print('Output writing complete.\n')
+    return conc_daily, conc_monthly, npp_daily, npp_monthly
+
+    # create separate function for writing outputs, dont want to write new npz files after each sample during optimization
+
+    # # ----------------------------------------------------------------------------------------------------
+    # # Write outputs to npz file
+    # # ----------------------------------------------------------------------------------------------------
+    # print('Writing outputs...')
+    # # npp_exists = False  # initialize writing of npp
+    # # for trac in tracers:
+    # #     if tracers[trac].type == "phytoplankton":
+    # #         if not npp_exists:  # first phytoplankton group
+    # #             npp = tracers[trac].npp
+    # #             npp_exists = True   # npp now exists, update to True to append with npp from later phytoplankton groups
+    # #         else:   # subsequent phytoplankton groups
+    # #             npp += tracers[trac].npp
+
+    # # if npp_exists:
+    # #     npp_daily, npp_monthly = average(npp,physical,'npp')
+    # #     np.savez('npp_bfm56.npz',daily=npp_daily,monthly=npp_monthly)
+
+    # npp_daily, npp_monthly = average(npp,physical,'npp')
+    # np.savez('npp_bfm56.npz',daily=npp_daily,monthly=npp_monthly)
+
+    # conc_daily, conc_monthly = average(concentration,physical,'concentration')
+    # np.savez('concentration.npz',daily=conc_daily,monthly=conc_monthly)
+
+    # np.savez('tracer_indices.npz',**tracer_map)
+
+    # print('Output writing complete.\n')

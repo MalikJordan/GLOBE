@@ -5,6 +5,9 @@ np.set_printoptions(precision=20)
 
 def bgc_rate_eqns(iter, configuration, base_element, conc, d_dt, light_attenuation_water, temp, sal, dens, z, dz, surface_PAR, wind, tracer_map, tracer_type, tracers, sinking):
 
+    # Initialize net primary productivity
+    npp = np.zeros_like(conc[0])            # shape = (num_boxes)
+
     # Calculate concentration ratios
     conc_ratio = concentration_ratio(conc, tracer_map)
 
@@ -26,14 +29,14 @@ def bgc_rate_eqns(iter, configuration, base_element, conc, d_dt, light_attenuati
         elif tracers[key].type == "inorganic": 
             tracers[key].inorg(configuration, bact_limitation_factor, conc, d_dt, tracer_map, z, dz, temp, sal, dens, wind)
         elif tracers[key].type == "phytoplankton":
-            tracers[key].phyto(configuration, iter, base_element, temp, z, dz, k_PAR, surface_PAR, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers, sinking)
+            npp += tracers[key].phyto(configuration, iter, base_element, temp, z, dz, k_PAR, surface_PAR, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers, sinking)
         elif tracers[key].type == "zooplankton": 
             tracers[key].zoo(iter, base_element, temp, conc, conc_ratio, d_dt, tracer_map, tracer_type, tracers)
 
     # Convert rates fro 1/d to 1/s
     d_dt /= 86400.
 
-    return d_dt
+    return d_dt, npp
 
 
 # def reduced_bgc_rate_eqns(time, base_element, conc, num_tracers, physical, tracers, tracer_map, tracer_type, indices_to_retain, removed_tracer_names, dic_matrix):

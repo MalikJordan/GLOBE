@@ -1,0 +1,35 @@
+parameter_bounds:
+  lower: 0.5
+  upper: 2.
+
+objective_targets:
+  # available options: any combination of following components (dynamically creates multi-objective function)
+  # o2: oxygen 
+  # no3: nitrate
+  # po4: phosphate
+  # chl: total chlorophyll concentration (sum of all phytoplankton chlorophyll constituents)
+  # pon: particulate organic nitrogen (sum of phytoplankton, zooplankton, and particulate detrital nitrogen constituents)
+  # npp: net primary productivity (sum across all phytoplankton groups)
+  - o2
+  - no3
+  - po4
+  - chl
+  - pon
+  - npp
+
+morris_screening:
+  levels: 4
+  trajectories: 2
+  threshold: 0.5
+  workers: 4
+
+sobol_SA:
+  samples: 2
+  threshold: 0.01
+  confidence_factor: 2
+  workers: 4
+
+parameter_optimization:
+  max_iter: 5
+  tolerance: 1.E-08
+  workers: 4

@@ -1,5 +1,6 @@
 import numpy as np
-from globe_functions.simulation import simulate
+import time
+from globe_functions.simulation import run_simulation
 from globe_functions.initialize import initialize_model
 from globe_functions.reduce import reduce_bgc_model
 from globe_functions.optimize import optimize_bgc_model
@@ -24,8 +25,29 @@ def main():
     # ----------------------------------------------------------------------------------------------------
     # Begin simulation
     # ----------------------------------------------------------------------------------------------------
-    simulate(base_element, concentration, sinking, tracers, tracer_map, tracer_type, physical)
+    start = time.perf_counter()
+    print("Beginning simulation...")
 
+    conc_daily, conc_monthly, npp_daily, npp_monthly = run_simulation(base_element, concentration, sinking, tracers, tracer_map, tracer_type, physical)
+    
+    print("Simulation complete.\n")
+    
+    # Calculate wall time
+    elapsed = time.perf_counter() - start
+    hours, remainder = divmod(elapsed, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    print(f"Walltime: {int(hours):02d}:{int(minutes):02d}:{seconds:09.6f}")
+
+    # ----------------------------------------------------------------------------------------------------
+    # Write outputs
+    # ----------------------------------------------------------------------------------------------------
+    print('Writing outputs...')
+
+    np.savez('npp.npz',daily=npp_daily,monthly=npp_monthly)
+    np.savez('concentration.npz',daily=conc_daily,monthly=conc_monthly)
+    np.savez('tracer_indices.npz',**tracer_map)
+
+    print('Output writing complete.\n')
 
 if __name__ == "__main__":
     main()
